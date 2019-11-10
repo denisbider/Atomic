@@ -78,6 +78,12 @@ I have my own ideas about stuff and I like to implement them.
 
 `Map` is like `std::map`, but it requires the value type to contain the key, rather than storing it separately. Part of its purpose is, again, to treat moving as a first-class concept and prevent stuff from being accidentally copied. It performs similarly to `std::map` in Visual Studio.
 
+## This code is for Windows, but its internal character representation is UTF-8?
+
+Yes. I recently stumbled across the [UTF-8 Everywhere](http://utf8everywhere.org/) manifesto: I had nothing to do with it, but I could have wriiten it myself.
+
+In a nutshell, the Windows decision to use UCS-2, and later UTF-16, was a well-meant historical mistake. It used to look like 65536 code points would be enough for everybody. *chuckle* If it was, UCS-2 would have worked great. But it is not, and then UTF-8 is best.
+
 ## Is this code production quality?
 
 *Yes*, in the sense that 90% of what everyone uses in production is worse crap. This code is fundamentally of high quality, if perhaps with a bug here and there.
