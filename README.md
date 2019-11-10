@@ -84,7 +84,7 @@ I have my own ideas about stuff and I like to implement them.
 
 *No*, if you're going to use it on a mission to send humans to Mars. While I'm a perfectionist, I also wouldn't bet lives on it because I don't like seeing people die.
 
-But stuff gets done by non-perfectionists. We routinely bet lives on code of [dubious quality](http://www.safetyresearch.net/blog/articles/toyota-unintended-acceleration-and-big-bowl-%E2%80%9Cspaghetti%E2%80%9D-code). Facebook was proverbially founded on PHP. People like me instead spend 10 years polishing an email parser.
+But stuff gets done by non-perfectionists. We routinely bet lives on code of [dubious quality](http://www.safetyresearch.net/blog/articles/toyota-unintended-acceleration-and-big-bowl-%E2%80%9Cspaghetti%E2%80%9D-code). Facebook was proverbially founded on PHP. People like me instead spend 10 years polishing an email parser like it's somehow not good enough.
 
 ## Does denis use this code in production?
 
