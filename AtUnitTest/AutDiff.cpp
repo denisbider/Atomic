@@ -89,7 +89,7 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 }
 
 
-void DiffTest(Seq linesOld, Seq linesNew, Seq desc)
+void DiffTest(Seq linesOld, Seq linesNew, Seq desc, Diff::DiffParams const& diffParams)
 {
 	if (desc.n)
 		Console::Out(Str::Join("\r\n", desc, "\r\n---begin---\r\n"));
@@ -107,7 +107,7 @@ void DiffTest(Seq linesOld, Seq linesNew, Seq desc)
 		timeBefore = Time::NonStrictNow();
 
 	Vec<Diff::DiffUnit> diff;
-	Diff::Generate(inputOld, inputNew, diff, Diff::DiffParams());
+	Diff::Generate(inputOld, inputNew, diff, diffParams);
 
 	if (!desc.n)
 	{
@@ -139,7 +139,7 @@ void DiffTest(Seq linesOld, Seq linesNew, Seq desc)
 }
 
 
-void DiffTestSimple(Seq oldText, Seq newText)
+void DiffTestSimple(Seq oldText, Seq newText, Diff::DiffParams const& diffParams)
 {
 	Str oldLines, newLines;
 	oldLines.ReserveExact(2*oldText.n);
@@ -152,53 +152,104 @@ void DiffTestSimple(Seq oldText, Seq newText)
 	if (!newText.n) newText = "_";
 	Str desc = Str::Join(oldText, " => ", newText);
 
-	DiffTest(oldLines, newLines, desc);
+	DiffTest(oldLines, newLines, desc, diffParams);
 }
 
 
 void DiffTests(int argc, char** argv)
 {
-	if (argc <= 2)
+	Diff::DiffParams diffParams;
+	diffParams.m_includeUnchanged = true;
+
+	bool helpRequested {}, simpleInput {}, haveOldParam {}, haveNewParam {};
+	Seq oldParam, newParam;
+
+	for (int i=2; i<argc; ++i)
 	{
-		DiffTestSimple("",            ""         );
-		DiffTestSimple("",            "a"        );
-		DiffTestSimple("a",           ""         );
-		DiffTestSimple("a",           "a"        );
-		DiffTestSimple("a",           "b"        );
-		DiffTestSimple("a",           "ab"       );
-		DiffTestSimple("a",           "ba"       );
-		DiffTestSimple("ab",          "a"        );
-		DiffTestSimple("ba",          "a"        );
-		DiffTestSimple("ab",          "ab"       );
-		DiffTestSimple("ab",          "bca"      );
-		DiffTestSimple("bca",         "ab"       );
-		DiffTestSimple("abcd",        "bcda"     );
-		DiffTestSimple("bcda",        "abcd"     );
-		DiffTestSimple("abcoeppklmn", "op"       );
-		DiffTestSimple("abcabba",     "cbabac"   );
-		DiffTestSimple("abgdef",      "gh"       );
-		DiffTestSimple("xaxcxabc",    "abcy"     );
-	}
-	else if (argc == 5)
-	{
-		if (!Seq(argv[2]).EqualInsensitive("-s"))
-			Console::Out("Expecting: -s <oldText> <newText>\r\n");
+		Seq arg = argv[i];
+		if (arg.StartsWithExact("-"))
+		{
+			if (arg == "-?")
+			{
+				helpRequested = true;
+				break;
+			}
+			else if (arg == "-s")
+				simpleInput = true;
+			else if (arg == "-mw")
+			{
+				if (++i >= argc) { Console::Err("Missing -mw value\r\n"); return; }
+				diffParams.m_maxMatrixWidth = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-qma")
+			{
+				if (++i >= argc) { Console::Err("Missing -qma value\r\n"); return; }
+				diffParams.m_quality_match = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-qmo")
+			{
+				if (++i >= argc) { Console::Err("Missing -qmo value\r\n"); return; }
+				diffParams.m_quality_momentum = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else
+				{ Console::Err(Str::Join("Unrecognized switch: ", arg, "\r\n")); return; }
+		}
+		else if (!haveOldParam)
+		{
+			oldParam = arg;
+			haveOldParam = true;
+		}
+		else if (!haveNewParam)
+		{
+			newParam = arg;
+			haveNewParam = true;
+		}
 		else
-			DiffTestSimple(argv[3], argv[4]);
+			{ Console::Err(Str::Join("Unexpected parameter: ", arg, "\r\n")); return; }
 	}
-	else if (argc != 4)
+
+	if (helpRequested)
 	{
-		Console::Out("Expecting parameters: <oldFile> <newFile>\r\n");
+		Console::Out(
+			"Usage: AtUnitTest diff [<oldFile> <newFile> | -s <oldText> <newText>] [options]\r\n"
+			"Options:\r\n"
+			" -mw  <n>    Set the value of DiffParams::m_maxMatrixWidth\r\n"
+			" -qma <n>    Set the value of DiffParams::m_quality_match\r\n"
+			" -qmo <n>    Set the value of DiffParams::m_quality_momentum\r\n");
 	}
+	else if (!haveOldParam && !haveNewParam)
+	{
+		DiffTestSimple("",            "",        diffParams);
+		DiffTestSimple("",            "a",       diffParams);
+		DiffTestSimple("a",           "",        diffParams);
+		DiffTestSimple("a",           "a",       diffParams);
+		DiffTestSimple("a",           "b",       diffParams);
+		DiffTestSimple("a",           "ab",      diffParams);
+		DiffTestSimple("a",           "ba",      diffParams);
+		DiffTestSimple("ab",          "a",       diffParams);
+		DiffTestSimple("ba",          "a",       diffParams);
+		DiffTestSimple("ab",          "ab",      diffParams);
+		DiffTestSimple("ab",          "bca",     diffParams);
+		DiffTestSimple("bca",         "ab",      diffParams);
+		DiffTestSimple("abcd",        "bcda",    diffParams);
+		DiffTestSimple("bcda",        "abcd",    diffParams);
+		DiffTestSimple("abcoeppklmn", "op",      diffParams);
+		DiffTestSimple("abcabba",     "cbabac",  diffParams);
+		DiffTestSimple("abgdef",      "gh",      diffParams);
+		DiffTestSimple("xaxcxabc",    "abcy",    diffParams);
+	}
+	else if (!haveNewParam)
+	{
+		Console::Err("Expecting <newText> or <newFile>\r\n");
+	}
+	else if (simpleInput)
+		DiffTestSimple(oldParam, newParam, diffParams);
 	else
 	{
-		Seq oldFile = argv[2];
-		Seq newFile = argv[3];
-
 		Str linesOld, linesNew;
-		File().Open(oldFile, File::OpenArgs::DefaultRead()).ReadAllInto(linesOld);
-		File().Open(newFile, File::OpenArgs::DefaultRead()).ReadAllInto(linesNew);
+		File().Open(oldParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesOld);
+		File().Open(newParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesNew);
 
-		DiffTest(linesOld, linesNew, Seq());
+		DiffTest(linesOld, linesNew, Seq(), diffParams);
 	}
 }

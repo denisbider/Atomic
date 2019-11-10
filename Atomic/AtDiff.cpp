@@ -206,7 +206,7 @@ namespace At
 					Build(axes, params);
 					CalculateEdges(params);
 					CalculateInner(params);
-					Travel(axes, diff);
+					Travel(axes, diff, params);
 				}
 			
 			private:
@@ -416,7 +416,7 @@ namespace At
 					}
 				}
 
-				void Travel(MatrixAxes const& axes, Vec<DiffUnit>& diff)
+				void Travel(MatrixAxes const& axes, Vec<DiffUnit>& diff, DiffParams const& params)
 				{
 					AxisUnit const* pAxisOld = axes.m_axisOld.m_axisUnits.begin();
 					AxisUnit const* pAxisNew = axes.m_axisNew.m_axisUnits.begin();
@@ -462,7 +462,9 @@ namespace At
 								for (sizet i=pAxisOld->m_leadPos; i!=pAxisOld->m_unitPos; ++i) { diff.Add(DiffDisposition::Removed, DiffInputSource::Old, *(pOccurOld->m_iu)); ++pOccurOld; }
 							}
 
-							diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, *(pOccurNew->m_iu));
+							if (params.m_includeUnchanged)
+								diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, *(pOccurNew->m_iu));
+
 							++pOccurOld; ++pOccurNew;
 							++pAxisOld; ++pAxisNew;
 							lastRemoved = false;
@@ -498,14 +500,15 @@ namespace At
 			};
 
 
-			void TrivialDiff(PtrPair<InputUnit>& inputOld, PtrPair<InputUnit>& inputNew, Vec<DiffUnit>& diff)
+			void TrivialDiff(PtrPair<InputUnit>& inputOld, PtrPair<InputUnit>& inputNew, Vec<DiffUnit>& diff, DiffParams const& params)
 			{
 				while (inputOld.Any() && inputNew.Any())
 				{
 					if (inputOld.First().m_value != inputNew.First().m_value)
 						return;
 
-					diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, inputNew.First());
+					if (params.m_includeUnchanged)
+						diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, inputNew.First());
 
 					inputOld.PopFirst();
 					inputNew.PopFirst();
@@ -542,12 +545,15 @@ namespace At
 			}
 
 
-			void DiffCommonTail(PtrPair<InputUnit> commonTailNew, Vec<DiffUnit>& diff)
+			void DiffCommonTail(PtrPair<InputUnit> commonTailNew, Vec<DiffUnit>& diff, DiffParams const& params)
 			{
-				while (commonTailNew.Any())
+				if (params.m_includeUnchanged)
 				{
-					diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, commonTailNew.First());
-					commonTailNew.PopFirst();
+					while (commonTailNew.Any())
+					{
+						diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, commonTailNew.First());
+						commonTailNew.PopFirst();
+					}
 				}
 			}
 
@@ -560,7 +566,7 @@ namespace At
 		{
 			diff.ReserveExact(inputOld.Len() + inputNew.Len());
 
-			TrivialDiff(inputOld, inputNew, diff);
+			TrivialDiff(inputOld, inputNew, diff, params);
 			EnsureThrow(inputOld.Any() == inputNew.Any());
 
 			if (inputOld.Any())
@@ -585,7 +591,7 @@ namespace At
 					matrix.BuildAndSolve(axes, diff, params);
 				}
 
-				DiffCommonTail(commonTailNew, diff);
+				DiffCommonTail(commonTailNew, diff, params);
 			}
 		}
 

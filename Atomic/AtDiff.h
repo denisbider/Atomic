@@ -35,6 +35,9 @@ namespace At
 			// This favors diffs that actually find the longest common subsequence of the inputs, or a subsequence close to it.
 			// Don't use large numbers or it can force use of a 64-bit matrix instead of 32-bit, increasing memory cost and reducing speed.
 			uint m_quality_match { 5 };
+
+			// Whether to include unchanged units in diff output.
+			bool m_includeUnchanged {};
 		};
 
 		struct InputUnit
@@ -60,7 +63,7 @@ namespace At
 
 		// Implements a diff algorithm with the following properties:
 		// - High quality output: if computationally feasible, finds the longest common subsequence; prefers to group additions and removals together.
-		// - Good worst-case performance: for large inputs, space/time cost is O(N+M), but might not find the best diff for large and complex inputs.
+		// - Good worst-case performance: for large inputs, space/time cost is O(max(N,M)), but might not find best diff for large and complex inputs.
 		// - Does not use recursion: uses a sliding matrix that is limited in width for easy control of the quality/performance tradeoff.
 		// - Trivially handles common head and tail: the matrix algorithm is used between first and last difference in the inputs.
 		void Generate(PtrPair<InputUnit> inputOld, PtrPair<InputUnit> inputNew, Vec<DiffUnit>& diff, DiffParams const& params);
