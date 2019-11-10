@@ -48,7 +48,7 @@ I resisted publishing Atomic before 2019 because I don't want customers. I have 
 
 Atomic is maintained. It is going to continue to be. If you have a defect report, I welcome it.
 
-*However*, I maintain it for my own needs, not to serve users. If you seek someone's help, or you want me to do something for you, please direct such requests to a file named NUL on Windows.
+*However*, I maintain it for my own needs, not to serve users. If you seek someone's help, or you want me to do something for you, then if you are on Windows, please direct such requests to a file named NUL.
 
 ## What compilers and platforms does it support?
 
@@ -94,6 +94,6 @@ Atomic does not underpin Bitvise SSH Client and Server because it was developed 
 
 ## Is there more of Atomic that's not published?
 
-Yes. There is Integral. It's a high-performance C++ web server, email server, content management system, online forum, activation system and maybe even a case management system (if I finish that).
+Yes. Among other things, there's Integral. It's a high-performance C++ web server, email server, content management system, online forum, activation system and maybe even a case management system (if I finish that).
 
 Integral may be published if or when I think it's time. If it's published, it might be as open source or commercial software or a combination. This might be influenced by how direly I want cash and users, and how much time I want to dedicate to that.
