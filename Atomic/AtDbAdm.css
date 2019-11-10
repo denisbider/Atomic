@@ -1,0 +1,9 @@
+body                             { color: #ddd; background: #222; padding: 30px 50px 0px 50px; max-width: 80em; font-family: "Trebuchet MS", Arial; font-size: 14px; }
+.submitErr                       { color: #f85; }
+a                                { color: #7d9; }
+h1,h2,h3,h4,h5,h6                { color: #8bf; font-size: 24px; margin-top: 21px; margin-bottom: 14px; }
+table                            { border-collapse: collapse; }
+table.border td, table.border th { border: 1px solid #444; }
+td,th                            { padding: 5px; vertical-align: top; }
+input,textarea,select            { color: #eee; background: #333; border: 1px solid #444; padding: 3px 6px 3px 6px; }
+input[type='text']               { width: 40em; }

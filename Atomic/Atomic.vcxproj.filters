@@ -1,0 +1,1103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="AtSchannel.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtOvlReader.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtOvlWriter.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHandleReader.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHandleWriter.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBhtpn.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBhtpnGrammar.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBhtpnServer.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBhtpnServerThread.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDbAdm.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDbAdm_Browse.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHttpRequest.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHttpServer.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHttpServerThread.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHttpStatus.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHttpVerb.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebEntities.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebHtmlPage.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebPage.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebRequestHandler.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebServer.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebServerThread.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtImfGrammar.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMimeGrammar.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMimeQuotedPrintable.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMimeReadWrite.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMimeTypes.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtParseNode.cpp">
+      <Filter>Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="AtParseTree.cpp">
+      <Filter>Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEntityEncode.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEntityJson.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEntityKinds.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEntityStore.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtJsonGrammar.cpp">
+      <Filter>JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="AtJsonPretty.cpp">
+      <Filter>JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="AtJsonReadWrite.cpp">
+      <Filter>JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSmtpGrammar.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSmtpReceiver.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSmtpReceiverThread.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSmtpSender.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSmtpSenderThread.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtObjectStore.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtTreeStore.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtReader.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCountries.cpp">
+      <Filter>Geolocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtLocations.cpp">
+      <Filter>Geolocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtGeoBuckets.cpp">
+      <Filter>Geolocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDnsQuery.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWinErr.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWinInet.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWinSecurity.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtService.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCrypt.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUrlEncode.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWorkPool.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWorkPoolThread.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtLoginThrottle.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEncode.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEncodeVarInt.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEvent.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtInitOnFirstUse.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEnsure.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtNum.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtNumCvt.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSeTranslate.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSeq.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUnicode.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtTime.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSocket.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPageAllocator.cpp">
+      <Filter>Allocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBulkAlloc.cpp">
+      <Filter>Allocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPinStore.cpp">
+      <Filter>Allocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCrc32.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCsv.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtLineReader.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtToken.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtStrFmt.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtQuoteStr.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSocketWriter.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSocketReader.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAbortable.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSocketConnector.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtImfReadWrite.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCharsets.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUtf8.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUtfWin.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBusyBeaver.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSha512.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPwHash.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtIncludes.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMem.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtTextBuilder.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUnicodeCharInfo.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtParse.cpp">
+      <Filter>Parsing</Filter>
+    </ClCompile>
+    <ClCompile Include="AtLogEvent.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtFile.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPath.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtTextLog.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWebRequestLog.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSmtpSendLog.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtConsole.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWait.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBgTask.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWaitEsc.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtStopCtl.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtThread.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtSeedGrammar.cpp">
+      <Filter>Seed</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUtf16.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtWinGui.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtIpFairThrottle.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAsn1.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEmailBody.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDkim.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEntity.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtTxScheduler.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBCrypt.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMpUInt.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEllipticCurve.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtActv.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtRwLock.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPostFormSecurity.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAsciiArt.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtRcHandle.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEnc.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtToolhelp.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBaseXY.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+    <ClCompile Include="AtJsonBuilder.cpp">
+      <Filter>JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlBuilder.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlCharRefs.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlEmbed.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlGrammar.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlRead.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlTransform.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCssGrammar.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtTagStack.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUriGrammar.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDescEnum.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMarkdownGrammar.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtMarkdownTransform.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtScripts.cpp">
+      <Filter>Generated by ScriptPack</Filter>
+    </ClCompile>
+    <ClCompile Include="AtRecaptcha.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCspBuilder.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtJsPackGrammar.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtJsPack.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCssPack.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEmailEntities.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPop3Server.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEmailServer.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtPop3ServerThread.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtArgs.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDsnGrammar.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDsnReadWrite.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtImfMsgWriter.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtImfDateTime.cpp">
+      <Filter>Email</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDllKernel32.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDllBCrypt.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtDiff.cpp">
+      <Filter>Algorithms and Services</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AtAbortable.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSchannel.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtOvlReader.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtOvlWriter.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHandleReader.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHandleWriter.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBhtpn.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBhtpnGrammar.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBhtpnServer.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBhtpnServerThread.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDbAdm.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHttpRequest.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHttpServer.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHttpServerThread.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHttpStatus.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHttpVerb.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebEntities.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebHtmlPage.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebPage.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebRequestHandler.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebRequestHandlerCreator.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebServer.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebServerThread.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtImfGrammar.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMimeGrammar.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMimeQuotedPrintable.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMimeReadWrite.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMimeTypes.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtParse.h">
+      <Filter>Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEntityKinds.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEntityStore.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtJsonReadWrite.h">
+      <Filter>JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="AtJsonGrammar.h">
+      <Filter>JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="AtJsonPretty.h">
+      <Filter>JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSmtpGrammar.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSmtpReceiver.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSmtpReceiverThread.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSmtpSender.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSmtpSenderThread.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtObjectStore.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtTreeStore.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtReader.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCountries.h">
+      <Filter>Geolocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtLocations.h">
+      <Filter>Geolocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWriter.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtGeoBuckets.h">
+      <Filter>Geolocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDnsQuery.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWinStr.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWinErr.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWinInet.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWinSecurity.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtService.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCrypt.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUrlEncode.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWorkPoolThread.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWorkPool.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtLoginThrottle.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCache.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEncode.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEvent.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMutex.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtInitOnFirstUse.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEnsure.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtException.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtIncludes.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtNum.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSeTranslate.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSeq.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUnicode.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtTime.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtStr.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRuid.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSocket.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPageAllocator.h">
+      <Filter>Allocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBulkAlloc.h">
+      <Filter>Allocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPinStore.h">
+      <Filter>Allocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAuto.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCrc32.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCsv.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtLineReader.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtToken.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtStrFmt.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtQuoteStr.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtNameValuePairs.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSocketReader.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSocketWriter.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSocketConnector.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtNumCast.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPop3Server.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtImfReadWrite.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCharsets.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUtf8.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUtfWin.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSatCast.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtReconstruct.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBusyBeaver.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSha512.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPwHash.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSpinLock.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtNumCvt.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMem.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAscii.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMap.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRange.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtTextBuilder.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtParseNode.h">
+      <Filter>Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="AtParseTree.h">
+      <Filter>Parsing</Filter>
+    </ClInclude>
+    <ClInclude Include="AtLogEvent.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtFile.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPath.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtTextLog.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWebRequestLog.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSmtpSendLog.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtConsole.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWait.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHashMap.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBgTask.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWaitEsc.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtStopCtl.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtThread.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSeedGrammar.h">
+      <Filter>Seed</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUtf16.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWinGui.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtList.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtConstIt.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtIpFairThrottle.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAsn1.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEmailBody.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDkim.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtActv.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtOpt.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtVec.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtVecBaseFixed.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtVecBaseHeap.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEntity.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtTxScheduler.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBCrypt.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMpUInt.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEllipticCurve.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRwLock.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPostFormSecurity.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAsciiArt.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRcHandle.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEnc.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAuxStorage.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtToolhelp.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBaseXY.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRp.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRpAnchor.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRpVec.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtJsonBuilder.h">
+      <Filter>JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlBuilder.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlCharRefs.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlEmbed.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlGrammar.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlRead.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlTransform.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCssGrammar.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtTagStack.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUriGrammar.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDescEnum.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMarkdownGrammar.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtMarkdownTransform.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtScripts.h">
+      <Filter>Generated by ScriptPack</Filter>
+    </ClInclude>
+    <ClInclude Include="AtRecaptcha.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCspBuilder.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtJsPackGrammar.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtJsPack.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCssPack.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEmailEntities.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEmailServer.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPop3ServerThread.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtArgs.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDsnGrammar.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDsnReadWrite.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtImfMsgWriter.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtImfDateTime.h">
+      <Filter>Email</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDllKernel32.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDllGetFunc.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDllBCrypt.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDiff.h">
+      <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtPtrPair.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Web">
+      <UniqueIdentifier>{c4aa60b7-172b-4840-9ab0-5bdd077500f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Email">
+      <UniqueIdentifier>{44b9b811-986b-4360-a47f-0b6a8b6164d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JSON">
+      <UniqueIdentifier>{4143abf9-4af1-4b1a-a9d8-02399d2e28ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Allocation">
+      <UniqueIdentifier>{45616cf1-2af2-46ba-8607-b7e32f49f6aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Geolocation">
+      <UniqueIdentifier>{2e640750-2843-4784-9650-9f89f07b165a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Connections">
+      <UniqueIdentifier>{5a6dedf7-24de-424b-b2e0-314902f7f2aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Algorithms and Services">
+      <UniqueIdentifier>{38ce6d99-e766-40a6-9518-6882f2ac2c4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing">
+      <UniqueIdentifier>{b765d9bf-b6b9-4eac-b5af-581bf6216636}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Datastore">
+      <UniqueIdentifier>{a4328fd3-b31a-4782-9db3-d1df8ba4d6b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Windows">
+      <UniqueIdentifier>{5370f4fc-ebdc-435e-bee2-0a7bebfec199}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Foundation">
+      <UniqueIdentifier>{8cedbfd6-4a4d-4146-a067-26e1a23105a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Seed">
+      <UniqueIdentifier>{365e5cf0-a399-4be0-8870-d7b5cf9a01ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HTML">
+      <UniqueIdentifier>{bad28379-fb07-4e3c-9db9-fd27bd02b854}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated by ScriptPack">
+      <UniqueIdentifier>{82227399-6f07-4681-a47a-406cbe678eff}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Atomic.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AtHtmlBuilder_Intro.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtHtmlBuilder_ReloadElem.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtHtmlBuilder_MultiUpload.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtHtmlBuilder_CheckboxEnable.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtHtmlBuilder_ToggleShowDiv.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtHtmlBuilder_PopUpLinks.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtDbAdm.css">
+      <Filter>Web</Filter>
+    </None>
+    <None Include="AtDbAdm_Browse.js">
+      <Filter>Web</Filter>
+    </None>
+    <None Include="AtSmtpEntities_SenderCfg.js">
+      <Filter>Email</Filter>
+    </None>
+    <None Include="AtHtmlBuilder_ReloadElem_Call.js">
+      <Filter>HTML</Filter>
+    </None>
+  </ItemGroup>
+</Project>

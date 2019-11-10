@@ -1,0 +1,530 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{01BD7DAD-F587-47A8-8118-DEC343075EAC}</ProjectGuid>
+    <RootNamespace>Atomic</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <CustomBuildStep>
+      <Command>..\Utils\ScriptPack -out AtScripts -in *.js *.css -pch AtIncludes.h -incl AtSeq.h -ns At</Command>
+      <Message>Packing scripts</Message>
+      <Outputs>NonexistentFileToTriggerCommandAlways_VS2015DoesNotDetectInputFileChangesSoScriptPackMustDoIt</Outputs>
+      <Inputs>
+      </Inputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;AT_MEM_LARGE_PAGES=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PrecompiledHeaderFile>AtIncludes.h</PrecompiledHeaderFile>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl />
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;AT_MEM_LARGE_PAGES=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PrecompiledHeaderFile>AtIncludes.h</PrecompiledHeaderFile>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderFile>AtIncludes.h</PrecompiledHeaderFile>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl />
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderFile>AtIncludes.h</PrecompiledHeaderFile>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="AtAbortable.cpp" />
+    <ClCompile Include="AtActv.cpp" />
+    <ClCompile Include="AtArgs.cpp" />
+    <ClCompile Include="AtAsciiArt.cpp" />
+    <ClCompile Include="AtAsn1.cpp" />
+    <ClCompile Include="AtBCrypt.cpp" />
+    <ClCompile Include="AtBgTask.cpp" />
+    <ClCompile Include="AtBhtpn.cpp" />
+    <ClCompile Include="AtBhtpnGrammar.cpp" />
+    <ClCompile Include="AtBhtpnServer.cpp" />
+    <ClCompile Include="AtBhtpnServerThread.cpp" />
+    <ClCompile Include="AtCspBuilder.cpp" />
+    <ClCompile Include="AtCssPack.cpp" />
+    <ClCompile Include="AtDiff.cpp" />
+    <ClCompile Include="AtDllBCrypt.cpp" />
+    <ClCompile Include="AtDsnGrammar.cpp" />
+    <ClCompile Include="AtDsnReadWrite.cpp" />
+    <ClCompile Include="AtEllipticCurve.cpp" />
+    <ClCompile Include="AtEmailServer.cpp" />
+    <ClCompile Include="AtEnc.cpp" />
+    <ClCompile Include="AtImfDateTime.cpp" />
+    <ClCompile Include="AtJsonBuilder.cpp" />
+    <ClCompile Include="AtJsPack.cpp" />
+    <ClCompile Include="AtJsPackGrammar.cpp" />
+    <ClCompile Include="AtMpUInt.cpp" />
+    <ClCompile Include="AtBusyBeaver.cpp" />
+    <ClCompile Include="AtCharsets.cpp" />
+    <ClCompile Include="AtConsole.cpp" />
+    <ClCompile Include="AtCrc32.cpp" />
+    <ClCompile Include="AtCssGrammar.cpp" />
+    <ClCompile Include="AtDbAdm.cpp" />
+    <ClCompile Include="AtDkim.cpp" />
+    <ClCompile Include="AtEmailBody.cpp" />
+    <ClCompile Include="AtEncodeVarInt.cpp" />
+    <ClCompile Include="AtEnsure.cpp" />
+    <ClCompile Include="AtBaseXY.cpp" />
+    <ClCompile Include="AtBulkAlloc.cpp" />
+    <ClCompile Include="AtEntity.cpp" />
+    <ClCompile Include="AtFile.cpp" />
+    <ClCompile Include="AtHandleReader.cpp" />
+    <ClCompile Include="AtHandleWriter.cpp" />
+    <ClCompile Include="AtHtmlCharRefs.cpp" />
+    <ClCompile Include="AtHtmlEmbed.cpp" />
+    <ClCompile Include="AtHtmlGrammar.cpp" />
+    <ClCompile Include="AtHtmlRead.cpp" />
+    <ClCompile Include="AtHtmlTransform.cpp" />
+    <ClCompile Include="AtImfMsgWriter.cpp" />
+    <ClCompile Include="AtImfReadWrite.cpp" />
+    <ClCompile Include="AtIncludes.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="AtIpFairThrottle.cpp" />
+    <ClCompile Include="AtLogEvent.cpp" />
+    <ClCompile Include="AtMarkdownGrammar.cpp" />
+    <ClCompile Include="AtMem.cpp" />
+    <ClCompile Include="AtDllKernel32.cpp" />
+    <ClCompile Include="AtOvlReader.cpp" />
+    <ClCompile Include="AtOvlWriter.cpp" />
+    <ClCompile Include="AtPinStore.cpp" />
+    <ClCompile Include="AtPop3Server.cpp" />
+    <ClCompile Include="AtPop3ServerThread.cpp" />
+    <ClCompile Include="AtPostFormSecurity.cpp" />
+    <ClCompile Include="AtPwHash.cpp" />
+    <ClCompile Include="AtReader.cpp" />
+    <ClCompile Include="AtRwLock.cpp" />
+    <ClCompile Include="AtSchannel.cpp" />
+    <ClCompile Include="AtScripts.cpp" />
+    <ClCompile Include="AtSha512.cpp" />
+    <ClCompile Include="AtSmtpSendLog.cpp" />
+    <ClCompile Include="AtSocketConnector.cpp" />
+    <ClCompile Include="AtSocketWriter.cpp" />
+    <ClCompile Include="AtSeedGrammar.cpp" />
+    <ClCompile Include="AtStopCtl.cpp" />
+    <ClCompile Include="AtTagStack.cpp" />
+    <ClCompile Include="AtTextBuilder.cpp" />
+    <ClCompile Include="AtTextLog.cpp" />
+    <ClCompile Include="AtToolhelp.cpp" />
+    <ClCompile Include="AtTxScheduler.cpp" />
+    <ClCompile Include="AtUnicodeCharInfo.cpp" />
+    <ClCompile Include="AtUtf8.cpp" />
+    <ClCompile Include="AtWait.cpp" />
+    <ClCompile Include="AtWaitEsc.cpp" />
+    <ClCompile Include="AtWebHtmlPage.cpp" />
+    <ClCompile Include="AtWebServer.cpp" />
+    <ClCompile Include="AtWebServerThread.cpp" />
+    <ClCompile Include="AtWinGui.cpp" />
+    <ClCompile Include="AtWinSecurity.cpp" />
+    <ClCompile Include="AtWorkPool.cpp" />
+    <ClCompile Include="AtWorkPoolThread.cpp" />
+    <ClCompile Include="AtCountries.cpp" />
+    <ClCompile Include="AtCrypt.cpp" />
+    <ClCompile Include="AtCsv.cpp" />
+    <ClCompile Include="AtDescEnum.cpp" />
+    <ClCompile Include="AtDnsQuery.cpp" />
+    <ClCompile Include="AtEncode.cpp" />
+    <ClCompile Include="AtEntityEncode.cpp" />
+    <ClCompile Include="AtEntityJson.cpp" />
+    <ClCompile Include="AtEntityKinds.cpp" />
+    <ClCompile Include="AtEntityStore.cpp" />
+    <ClCompile Include="AtEvent.cpp" />
+    <ClCompile Include="AtMarkdownTransform.cpp" />
+    <ClCompile Include="AtGeoBuckets.cpp" />
+    <ClCompile Include="AtRcHandle.cpp" />
+    <ClCompile Include="AtHtmlBuilder.cpp" />
+    <ClCompile Include="AtHttpRequest.cpp" />
+    <ClCompile Include="AtHttpStatus.cpp" />
+    <ClCompile Include="AtImfGrammar.cpp" />
+    <ClCompile Include="AtInitOnFirstUse.cpp" />
+    <ClCompile Include="AtJsonReadWrite.cpp" />
+    <ClCompile Include="AtJsonGrammar.cpp" />
+    <ClCompile Include="AtJsonPretty.cpp" />
+    <ClCompile Include="AtLineReader.cpp" />
+    <ClCompile Include="AtLocations.cpp" />
+    <ClCompile Include="AtLoginThrottle.cpp" />
+    <ClCompile Include="AtMimeGrammar.cpp" />
+    <ClCompile Include="AtMimeTypes.cpp" />
+    <ClCompile Include="AtMimeReadWrite.cpp" />
+    <ClCompile Include="AtNum.cpp" />
+    <ClCompile Include="AtNumCvt.cpp" />
+    <ClCompile Include="AtPageAllocator.cpp" />
+    <ClCompile Include="AtParse.cpp" />
+    <ClCompile Include="AtParseNode.cpp" />
+    <ClCompile Include="AtParseTree.cpp" />
+    <ClCompile Include="AtPath.cpp" />
+    <ClCompile Include="AtMimeQuotedPrintable.cpp" />
+    <ClCompile Include="AtQuoteStr.cpp" />
+    <ClCompile Include="AtRecaptcha.cpp" />
+    <ClCompile Include="AtSeq.cpp" />
+    <ClCompile Include="AtService.cpp" />
+    <ClCompile Include="AtSeTranslate.cpp" />
+    <ClCompile Include="AtSmtpGrammar.cpp" />
+    <ClCompile Include="AtEmailEntities.cpp" />
+    <ClCompile Include="AtSmtpReceiver.cpp" />
+    <ClCompile Include="AtSmtpReceiverThread.cpp" />
+    <ClCompile Include="AtSmtpSender.cpp" />
+    <ClCompile Include="AtSmtpSenderThread.cpp" />
+    <ClCompile Include="AtSocket.cpp" />
+    <ClCompile Include="AtObjectStore.cpp" />
+    <ClCompile Include="AtUtfWin.cpp" />
+    <ClCompile Include="AtStrFmt.cpp" />
+    <ClCompile Include="AtThread.cpp" />
+    <ClCompile Include="AtTime.cpp" />
+    <ClCompile Include="AtToken.cpp" />
+    <ClCompile Include="AtTreeStore.cpp" />
+    <ClCompile Include="AtUnicode.cpp" />
+    <ClCompile Include="AtUriGrammar.cpp" />
+    <ClCompile Include="AtUrlEncode.cpp" />
+    <ClCompile Include="AtWebEntities.cpp" />
+    <ClCompile Include="AtDbAdm_Browse.cpp" />
+    <ClCompile Include="AtWebPage.cpp" />
+    <ClCompile Include="AtWebRequestHandler.cpp" />
+    <ClCompile Include="AtWebRequestLog.cpp" />
+    <ClCompile Include="AtHttpServerThread.cpp" />
+    <ClCompile Include="AtHttpServer.cpp" />
+    <ClCompile Include="AtWinErr.cpp" />
+    <ClCompile Include="AtWinInet.cpp" />
+    <ClCompile Include="AtHttpVerb.cpp" />
+    <ClCompile Include="AtSocketReader.cpp" />
+    <ClCompile Include="AtUtf16.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AtAbortable.h" />
+    <ClInclude Include="AtActv.h" />
+    <ClInclude Include="AtArgs.h" />
+    <ClInclude Include="AtAsciiArt.h" />
+    <ClInclude Include="AtAsn1.h" />
+    <ClInclude Include="AtBCrypt.h" />
+    <ClInclude Include="AtBgTask.h" />
+    <ClInclude Include="AtCspBuilder.h" />
+    <ClInclude Include="AtCssPack.h" />
+    <ClInclude Include="AtDiff.h" />
+    <ClInclude Include="AtDllBCrypt.h" />
+    <ClInclude Include="AtDllGetFunc.h" />
+    <ClInclude Include="AtDsnGrammar.h" />
+    <ClInclude Include="AtDsnReadWrite.h" />
+    <ClInclude Include="AtEllipticCurve.h" />
+    <ClInclude Include="AtEmailServer.h" />
+    <ClInclude Include="AtEnc.h" />
+    <ClInclude Include="AtImfDateTime.h" />
+    <ClInclude Include="AtJsonBuilder.h" />
+    <ClInclude Include="AtJsPack.h" />
+    <ClInclude Include="AtJsPackGrammar.h" />
+    <ClInclude Include="AtMpUInt.h" />
+    <ClInclude Include="AtBusyBeaver.h" />
+    <ClInclude Include="AtCharsets.h" />
+    <ClInclude Include="AtConsole.h" />
+    <ClInclude Include="AtConstIt.h" />
+    <ClInclude Include="AtCssGrammar.h" />
+    <ClInclude Include="AtDkim.h" />
+    <ClInclude Include="AtEmailBody.h" />
+    <ClInclude Include="AtEntity.h" />
+    <ClInclude Include="AtFile.h" />
+    <ClInclude Include="AtHashMap.h" />
+    <ClInclude Include="AtHtmlCharRefs.h" />
+    <ClInclude Include="AtHtmlEmbed.h" />
+    <ClInclude Include="AtHtmlRead.h" />
+    <ClInclude Include="AtHtmlTransform.h" />
+    <ClInclude Include="AtIpFairThrottle.h" />
+    <ClInclude Include="AtList.h" />
+    <ClInclude Include="AtLogEvent.h" />
+    <ClInclude Include="AtMarkdownGrammar.h" />
+    <ClInclude Include="AtDllKernel32.h" />
+    <ClInclude Include="AtOpt.h" />
+    <ClInclude Include="AtParseTree.h" />
+    <ClInclude Include="AtPop3ServerThread.h" />
+    <ClInclude Include="AtPostFormSecurity.h" />
+    <ClInclude Include="AtPtrPair.h" />
+    <ClInclude Include="AtRange.h" />
+    <ClInclude Include="AtRwLock.h" />
+    <ClInclude Include="AtScripts.h" />
+    <ClInclude Include="AtSmtpSendLog.h" />
+    <ClInclude Include="AtSeedGrammar.h" />
+    <ClInclude Include="AtStopCtl.h" />
+    <ClInclude Include="AtTagStack.h" />
+    <ClInclude Include="AtTextBuilder.h" />
+    <ClInclude Include="AtTextLog.h" />
+    <ClInclude Include="AtToolhelp.h" />
+    <ClInclude Include="AtTxScheduler.h" />
+    <ClInclude Include="AtVecBaseFixed.h" />
+    <ClInclude Include="AtHtmlGrammar.h" />
+    <ClInclude Include="AtImfMsgWriter.h" />
+    <ClInclude Include="AtMap.h" />
+    <ClInclude Include="AtMem.h" />
+    <ClInclude Include="AtNumCast.h" />
+    <ClInclude Include="AtPop3Server.h" />
+    <ClInclude Include="AtPwHash.h" />
+    <ClInclude Include="AtReader.h" />
+    <ClInclude Include="AtReconstruct.h" />
+    <ClInclude Include="AtSatCast.h" />
+    <ClInclude Include="AtSha512.h" />
+    <ClInclude Include="AtSocketConnector.h" />
+    <ClInclude Include="AtSocketReader.h" />
+    <ClInclude Include="AtSocketWriter.h" />
+    <ClInclude Include="AtSpinLock.h" />
+    <ClInclude Include="AtUtf8.h" />
+    <ClInclude Include="AtWait.h" />
+    <ClInclude Include="AtWaitEsc.h" />
+    <ClInclude Include="AtWinGui.h" />
+    <ClInclude Include="AtAuxStorage.h" />
+    <ClInclude Include="AtWriter.h" />
+    <ClInclude Include="AtBhtpn.h" />
+    <ClInclude Include="AtBhtpnGrammar.h" />
+    <ClInclude Include="AtBhtpnServer.h" />
+    <ClInclude Include="AtBhtpnServerThread.h" />
+    <ClInclude Include="AtVecBaseHeap.h" />
+    <ClInclude Include="AtCrc32.h" />
+    <ClInclude Include="AtEnsure.h" />
+    <ClInclude Include="AtAuto.h" />
+    <ClInclude Include="AtBaseXY.h" />
+    <ClInclude Include="AtBulkAlloc.h" />
+    <ClInclude Include="AtCache.h" />
+    <ClInclude Include="AtAscii.h" />
+    <ClInclude Include="AtHandleReader.h" />
+    <ClInclude Include="AtHandleWriter.h" />
+    <ClInclude Include="AtImfReadWrite.h" />
+    <ClInclude Include="AtOvlReader.h" />
+    <ClInclude Include="AtOvlWriter.h" />
+    <ClInclude Include="AtPinStore.h" />
+    <ClInclude Include="AtSchannel.h" />
+    <ClInclude Include="AtWebHtmlPage.h" />
+    <ClInclude Include="AtWebServer.h" />
+    <ClInclude Include="AtWebServerThread.h" />
+    <ClInclude Include="AtWinSecurity.h" />
+    <ClInclude Include="AtWorkPool.h" />
+    <ClInclude Include="AtWorkPoolThread.h" />
+    <ClInclude Include="AtCountries.h" />
+    <ClInclude Include="AtCrypt.h" />
+    <ClInclude Include="AtCsv.h" />
+    <ClInclude Include="AtDescEnum.h" />
+    <ClInclude Include="AtDnsQuery.h" />
+    <ClInclude Include="AtEncode.h" />
+    <ClInclude Include="AtEntityKinds.h" />
+    <ClInclude Include="AtEntityStore.h" />
+    <ClInclude Include="AtEvent.h" />
+    <ClInclude Include="AtException.h" />
+    <ClInclude Include="AtMarkdownTransform.h" />
+    <ClInclude Include="AtGeoBuckets.h" />
+    <ClInclude Include="AtRcHandle.h" />
+    <ClInclude Include="AtHtmlBuilder.h" />
+    <ClInclude Include="AtHttpRequest.h" />
+    <ClInclude Include="AtHttpStatus.h" />
+    <ClInclude Include="AtHttpVerb.h" />
+    <ClInclude Include="AtImfGrammar.h" />
+    <ClInclude Include="AtIncludes.h" />
+    <ClInclude Include="AtInitOnFirstUse.h" />
+    <ClInclude Include="AtJsonReadWrite.h" />
+    <ClInclude Include="AtJsonGrammar.h" />
+    <ClInclude Include="AtJsonPretty.h" />
+    <ClInclude Include="AtLineReader.h" />
+    <ClInclude Include="AtLocations.h" />
+    <ClInclude Include="AtLoginThrottle.h" />
+    <ClInclude Include="AtMimeGrammar.h" />
+    <ClInclude Include="AtMimeTypes.h" />
+    <ClInclude Include="AtMimeReadWrite.h" />
+    <ClInclude Include="AtMutex.h" />
+    <ClInclude Include="AtNameValuePairs.h" />
+    <ClInclude Include="AtNum.h" />
+    <ClInclude Include="AtNumCvt.h" />
+    <ClInclude Include="AtObjectStore.h" />
+    <ClInclude Include="AtPageAllocator.h" />
+    <ClInclude Include="AtParse.h" />
+    <ClInclude Include="AtPath.h" />
+    <ClInclude Include="AtMimeQuotedPrintable.h" />
+    <ClInclude Include="AtQuoteStr.h" />
+    <ClInclude Include="AtRecaptcha.h" />
+    <ClInclude Include="AtRp.h" />
+    <ClInclude Include="AtRpVec.h" />
+    <ClInclude Include="AtRuid.h" />
+    <ClInclude Include="AtSeq.h" />
+    <ClInclude Include="AtService.h" />
+    <ClInclude Include="AtSeTranslate.h" />
+    <ClInclude Include="AtSmtpGrammar.h" />
+    <ClInclude Include="AtEmailEntities.h" />
+    <ClInclude Include="AtSmtpReceiver.h" />
+    <ClInclude Include="AtSmtpReceiverThread.h" />
+    <ClInclude Include="AtSmtpSender.h" />
+    <ClInclude Include="AtSmtpSenderThread.h" />
+    <ClInclude Include="AtSocket.h" />
+    <ClInclude Include="AtStr.h" />
+    <ClInclude Include="AtUtfWin.h" />
+    <ClInclude Include="AtStrFmt.h" />
+    <ClInclude Include="AtThread.h" />
+    <ClInclude Include="AtTime.h" />
+    <ClInclude Include="AtToken.h" />
+    <ClInclude Include="AtTreeStore.h" />
+    <ClInclude Include="AtUnicode.h" />
+    <ClInclude Include="AtUriGrammar.h" />
+    <ClInclude Include="AtUrlEncode.h" />
+    <ClInclude Include="AtVec.h" />
+    <ClInclude Include="AtDbAdm.h" />
+    <ClInclude Include="AtWebEntities.h" />
+    <ClInclude Include="AtWebPage.h" />
+    <ClInclude Include="AtWebRequestHandler.h" />
+    <ClInclude Include="AtWebRequestHandlerCreator.h" />
+    <ClInclude Include="AtWebRequestLog.h" />
+    <ClInclude Include="AtHttpServerThread.h" />
+    <ClInclude Include="AtHttpServer.h" />
+    <ClInclude Include="AtWinErr.h" />
+    <ClInclude Include="AtWinInet.h" />
+    <ClInclude Include="AtWinStr.h" />
+    <ClInclude Include="AtRpAnchor.h" />
+    <ClInclude Include="AtParseNode.h" />
+    <ClInclude Include="AtUtf16.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Atomic.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AtDbAdm.css" />
+    <None Include="AtDbAdm_Browse.js" />
+    <None Include="AtHtmlBuilder_CheckboxEnable.js" />
+    <None Include="AtHtmlBuilder_Intro.js" />
+    <None Include="AtHtmlBuilder_MultiUpload.js" />
+    <None Include="AtHtmlBuilder_PopUpLinks.js" />
+    <None Include="AtHtmlBuilder_ReloadElem.js" />
+    <None Include="AtHtmlBuilder_ReloadElem_Call.js" />
+    <None Include="AtHtmlBuilder_ToggleShowDiv.js" />
+    <None Include="AtSmtpEntities_SenderCfg.js" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

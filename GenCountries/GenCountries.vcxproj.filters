@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="GctMain.cpp" />
+    <ClCompile Include="GctIncludes.cpp" />
+    <ClCompile Include="GctRead.cpp" />
+    <ClCompile Include="GctWrite.cpp" />
+    <ClCompile Include="GctAnalyze.cpp" />
+    <ClCompile Include="GctIpToCountry.cpp" />
+    <ClCompile Include="GctValidate.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GctIncludes.h" />
+    <ClInclude Include="GctMain.h" />
+    <ClInclude Include="IpToCountryImpl.h" />
+    <ClInclude Include="IpToCountryHdr.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="IpToCountryFormat.txt" />
+  </ItemGroup>
+</Project>

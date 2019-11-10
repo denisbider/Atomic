@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="At::Seq">
+    <DisplayString>Seq {((sizet) p),x} n={n} {p,[n]s8}</DisplayString>
+  </Type>
+  <Type Name="At::Str">
+    <DisplayString Condition="m_cap==0">Str unallocated</DisplayString>
+    <DisplayString Condition="m_cap==(((sizet)-1)/2)+1">Str unallocated fix={u_fix}</DisplayString>
+    <DisplayString Condition="m_cap&lt;(((sizet)-1)/2)+1">Str {((sizet) u_mem),x} l={m_len} c={m_cap} {u_mem,[m_len]s8}</DisplayString>
+    <DisplayString Condition="m_cap&gt;(((sizet)-1)/2)">Str {((sizet) u_mem),x} l={m_len} c={m_cap-((((sizet)-1)/2)+1)} fixed {u_mem,[m_len]s8}</DisplayString>
+    <DisplayString>Error - check Atomic.natvis</DisplayString>
+    <Expand HideRawView="1">
+      <Item Name="u_mem">(char*)u_mem</Item>
+    </Expand>
+  </Type>
+  <Type Name="At::Enc">
+    <DisplayString Condition="m_cap==0">Enc unallocated</DisplayString>
+    <DisplayString Condition="m_cap==(((sizet)-1)/2)+1">Enc unallocated fix={u_fix}</DisplayString>
+    <DisplayString Condition="m_cap&lt;(((sizet)-1)/2)+1">Enc {((sizet) u_mem),x} l={m_len} c={m_cap} {u_mem,[m_len]s8}</DisplayString>
+    <DisplayString Condition="m_cap&gt;(((sizet)-1)/2)">Enc {((sizet) u_mem),x} l={m_len} c={m_cap-((((sizet)-1)/2)+1)} fixed {u_mem,[m_len]s8}</DisplayString>
+    <DisplayString>Error - check Atomic.natvis</DisplayString>
+    <Expand HideRawView="1">
+      <Item Name="u_mem">(char*)u_mem</Item>
+    </Expand>
+  </Type>
+  <Type Name="At::VecBaseHeap&lt;*&gt;">
+    <DisplayString Condition="m_cap==0">Vec unallocated</DisplayString>
+    <DisplayString Condition="m_cap==(((sizet)-1)/2)+1">Vec unallocated, fix={u_fix}</DisplayString>
+    <DisplayString Condition="m_cap&lt;(((sizet)-1)/2)+1">Vec {((sizet) u_mem),x} l={m_len} c={m_cap}</DisplayString>
+    <DisplayString Condition="m_cap&gt;(((sizet)-1)/2)">Vec {((sizet) u_mem),x} l={m_len} c={m_cap-((((sizet)-1)/2)+1)} fixed</DisplayString>
+    <DisplayString>Error - check Atomic.natvis</DisplayString>
+    <Expand HideRawView="1">
+      <ArrayItems>
+        <Size>m_len</Size>
+        <ValuePointer>($T1*) u_mem</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  <Type Name="At::MapCore&lt;*&gt;::Node">
+    <DisplayString Condition="u_leaf.m_height==0">LeafNode l={u_leaf.m_entries.m_len}</DisplayString>
+    <DisplayString Condition="u_leaf.m_height!=0">NonLeafNode h={u_nonLeaf.m_height} l={u_leaf.m_entries.m_len} at {((sizet)&amp;u_nonLeaf),x}</DisplayString>
+    <DisplayString>Error - check Atomic.natvis</DisplayString>
+    <Expand HideRawView="1">
+      <Item Name="indexInParent">u_leaf.m_indexInParent</Item>
+      <Item Name="parent">u_leaf.m_parent</Item>
+      <Item Name="entries" Condition="u_leaf.m_height==0">u_leaf.m_entries</Item>
+      <Item Name="entries" Condition="u_leaf.m_height!=0">u_nonLeaf.m_entries</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

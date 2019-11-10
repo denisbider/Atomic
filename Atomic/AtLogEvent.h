@@ -1,0 +1,15 @@
+#pragma once
+
+#include "AtDescEnum.h"
+
+
+namespace At
+{
+
+	DESCENUM_DECL_BEGIN(LogEventType)
+	DESCENUM_DECL_VALUE(Error,   EVENTLOG_ERROR_TYPE       )
+	DESCENUM_DECL_VALUE(Warning, EVENTLOG_WARNING_TYPE     )
+	DESCENUM_DECL_VALUE(Info,    EVENTLOG_INFORMATION_TYPE )
+	DESCENUM_DECL_CLOSE()
+
+}

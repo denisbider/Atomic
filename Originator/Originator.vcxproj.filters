@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="OgnIncludes.h" />
+    <ClInclude Include="Originator.h" />
+    <ClInclude Include="OgnSmtpSender.h" />
+    <ClInclude Include="OgnGlobals.h" />
+    <ClInclude Include="OgnEntities.h" />
+    <ClInclude Include="OgnConversions.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="OgnIncludes.cpp" />
+    <ClCompile Include="OgnEnums.cpp" />
+    <ClCompile Include="OgnSmtpSender.cpp" />
+    <ClCompile Include="OgnEntities.cpp" />
+    <ClCompile Include="OgnGlobals.cpp" />
+    <ClCompile Include="Originator.cpp" />
+    <ClCompile Include="OgnConversions.cpp" />
+  </ItemGroup>
+</Project>

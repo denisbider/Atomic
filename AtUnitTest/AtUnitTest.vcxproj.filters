@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="AutMain.cpp" />
+    <ClCompile Include="AutIncludes.cpp" />
+    <ClCompile Include="AutMarkdown.cpp" />
+    <ClCompile Include="AutTextBuilder.cpp" />
+    <ClCompile Include="AutMultipart.cpp" />
+    <ClCompile Include="AutSchannelClient.cpp" />
+    <ClCompile Include="AutSmtpReceiver.cpp" />
+    <ClCompile Include="AutWinErr.cpp" />
+    <ClCompile Include="AutDkim.cpp" />
+    <ClCompile Include="AutBootTime.cpp" />
+    <ClCompile Include="AutEntityStore.cpp" />
+    <ClCompile Include="AutBCrypt.cpp" />
+    <ClCompile Include="AutMpUInt.cpp" />
+    <ClCompile Include="AutBaseXY.cpp" />
+    <ClCompile Include="AutActvTests.cpp" />
+    <ClCompile Include="AutLargeEntities.cpp" />
+    <ClCompile Include="AutEmailAddress.cpp" />
+    <ClCompile Include="AutRsaSigner.cpp" />
+    <ClCompile Include="AutCore.cpp" />
+    <ClCompile Include="AutDiff.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AutIncludes.h" />
+    <ClInclude Include="AutMain.h" />
+  </ItemGroup>
+</Project>

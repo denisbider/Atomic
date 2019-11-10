@@ -1,0 +1,80 @@
+#pragma once
+
+#include "AtBCrypt.h"
+#include "AtEntityStore.h"
+#include "AtSchannel.h"
+#include "AtSmtpSendLog.h"
+#include "AtWorkPool.h"
+
+
+namespace At
+{
+	enum
+	{
+		Smtp_AttemptMaxTempFailures = 3,
+		Smtp_MaxServerReplyBytes = 32000,
+	};
+
+
+
+	struct SmtpDeliveryInstr { enum E { Abort, KeepTrying }; };
+
+
+	class SmtpSenderThread;
+
+	struct SmtpSenderWorkItem
+	{
+		Rp<SmtpMsgToSend> m_msg;
+	};
+
+	class SmtpSender : public WorkPool<SmtpSenderThread, SmtpSenderWorkItem>
+	{
+	public:
+		// Creates a SmtpMsgToSend so that the caller can populate it with information.
+		// Once populated, the message should be passed to Send.
+		Rp<SmtpMsgToSend> CreateMsg();
+
+		// Sends a message, using SMTP, to the specified address.
+		// - Must be called from within an active Db transaction.
+		// - Single delivery domain per call, but multiple mailboxes OK.
+		// - Message is sent as-is, all headers must already be part of content, no headers are added.
+		// - The method returns immediately after enqueueing the message for delivery.
+		//   On delivery success or failure, the SmtpSender_OnDeliveryResult method is called.
+		void Send(Rp<SmtpMsgToSend> const& msg) { msg->Insert_ParentExists(); msg->GetStore().AddPostCommitAction( [this] () { m_pumpTrigger.Signal(); } ); }
+
+		EntityStore& GetStore() { return SmtpSender_GetStorageParent().GetStore(); }
+
+	protected:
+		// Must return the database entity under which the SMTP sender's data is to be stored.
+		virtual Entity& SmtpSender_GetStorageParent() = 0;
+		virtual SmtpSendLog& SmtpSender_GetSendLog() = 0;
+
+		// Called separately by each sender thread. Must copy or initialize SMTP sender configuration into the provided entity.
+		virtual void SmtpSender_GetCfg(SmtpSenderCfg& cfg) const = 0;
+
+		// A fully qualified sender computer name that will be sent as part of the EHLO command.
+		virtual Str SmtpSender_SenderComputerName(Seq fromDomainName) const = 0;
+
+		// Called by sender threads each time TLS is started
+		virtual void SmtpSender_AddSchannelCerts(Schannel& conn) = 0;
+
+		// - Called on a different thread than the corresponding call to Send. Even likely called in an entirely separate process instance than the original Send.
+		// - Pointers do not persist across process instances, therefore delivery context is a string.
+		// - SmtpDeliveryInstruction is ignored if delivery to all mailboxes succeeded or failed permanently. Retries will occur only for mailboxes that failed temporarily.
+		// - Called with SmtpMsgToSend not yet modified: the fields f_status, f_pendingMailboxes, f_mailboxResults are not yet updated.
+		//   These fields are updated if the message is being retried, after the function returns. If the message is not being retried, it is removed.
+		// - Called in the same EntityStore transaction in which SmtpMsgToSend will be updated or removed. If the transaction is repeated, this function is also called again.
+		virtual SmtpDeliveryInstr::E SmtpSender_OnDeliveryResult_InTx(SmtpMsgToSend& msg, Vec<MailboxResult> const& mailboxResults, SmtpTlsAssurance::E tlsAssuranceAchieved) = 0;
+
+	private:
+		Event m_pumpTrigger { Event::CreateAuto };
+
+		LONG volatile    m_md5ProviderInitFlag {};
+		BCrypt::Provider m_md5Provider;
+
+		void WorkPool_Run() override;
+		BCrypt::Provider const& GetMd5Provider();
+	
+		friend class SmtpSenderThread;
+	};
+}
