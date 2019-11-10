@@ -82,7 +82,7 @@ I have my own ideas about stuff and I like to implement them.
 
 Yes. I recently stumbled across [UTF-8 Everywhere](http://utf8everywhere.org/): I had nothing to do with it, but I could have written it myself.
 
-The Windows decision to use UCS-2, and later UTF-16, was a well-meant historical mistake. It used to look like 65536 code points would be enough for everybody. *chuckle* If it was, UCS-2 would have worked great. But it is not, and then UTF-8 is best.
+The Windows decision to use UCS-2, and later UTF-16, was a well-meant historical mistake. It used to seem 65536 code points would be enough for everybody. If it was, UCS-2 would have worked great. But it is not, and so UTF-8 is best.
 
 ## Is this code production quality?
 
