@@ -42,7 +42,7 @@ Atomic is a love child I created in my free time, spanning perhaps a decade up t
 
 ## Why not publish it earlier?
 
-I resisted publishing Atomic before 2019 because I don't want customers. I have enough customers in my work. I don't need more in my free time. I like being free to develop Atomic as I see fit, sometimes to perform substantial refactoring if I see an opportunity. When I work for Bitvise, I serve customers and their wants and needs. When I work on this, I serve my ideas of beauty.
+I like being free to develop Atomic as I see fit, sometimes to perform substantial refactoring if I see an opportunity. When I work for Bitvise, I serve customers and their wants and needs. When I work on this, I serve my ideas of beauty. I felt like I have enough customers in my work, and don't need more in my free time.
 
 ## What if I want support?
 
