@@ -11,18 +11,18 @@
 #pragma warning (disable: 4820)  // L4: 'bytes' bytes padding added after construct 'member_name'
 
 
+// Windows
 #define _WIN32_WINNT _WIN32_WINNT_VISTA
 #define NTDDI_VERSION NTDDI_VISTA
 #define NOMINMAX
 #define _CRT_RAND_S
 #define SECURITY_WIN32
+#define STRSAFE_NO_DEPRECATE	// Necessary to avoid errors in <cwchar>, <cstdio>, <cstring> when compiling with "v140_xp" build tools
 
-// Windows
 #define WIN32_NO_STATUS
 #include <winsock2.h>
 #include <windows.h>
 #undef WIN32_NO_STATUS
-#include <winternl.h>
 #include <ntstatus.h>
 
 #include <http.h>
@@ -36,6 +36,43 @@
 #include <CommCtrl.h>
 #include <Uxtheme.h>
 #include <TlHelp32.h>
+
+
+// Macros not defined when compiling with "v140_xp" build tools
+#ifndef FILE_ATTRIBUTE_INTEGRITY_STREAM
+#define FILE_ATTRIBUTE_INTEGRITY_STREAM 0x00008000
+#endif
+
+#ifndef FILE_ATTRIBUTE_NO_SCRUB_DATA
+#define FILE_ATTRIBUTE_NO_SCRUB_DATA 0x00020000
+#endif
+
+#ifndef FILE_ATTRIBUTE_EA
+#define FILE_ATTRIBUTE_EA 0x00040000
+#endif
+
+#ifndef FILE_FLAG_SESSION_AWARE
+#define FILE_FLAG_SESSION_AWARE 0x00800000
+#endif
+
+#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
+#define LOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
+#endif
+
+#ifndef SCH_SEND_AUX_RECORD
+#define SCH_SEND_AUX_RECORD 0x00200000
+#endif
+
+#ifndef SCH_USE_STRONG_CRYPTO
+#define SCH_USE_STRONG_CRYPTO 0x00400000
+#endif
+
+
+// Macros we don't want
+#ifdef SetPort
+#undef SetPort
+#endif
+
 
 // std
 #include <algorithm>
@@ -61,11 +98,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-
-
-#ifdef SetPort
-#undef SetPort
-#endif
 
 
 // Off-by-default warnings at -W4 that I want on

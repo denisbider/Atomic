@@ -1,4 +1,5 @@
 #include "AtIncludes.h"
+#include <winternl.h>
 #include "AtWinErr.h"
 
 #include "AtUtfWin.h"

@@ -1,6 +1,8 @@
 #include "AutIncludes.h"
 #include "AutMain.h"
 
+#include <winternl.h>
+
 
 void ShowProcessStartTime(DWORD pid)
 {
