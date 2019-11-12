@@ -152,6 +152,9 @@ void DiffTestSimple(Seq oldText, Seq newText, Diff::DiffParams const& diffParams
 	if (!newText.n) newText = "_";
 	Str desc = Str::Join(oldText, " => ", newText);
 
+	if (diffParams.m_debugHtml)
+		diffParams.m_debugHtml->H1(desc);
+
 	DiffTest(oldLines, newLines, desc, diffParams);
 }
 
@@ -159,10 +162,10 @@ void DiffTestSimple(Seq oldText, Seq newText, Diff::DiffParams const& diffParams
 void DiffTests(int argc, char** argv)
 {
 	Diff::DiffParams diffParams;
-	diffParams.m_includeUnchanged = true;
+	diffParams.m_emitUnchanged = true;
 
 	bool helpRequested {}, simpleInput {}, haveOldParam {}, haveNewParam {};
-	Seq oldParam, newParam;
+	Seq oldParam, newParam, dbgFileName;
 
 	for (int i=2; i<argc; ++i)
 	{
@@ -191,6 +194,11 @@ void DiffTests(int argc, char** argv)
 				if (++i >= argc) { Console::Err("Missing -qmo value\r\n"); return; }
 				diffParams.m_quality_momentum = Seq(argv[i]).ReadNrUInt32Dec();
 			}
+			else if (arg == "-dbg")
+			{
+				if (++i >= argc) { Console::Err("Missing -dbg filename\r\n"); return; }
+				dbgFileName = argv[i];
+			}
 			else
 				{ Console::Err(Str::Join("Unrecognized switch: ", arg, "\r\n")); return; }
 		}
@@ -215,41 +223,65 @@ void DiffTests(int argc, char** argv)
 			"Options:\r\n"
 			" -mw  <n>    Set the value of DiffParams::m_maxMatrixWidth\r\n"
 			" -qma <n>    Set the value of DiffParams::m_quality_match\r\n"
-			" -qmo <n>    Set the value of DiffParams::m_quality_momentum\r\n");
+			" -qmo <n>    Set the value of DiffParams::m_quality_momentum\r\n"
+			" -dbg <file> Write debug HTML into the specified file. File is overwritten\r\n");
 	}
-	else if (!haveOldParam && !haveNewParam)
-	{
-		DiffTestSimple("",            "",        diffParams);
-		DiffTestSimple("",            "a",       diffParams);
-		DiffTestSimple("a",           "",        diffParams);
-		DiffTestSimple("a",           "a",       diffParams);
-		DiffTestSimple("a",           "b",       diffParams);
-		DiffTestSimple("a",           "ab",      diffParams);
-		DiffTestSimple("a",           "ba",      diffParams);
-		DiffTestSimple("ab",          "a",       diffParams);
-		DiffTestSimple("ba",          "a",       diffParams);
-		DiffTestSimple("ab",          "ab",      diffParams);
-		DiffTestSimple("ab",          "bca",     diffParams);
-		DiffTestSimple("bca",         "ab",      diffParams);
-		DiffTestSimple("abcd",        "bcda",    diffParams);
-		DiffTestSimple("bcda",        "abcd",    diffParams);
-		DiffTestSimple("abcoeppklmn", "op",      diffParams);
-		DiffTestSimple("abcabba",     "cbabac",  diffParams);
-		DiffTestSimple("abgdef",      "gh",      diffParams);
-		DiffTestSimple("xaxcxabc",    "abcy",    diffParams);
-	}
-	else if (!haveNewParam)
-	{
-		Console::Err("Expecting <newText> or <newFile>\r\n");
-	}
-	else if (simpleInput)
-		DiffTestSimple(oldParam, newParam, diffParams);
 	else
 	{
-		Str linesOld, linesNew;
-		File().Open(oldParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesOld);
-		File().Open(newParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesNew);
+		Crypt::Initializer cryptInit;
+		
+		File dbgFile;
+		HtmlBuilder html;
 
-		DiffTest(linesOld, linesNew, Seq(), diffParams);
+		if (dbgFileName.Any())
+		{
+			dbgFile.Open(dbgFileName, File::OpenArgs::DefaultOverwrite());
+			html.DefaultHead();
+			Diff::DebugCss(html);
+			html.EndHead().Body();
+			diffParams.m_debugHtml = &html;
+		}
+
+		if (!haveOldParam && !haveNewParam)
+		{
+			DiffTestSimple("",            "",        diffParams);
+			DiffTestSimple("",            "a",       diffParams);
+			DiffTestSimple("a",           "",        diffParams);
+			DiffTestSimple("a",           "a",       diffParams);
+			DiffTestSimple("a",           "b",       diffParams);
+			DiffTestSimple("a",           "ab",      diffParams);
+			DiffTestSimple("a",           "ba",      diffParams);
+			DiffTestSimple("ab",          "a",       diffParams);
+			DiffTestSimple("ba",          "a",       diffParams);
+			DiffTestSimple("ab",          "ab",      diffParams);
+			DiffTestSimple("ab",          "bca",     diffParams);
+			DiffTestSimple("bca",         "ab",      diffParams);
+			DiffTestSimple("abcd",        "bcda",    diffParams);
+			DiffTestSimple("bcda",        "abcd",    diffParams);
+			DiffTestSimple("abcoeppklmn", "op",      diffParams);
+			DiffTestSimple("abcabba",     "cbabac",  diffParams);
+			DiffTestSimple("abgdef",      "gh",      diffParams);
+			DiffTestSimple("xaxcxabc",    "abcy",    diffParams);
+		}
+		else if (!haveNewParam)
+		{
+			Console::Err("Expecting <newText> or <newFile>\r\n");
+		}
+		else if (simpleInput)
+			DiffTestSimple(oldParam, newParam, diffParams);
+		else
+		{
+			Str linesOld, linesNew;
+			File().Open(oldParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesOld);
+			File().Open(newParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesNew);
+
+			DiffTest(linesOld, linesNew, Seq(), diffParams);
+		}
+
+		if (dbgFile.IsOpen())
+		{
+			html.EndBody().EndHtml();
+			dbgFile.Write(html.Final());
+		}
 	}
 }

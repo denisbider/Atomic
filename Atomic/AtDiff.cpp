@@ -1,6 +1,7 @@
 #include "AtIncludes.h"
 #include "AtDiff.h"
 
+#include "AtHtmlBuilder.h"
 #include "AtMap.h"
 
 
@@ -130,6 +131,30 @@ namespace At
 					}
 				}
 
+				void Debug_DumpAxis(HtmlBuilder& html) const
+				{
+					html.Table().Class("AtDiff");
+					for (sizet axisIdx=0; axisIdx!=m_axisUnits.Len(); ++axisIdx)
+					{
+						AxisUnit const& u = m_axisUnits[axisIdx];
+						html.Tr()
+								.Td().UInt(axisIdx).EndTd()
+								.Td();
+
+						bool needBr {};
+						for (sizet pos=u.m_leadPos; pos<=u.m_unitPos; ++pos)
+						{
+							if (needBr) html.Br(); else needBr = true;
+							InputUnit const& iu = *(*m_occurrences)[pos].m_iu;
+							html.UInt(iu.m_seqNr).T(": ").T(iu.m_value, Html::CharRefs::Escape);
+						}
+
+						html	.EndTd()
+							.EndTr();
+					}
+					html.EndTable();
+				}
+
 			private:
 				static sizet CalculateNrAxisUnits(Vec<Occurrence> const& occurrences)
 				{
@@ -206,6 +231,10 @@ namespace At
 					Build(axes, params);
 					CalculateEdges(params);
 					CalculateInner(params);
+
+					if (params.m_debugHtml)
+						Debug_DumpMatrix(params);
+
 					Travel(axes, diff, params);
 				}
 			
@@ -255,7 +284,8 @@ namespace At
 					m_matrix = new Cell[m_nrRows * m_width];
 					m_rowOffsets.FixReserve(m_nrRows);
 
-					for (sizet row=0, offset=0, slack=m_nrRows-m_nrCols; row!=m_nrRows; ++row)
+					sizet slack = ((m_nrRows - m_nrCols) + m_width) / 2;
+					for (sizet row=0, offset=0; row!=m_nrRows; ++row)
 					{
 						m_rowOffsets.Add(offset);
 						if (row >= slack && (offset + m_width < m_nrCols))
@@ -416,6 +446,57 @@ namespace At
 					}
 				}
 
+				void Debug_DumpMatrix(DiffParams const& params)
+				{
+					if (!params.m_debugHtml)
+						return;
+
+					HtmlBuilder& html = *params.m_debugHtml;
+					html.H2().T("Horizontal axis ").T(m_colsNew ? "(new)" : "(old)").EndH2();
+					m_colAxis->Debug_DumpAxis(html);
+
+					html.H2().T("Vertical axis ").T(m_colsNew ? "(old)" : "(new)").EndH2();
+					m_rowAxis->Debug_DumpAxis(html);
+
+					html.H2().T("Matrix").EndH2()
+						.Table().Class("AtDiff")
+							.Tr()
+								.Th().EndTh();
+
+					for (sizet col=0; col!=m_nrCols; ++col)
+						html	.Th().UInt(col).EndTh();
+								
+					html	.EndTr();
+
+					for (sizet row=0; row!=m_nrRows; ++row)
+					{
+						html.Tr()
+								.Th().UInt(row).EndTh();
+
+						for (sizet col=0; col!=m_nrCols; ++col)
+						{
+							html.Td();
+							Cell* cell = GetCell(row, col);
+							if (cell)
+							{
+								html.UInt(cell->m_quality).Br();
+
+								switch (cell->m_dir)
+								{
+								case CellDir::Right: html.T("&rarr;"); break;
+								case CellDir::Down:  html.T("&darr;"); break;
+								case CellDir::Diag:  html.T("&searr;"); break;
+								case CellDir::End:   html.T("&nbsp;"); break;
+								default:             EnsureThrow(!"Unrecognized cell direction");
+								}
+							}
+							html.EndTd();
+						}
+						html.EndTr();
+					}
+					html.EndTable();
+				}
+
 				void Travel(MatrixAxes const& axes, Vec<DiffUnit>& diff, DiffParams const& params)
 				{
 					AxisUnit const* pAxisOld = axes.m_axisOld.m_axisUnits.begin();
@@ -462,7 +543,7 @@ namespace At
 								for (sizet i=pAxisOld->m_leadPos; i!=pAxisOld->m_unitPos; ++i) { diff.Add(DiffDisposition::Removed, DiffInputSource::Old, *(pOccurOld->m_iu)); ++pOccurOld; }
 							}
 
-							if (params.m_includeUnchanged)
+							if (params.m_emitUnchanged)
 								diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, *(pOccurNew->m_iu));
 
 							++pOccurOld; ++pOccurNew;
@@ -507,7 +588,7 @@ namespace At
 					if (inputOld.First().m_value != inputNew.First().m_value)
 						return;
 
-					if (params.m_includeUnchanged)
+					if (params.m_emitUnchanged)
 						diff.Add(DiffDisposition::Unchanged, DiffInputSource::New, inputNew.First());
 
 					inputOld.PopFirst();
@@ -547,7 +628,7 @@ namespace At
 
 			void DiffCommonTail(PtrPair<InputUnit> commonTailNew, Vec<DiffUnit>& diff, DiffParams const& params)
 			{
-				if (params.m_includeUnchanged)
+				if (params.m_emitUnchanged)
 				{
 					while (commonTailNew.Any())
 					{
@@ -560,6 +641,15 @@ namespace At
 		}	// Internal
 
 		using namespace Internal;
+
+
+		void DebugCss(HtmlBuilder& html)
+		{
+			html.AddCss("body "            "{ font-size: x-small } "
+						"table.AtDiff "    "{ border-collapse: collapse } "
+						"table.AtDiff th " "{ border: 1px solid #666; background: #eee; font-weight: normal; padding: 0px 5px 0px 5px; } "
+						"table.AtDiff td " "{ border: 1px solid #666; text-align: center; padding: 0px 5px 0px 5px; } ");
+		}
 
 
 		void Generate(PtrPair<InputUnit> inputOld, PtrPair<InputUnit> inputNew, Vec<DiffUnit>& diff, DiffParams const& params)

@@ -6,6 +6,8 @@
 
 namespace At
 {
+	class HtmlBuilder;
+
 	namespace Diff
 	{
 
@@ -37,7 +39,10 @@ namespace At
 			uint m_quality_match { 5 };
 
 			// Whether to include unchanged units in diff output.
-			bool m_includeUnchanged {};
+			bool m_emitUnchanged {};
+
+			// Set to write debug HTML output containing the full diff matrix
+			HtmlBuilder* m_debugHtml {};
 		};
 
 		struct InputUnit
@@ -60,6 +65,8 @@ namespace At
 			DiffUnit(DiffDisposition disposition, DiffInputSource inputSource, InputUnit const& inputUnit)
 				: m_disposition(disposition), m_inputSource(inputSource), m_inputUnit(inputUnit) {}
 		};
+
+		void DebugCss(HtmlBuilder& html);
 
 		// Implements a diff algorithm with the following properties:
 		// - High quality output: if computationally feasible, finds the longest common subsequence; prefers to group additions and removals together.
