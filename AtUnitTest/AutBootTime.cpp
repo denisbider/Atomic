@@ -1,8 +1,6 @@
 #include "AutIncludes.h"
 #include "AutMain.h"
 
-#include <winternl.h>
-
 
 void ShowProcessStartTime(DWORD pid)
 {
@@ -91,25 +89,13 @@ void MeasureBootTime_TickCount()
 }
 
 
-struct ActualSystemTimeOfDayInformation // Size=48
-{
-    LARGE_INTEGER BootTime; // Size=8 Offset=0
-    LARGE_INTEGER CurrentTime; // Size=8 Offset=8
-    LARGE_INTEGER TimeZoneBias; // Size=8 Offset=16
-    ULONG TimeZoneId; // Size=4 Offset=24
-    ULONG Reserved; // Size=4 Offset=28
-    ULONGLONG BootTimeBias; // Size=8 Offset=32
-    ULONGLONG SleepTimeBias; // Size=8 Offset=40
-};
-
-
 void BootTime()
 {
 	Console::Out("Using undocumented NtQuerySystemInformation:\r\n");
 
 	{
 		ActualSystemTimeOfDayInformation stodi {};
-		NTSTATUS st = NtQuerySystemInformation(SystemTimeOfDayInformation, &stodi, sizeof(stodi), nullptr);
+		NTSTATUS st = Call_NtQuerySystemInformation(SystemTimeOfDayInformation, &stodi, sizeof(stodi), nullptr);
 		if (st != STATUS_SUCCESS)
 			Console::Out(Str("Error in NtQuerySystemInformation: ").Fun(DescribeNtStatus, st).Add("\r\n"));
 		else

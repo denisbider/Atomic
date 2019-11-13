@@ -1,6 +1,7 @@
 #include "AtIncludes.h"
 #include "AtSocket.h"
 
+#include "AtDllNtDll.h"
 #include "AtException.h"
 #include "AtWinErr.h"
 #include "AtWinStr.h"
@@ -35,7 +36,7 @@ namespace At
 		ZeroMemory(&m_sa, sizeof(m_sa));
 	
 		PCWSTR terminator;
-		if (RtlIpv4StringToAddressW(wz, true, &terminator, &m_sa.sa4.sin_addr) == NO_ERROR && !*terminator)
+		if (Call_RtlIpv4StringToAddressW(wz, true, &terminator, &m_sa.sa4.sin_addr) == NO_ERROR && !*terminator)
 		{
 			m_saLen = sizeof(sockaddr_in);
 			m_sa.family = AF_INET;
@@ -51,7 +52,7 @@ namespace At
 		ZeroMemory(&m_sa, sizeof(m_sa));
 	
 		PCWSTR terminator;
-		if (RtlIpv6StringToAddressW(wz, &terminator, &m_sa.sa6.sin6_addr) == NO_ERROR && !*terminator)
+		if (Call_RtlIpv6StringToAddressW(wz, &terminator, &m_sa.sa6.sin6_addr) == NO_ERROR && !*terminator)
 		{
 			m_saLen = sizeof(sockaddr_in6);
 			m_sa.family = AF_INET6;
@@ -77,7 +78,7 @@ namespace At
 		EnsureThrow(defaultPort <= 65535);	
 		Str addrPart { Str::NullTerminate, s.ReadToByte(':') };
 		LPCSTR terminator = nullptr;
-		LONG retVal = RtlIpv6StringToAddressA(addrPart.CharPtr(), &terminator, &m_sa.sa6.sin6_addr);
+		LONG retVal = Call_RtlIpv6StringToAddressA(addrPart.CharPtr(), &terminator, &m_sa.sa6.sin6_addr);
 		if (retVal == NO_ERROR)
  		{
 			m_saLen = sizeof(sockaddr_in6);
@@ -85,7 +86,7 @@ namespace At
  		}
  		else
  		{
-			retVal = RtlIpv4StringToAddressA(addrPart.CharPtr(), TRUE, &terminator, &m_sa.sa4.sin_addr);
+			retVal = Call_RtlIpv4StringToAddressA(addrPart.CharPtr(), TRUE, &terminator, &m_sa.sa4.sin_addr);
 			if (retVal == NO_ERROR)
 			{
 				m_saLen = sizeof(sockaddr_in);
@@ -331,9 +332,9 @@ namespace At
 		char* endPtr;
 
 		if (m_sa.family == AF_INET)
-			endPtr = RtlIpv4AddressToStringA(&m_sa.sa4.sin_addr, write.CharPtr());
+			endPtr = Call_RtlIpv4AddressToStringA(&m_sa.sa4.sin_addr, write.CharPtr());
 		else
-			endPtr = RtlIpv6AddressToStringA(&m_sa.sa6.sin6_addr, write.CharPtr());
+			endPtr = Call_RtlIpv6AddressToStringA(&m_sa.sa6.sin6_addr, write.CharPtr());
 
 		write.AddSigned(endPtr - write.CharPtr());
 	}
@@ -347,9 +348,9 @@ namespace At
 		LONG rc;
 
 		if (m_sa.family == AF_INET)
-			rc = RtlIpv4AddressToStringExA(&m_sa.sa4.sin_addr, m_sa.sa4.sin_port, write.CharPtr(), &outLen);
+			rc = Call_RtlIpv4AddressToStringExA(&m_sa.sa4.sin_addr, m_sa.sa4.sin_port, write.CharPtr(), &outLen);
 		else
-			rc = RtlIpv6AddressToStringExA(&m_sa.sa6.sin6_addr, m_sa.sa6.sin6_scope_id, m_sa.sa6.sin6_port, write.CharPtr(), &outLen);
+			rc = Call_RtlIpv6AddressToStringExA(&m_sa.sa6.sin6_addr, m_sa.sa6.sin6_scope_id, m_sa.sa6.sin6_port, write.CharPtr(), &outLen);
 		if (rc != NO_ERROR)
 			{ LastWinErr e; throw e.Make<>("Error in RtlIpv#AddressToStringExA"); }
 

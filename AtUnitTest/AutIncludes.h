@@ -6,6 +6,7 @@
 #include "AtCrypt.h"
 #include "AtConsole.h"
 #include "AtDiff.h"
+#include "AtDllNtDll.h"
 #include "AtEllipticCurve.h"
 #include "AtEntityStore.h"
 #include "AtDkim.h"

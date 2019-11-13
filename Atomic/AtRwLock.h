@@ -19,7 +19,7 @@ namespace At
 		void ReleaseWriteLock()
 		{
 			// There may be read lock attempts going on, so we have to subtract - not just set to zero
-			InterlockedAdd(&m_flag, -WRITE_LOCK_THRESHOLD);
+			InterlockedExchangeAdd(&m_flag, -WRITE_LOCK_THRESHOLD);
 		}
 
 	private:

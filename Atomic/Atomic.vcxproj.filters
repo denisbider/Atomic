@@ -472,6 +472,9 @@
     <ClCompile Include="AtDiff.cpp">
       <Filter>Algorithms and Services</Filter>
     </ClCompile>
+    <ClCompile Include="AtDllNtDll.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1019,6 +1022,9 @@
     </ClInclude>
     <ClInclude Include="AtPtrPair.h">
       <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtDllNtDll.h">
+      <Filter>Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

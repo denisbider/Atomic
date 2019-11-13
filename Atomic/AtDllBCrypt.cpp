@@ -3,7 +3,6 @@
 
 #include "AtDllGetFunc.h"
 #include "AtInitOnFirstUse.h"
-#include "AtSpinLock.h"
 
 #pragma warning (push)
 #pragma warning (disable: 4073)		// L3: initializers put in library initialization area
@@ -14,13 +13,15 @@
 namespace At
 {
 
-	namespace
+	namespace Internal
 	{
 		
 		LONG volatile a_bcrypt_initFlag {};
 		HMODULE a_bcrypt_h {};
 
-	}	// anon
+	}
+
+	using namespace Internal;
 
 
 	HMODULE GetDll_bcrypt()

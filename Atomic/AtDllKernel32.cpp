@@ -14,13 +14,15 @@
 namespace At
 {
 
-	namespace
+	namespace Internal
 	{
 		
 		LONG volatile a_kernel32_initFlag {};
 		HMODULE a_kernel32_h {};
 
-	}	// anon
+	}
+
+	using namespace Internal;
 
 
 	HMODULE GetDll_kernel32()

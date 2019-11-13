@@ -1,7 +1,7 @@
 #include "AtIncludes.h"
-#include <winternl.h>
 #include "AtWinErr.h"
 
+#include "AtDllNtDll.h"
 #include "AtUtfWin.h"
 
 
@@ -49,8 +49,13 @@ namespace At
 		enc.Add("NT status ").ErrCode(err);
 		if (err >= INT32_MIN && err <= UINT32_MAX)
 		{
-			int64 winErr = RtlNtStatusToDosError((NTSTATUS) err);
-			if (winErr == ERROR_MR_MID_NOT_FOUND)
+			int64 winErr;
+			if (!TryCall_RtlNtStatusToDosError((NTSTATUS) err, winErr))
+			{
+				enc.Add(" (RtlNtStatusToDosError not available; reinterpreted as Windows error)");
+				TryAddWinErrDesc(enc, err);
+			}
+			else if (winErr == ERROR_MR_MID_NOT_FOUND)
 			{
 				enc.Add(" (reinterpreted as Windows error)");
 				TryAddWinErrDesc(enc, err);

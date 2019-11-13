@@ -182,6 +182,7 @@
     <ClCompile Include="AtCssPack.cpp" />
     <ClCompile Include="AtDiff.cpp" />
     <ClCompile Include="AtDllBCrypt.cpp" />
+    <ClCompile Include="AtDllNtDll.cpp" />
     <ClCompile Include="AtDsnGrammar.cpp" />
     <ClCompile Include="AtDsnReadWrite.cpp" />
     <ClCompile Include="AtEllipticCurve.cpp" />
@@ -343,6 +344,7 @@
     <ClInclude Include="AtDiff.h" />
     <ClInclude Include="AtDllBCrypt.h" />
     <ClInclude Include="AtDllGetFunc.h" />
+    <ClInclude Include="AtDllNtDll.h" />
     <ClInclude Include="AtDsnGrammar.h" />
     <ClInclude Include="AtDsnReadWrite.h" />
     <ClInclude Include="AtEllipticCurve.h" />
