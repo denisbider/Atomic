@@ -23,9 +23,9 @@ namespace At
 			//
 			//   sizeof(Cell) * max(nrOldAxisUnits, nrNewAxisUnits) * maxMatrixWidth
 			//
-			// For example, if each cell is 64-bit, and two almost identical files of 100,000 lines each are diffed,
-			// the matrix memory requirement will be 8 * 100000 * 100 = 80 MB.
-			uint m_maxMatrixWidth { 100 };
+			// For example, if each cell is 32-bit, maxMatrixWidth = 800, and two almost identical files of 100,000 lines are diffed,
+			// the matrix memory requirement will be 4 * 100000 * 800 = 320 MB.
+			uint m_maxMatrixWidth { 800 };
 
 			// When calculating the best diff path matrix, the number of points to assign to each move for maintaining momentum.
 			// The number of points configured here is given to a diff path for each move that continues what the previous one did.
