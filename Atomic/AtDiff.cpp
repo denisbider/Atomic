@@ -468,6 +468,7 @@ namespace At
 								
 					html	.EndTr();
 
+					sizet hlRow {}, hlCol {};
 					for (sizet row=0; row!=m_nrRows; ++row)
 					{
 						html.Tr()
@@ -475,7 +476,9 @@ namespace At
 
 						for (sizet col=0; col!=m_nrCols; ++col)
 						{
+							bool hl = (col == hlCol && row == hlRow);
 							html.Td();
+							if (hl) html.Class("hl");
 							Cell* cell = GetCell(row, col);
 							if (cell)
 							{
@@ -483,9 +486,9 @@ namespace At
 
 								switch (cell->m_dir)
 								{
-								case CellDir::Right: html.T("&rarr;"); break;
-								case CellDir::Down:  html.T("&darr;"); break;
-								case CellDir::Diag:  html.T("&searr;"); break;
+								case CellDir::Right: html.T("&rarr;"); if (hl) ++hlCol; break;
+								case CellDir::Down:  html.T("&darr;"); if (hl) ++hlRow; break;
+								case CellDir::Diag:  html.T("&searr;"); if (hl) { ++hlCol; ++hlRow; } break;
 								case CellDir::End:   html.T("&nbsp;"); break;
 								default:             EnsureThrow(!"Unrecognized cell direction");
 								}
@@ -645,10 +648,11 @@ namespace At
 
 		void DebugCss(HtmlBuilder& html)
 		{
-			html.AddCss("body "            "{ font-size: x-small } "
-						"table.AtDiff "    "{ border-collapse: collapse } "
-						"table.AtDiff th " "{ border: 1px solid #666; background: #eee; font-weight: normal; padding: 0px 5px 0px 5px; } "
-						"table.AtDiff td " "{ border: 1px solid #666; text-align: center; padding: 0px 5px 0px 5px; } ");
+			html.AddCss("body "               "{ font-size: x-small } "
+						"table.AtDiff "       "{ border-collapse: collapse } "
+						"table.AtDiff th "    "{ border: 1px solid #666; background: #eee; font-weight: normal; padding: 0px 5px 0px 5px; } "
+						"table.AtDiff td "    "{ border: 1px solid #666; text-align: center; padding: 0px 5px 0px 5px; } "
+						"table.AtDiff td.hl " "{ background: #def; } ");
 		}
 
 
