@@ -13,6 +13,9 @@ namespace At
 	template <class T> inline T constexpr PickMin(T a, T b, T c) { return PickMin(a, PickMin(b, c)); }
 	template <class T> inline T constexpr PickMax(T a, T b, T c) { return PickMax(a, PickMax(b, c)); }
 
+	template <class T> inline T constexpr PickMin(T a, T b, T c, T d) { return PickMin(PickMin(a, b), PickMin(c, d)); }
+	template <class T> inline T constexpr PickMax(T a, T b, T c, T d) { return PickMax(PickMax(a, b), PickMax(c, d)); }
+
 
 	// Unsigned integers
 

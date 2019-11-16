@@ -32,6 +32,7 @@ namespace At
 		T const& First() const { EnsureThrow(Any()); return m_begin[0]; }
 		T const& Last() const { EnsureThrow(Any()); return *(m_end-1); }
 
+		PtrPair<T>& Clear() { m_begin = nullptr; m_end = nullptr; return *this; }
 		PtrPair<T>& PopFirst() { EnsureThrow(Any()); ++m_begin; return *this; }
 		PtrPair<T>& PopLast() { EnsureThrow(Any()); --m_end; return *this; }
 

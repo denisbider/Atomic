@@ -42,7 +42,7 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 			return true;
 		};
 
-	sizet diffLines {}, oldLines {}, newLines {};
+	sizet diffLines {}, sameLines {}, addLines {}, removeLines {}, oldLines {}, newLines {};
 	bool ok = true;
 	for (Diff::DiffUnit const& u : diff)
 	{
@@ -51,14 +51,17 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 		case Diff::DiffDisposition::Unchanged:
 			ok = ok && expectLine("old", inputOld, u.m_inputUnit, false, oldLines);
 			ok = ok && expectLine("new", inputNew, u.m_inputUnit, true,  newLines);
+			++sameLines;
 			break;
 
 		case Diff::DiffDisposition::Added:
 			ok = ok && expectLine("new", inputNew, u.m_inputUnit, true, newLines);
+			++addLines;
 			break;
 
 		case Diff::DiffDisposition::Removed:
 			ok = ok && expectLine("old", inputOld, u.m_inputUnit, true, oldLines);
+			++removeLines;
 			break;
 
 		default: EnsureThrow(!"Unexpected DiffDisposition");
@@ -85,7 +88,9 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 	}
 
 	if (ok)
-		Console::Err(Str("OK, matched ").UInt(diffLines).Add(" diff lines, ").UInt(oldLines).Add(" old lines, ").UInt(newLines).Add(" new lines\r\n"));
+		Console::Err(Str("OK, matched ").UInt(diffLines).Add(" diff lines (")
+			.UInt(sameLines).Add(" same, ").UInt(addLines).Add(" added, ").UInt(removeLines).Add(" removed), ")
+			.UInt(oldLines).Add(" old lines, ").UInt(newLines).Add(" new lines\r\n"));
 }
 
 
@@ -179,15 +184,44 @@ void DiffTests(int argc, char** argv)
 			}
 			else if (arg == "-s")
 				simpleInput = true;
-			else if (arg == "-mw")
+			else if (arg == "-fmc")
 			{
-				if (++i >= argc) { Console::Err("Missing -mw value\r\n"); return; }
-				diffParams.m_maxMatrixWidth = Seq(argv[i]).ReadNrUInt32Dec();
+				if (++i >= argc) { Console::Err("Missing -fmc value\r\n"); return; }
+				diffParams.m_maxFullMatrixCells = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-smw")
+			{
+				if (++i >= argc) { Console::Err("Missing -smw value\r\n"); return; }
+				diffParams.m_slidingMatrixWidth = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-fsc")
+			{
+				if (++i >= argc) { Console::Err("Missing -fsc value\r\n"); return; }
+				diffParams.m_forceSplitNrCells = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-pns")
+			{
+				diffParams.m_preferNoSplit = true;
 			}
 			else if (arg == "-qma")
 			{
 				if (++i >= argc) { Console::Err("Missing -qma value\r\n"); return; }
 				diffParams.m_quality_match = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-qmt")
+			{
+				if (++i >= argc) { Console::Err("Missing -qmt value\r\n"); return; }
+				diffParams.m_quality_matchTrivial = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-qkm")
+			{
+				if (++i >= argc) { Console::Err("Missing -qkm value\r\n"); return; }
+				diffParams.m_quality_keystoneMultiple = Seq(argv[i]).ReadNrUInt32Dec();
+			}
+			else if (arg == "-qks")
+			{
+				if (++i >= argc) { Console::Err("Missing -qks value\r\n"); return; }
+				diffParams.m_quality_keystoneSingular = Seq(argv[i]).ReadNrUInt32Dec();
 			}
 			else if (arg == "-qmo")
 			{
@@ -221,8 +255,14 @@ void DiffTests(int argc, char** argv)
 		Console::Out(
 			"Usage: AtUnitTest diff [<oldFile> <newFile> | -s <oldText> <newText>] [options]\r\n"
 			"Options:\r\n"
-			" -mw  <n>    Set the value of DiffParams::m_maxMatrixWidth\r\n"
+			" -fmc <n>    Set the value of DiffParams::m_maxFullMatrixCells\r\n"
+			" -smw <n>    Set the value of DiffParams::m_slidingMatrixWidth\r\n"
+			" -fsc <n>    Set the value of DiffParams::m_forceSplitNrCells\r\n"
+			" -pns        Set the value of DiffParams::m_preferNoSplit to true\r\n"
 			" -qma <n>    Set the value of DiffParams::m_quality_match\r\n"
+			" -qmt <n>    Set the value of DiffParams::m_quality_matchTrivial\r\n"
+			" -qkm <n>    Set the value of DiffParams::m_quality_keystoneMultiple\r\n"
+			" -qks <n>    Set the value of DiffParams::m_quality_keystoneSingular\r\n"
 			" -qmo <n>    Set the value of DiffParams::m_quality_momentum\r\n"
 			" -dbg <file> Write debug HTML into the specified file. File is overwritten\r\n");
 	}
