@@ -5,18 +5,18 @@
 Str DescInputUnit(Seq src, Diff::InputUnit const& iu)
 {
 	Str s;
-	s.ReserveExact(src.n + 2 + 15 + 2 + iu.m_value.n + 2);
-	return s.Add(src).Add(": ").UInt(iu.m_seqNr).Add(": ").Add(iu.m_value).Add("\r\n");
+	s.ReserveExact(src.n + 1 + 15 + 1 + iu.m_value.n + 2);
+	return s.Add(src).Ch(':').UInt(iu.m_seqNr).Ch(':').Add(iu.m_value).Add("\r\n");
 }
 
 
 void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inputOld, PtrPair<Diff::InputUnit> inputNew)
 {
-	auto expectLine = [] (Seq src, PtrPair<Diff::InputUnit>& input, Diff::InputUnit const& iu, bool checkSeqNr, sizet& linesMatched) -> bool
+	auto expectLine = [] (Seq src, PtrPair<Diff::InputUnit>& input, Diff::InputUnit const& iu, sizet& linesMatched) -> bool
 		{
 			if (!input.Any())
 			{
-				Str desc = DescInputUnit("diff", iu);
+				Str desc = DescInputUnit("exp", iu);
 				Console::Err(Str::Join(src, " input is empty, expecting:\r\n", desc));
 				return false;
 			}
@@ -24,16 +24,16 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 			if (input.First().m_value != iu.m_value)
 			{
 				Str srcDesc = DescInputUnit(src, input.First());
-				Str diffDesc = DescInputUnit("diff", iu);
-				Console::Err(Str::Join(src, " input does not match diff:\r\n", srcDesc, diffDesc));
+				Str expDesc = DescInputUnit("exp", iu);
+				Console::Err(Str::Join(src, " input does not match expected:\r\n", srcDesc, expDesc));
 				return false;
 			}
 			
-			if (checkSeqNr && input.First().m_seqNr != iu.m_seqNr)
+			if (input.First().m_seqNr != iu.m_seqNr)
 			{
 				Str srcDesc = DescInputUnit(src, input.First());
-				Str diffDesc = DescInputUnit("diff", iu);
-				Console::Err(Str::Join(src, " sequence number does not match diff:\r\n", srcDesc, diffDesc));
+				Str expDesc = DescInputUnit("exp", iu);
+				Console::Err(Str::Join(src, " sequence number does not match expected:\r\n", srcDesc, expDesc));
 				return false;
 			}
 
@@ -43,36 +43,53 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 		};
 
 	sizet diffLines {}, sameLines {}, addLines {}, removeLines {}, oldLines {}, newLines {};
-	bool ok = true;
+
+	auto expectSameLine = [&] () -> bool
+		{
+			Seq valueOld = inputOld.Any() ? inputOld.First().m_value : Seq();
+			Seq valueNew = inputNew.Any() ? inputNew.First().m_value : Seq();
+			Diff::InputUnit iuOld { oldLines+1, valueNew };
+			Diff::InputUnit iuNew { newLines+1, valueOld };
+			if (!expectLine("old", inputOld, iuOld, oldLines)) return false;
+			if (!expectLine("new", inputNew, iuNew, newLines)) return false;
+			++sameLines;
+			return true;
+		};
+
+	bool ok {};
 	for (Diff::DiffUnit const& u : diff)
 	{
 		switch (u.m_disposition)
 		{
-		case Diff::DiffDisposition::Unchanged:
-			ok = ok && expectLine("old", inputOld, u.m_inputUnit, false, oldLines);
-			ok = ok && expectLine("new", inputNew, u.m_inputUnit, true,  newLines);
-			++sameLines;
-			break;
-
 		case Diff::DiffDisposition::Added:
-			ok = ok && expectLine("new", inputNew, u.m_inputUnit, true, newLines);
+			while (u.m_inputUnit.m_seqNr > newLines+1)
+				if (!expectSameLine()) goto Fail;
+			if (!expectLine("new", inputNew, u.m_inputUnit, newLines)) goto Fail;
 			++addLines;
 			break;
 
 		case Diff::DiffDisposition::Removed:
-			ok = ok && expectLine("old", inputOld, u.m_inputUnit, true, oldLines);
+			while (u.m_inputUnit.m_seqNr > oldLines+1)
+				if (!expectSameLine()) goto Fail;
+			if (!expectLine("old", inputOld, u.m_inputUnit, oldLines)) goto Fail;
 			++removeLines;
 			break;
 
 		default: EnsureThrow(!"Unexpected DiffDisposition");
 		}
-		
-		if (!ok)
-			break;
 
 		++diffLines;
 	}
 
+	if (diffLines == diff.Len())
+	{
+		while (inputOld.Len())
+			if (!expectSameLine()) goto Fail;
+
+		ok = true;
+	}
+
+Fail:
 	if (ok && inputOld.Any())
 	{
 		Str desc = DescInputUnit("old", inputOld.First());
@@ -87,10 +104,12 @@ void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inp
 		ok = false;
 	}
 
-	if (ok)
-		Console::Err(Str("OK, matched ").UInt(diffLines).Add(" diff lines (")
-			.UInt(sameLines).Add(" same, ").UInt(addLines).Add(" added, ").UInt(removeLines).Add(" removed), ")
-			.UInt(oldLines).Add(" old lines, ").UInt(newLines).Add(" new lines\r\n"));
+	if (!ok)
+		throw "Diff incorrect";
+
+	Console::Err(Str("OK, matched ").UInt(diffLines).Add(" diff lines (")
+		.UInt(sameLines).Add(" same, ").UInt(addLines).Add(" added, ").UInt(removeLines).Add(" removed), ")
+		.UInt(oldLines).Add(" old lines, ").UInt(newLines).Add(" new lines\r\n"));
 }
 
 
@@ -123,13 +142,12 @@ void DiffTest(Seq linesOld, Seq linesNew, Seq desc, Diff::DiffParams const& diff
 	Str outLine;
 	for (Diff::DiffUnit const& u : diff)
 	{
-		outLine.ReserveAtLeast(2 + u.m_inputUnit.m_value.n + 2);
+		outLine.ReserveAtLeast(20 + u.m_inputUnit.m_value.n + 2);
 
 		switch (u.m_disposition)
 		{
-		case Diff::DiffDisposition::Unchanged: outLine.Set("  "); break;
-		case Diff::DiffDisposition::Added:     outLine.Set("+ "); break;
-		case Diff::DiffDisposition::Removed:   outLine.Set("- "); break;
+		case Diff::DiffDisposition::Added:     outLine.Set("+:").UInt(u.m_inputUnit.m_seqNr).Ch(':'); break;
+		case Diff::DiffDisposition::Removed:   outLine.Set("-:").UInt(u.m_inputUnit.m_seqNr).Ch(':'); break;
 		default: EnsureThrow(!"Unexpected DiffDisposition");
 		}
 
@@ -157,9 +175,6 @@ void DiffTestSimple(Seq oldText, Seq newText, Diff::DiffParams const& diffParams
 	if (!newText.n) newText = "_";
 	Str desc = Str::Join(oldText, " => ", newText);
 
-	if (diffParams.m_debugHtml)
-		diffParams.m_debugHtml->H1(desc);
-
 	DiffTest(oldLines, newLines, desc, diffParams);
 }
 
@@ -167,10 +182,9 @@ void DiffTestSimple(Seq oldText, Seq newText, Diff::DiffParams const& diffParams
 void DiffTests(int argc, char** argv)
 {
 	Diff::DiffParams diffParams;
-	diffParams.m_emitUnchanged = true;
 
 	bool helpRequested {}, simpleInput {}, haveOldParam {}, haveNewParam {};
-	Seq oldParam, newParam, dbgFileName;
+	Seq oldParam, newParam;
 
 	for (int i=2; i<argc; ++i)
 	{
@@ -184,55 +198,8 @@ void DiffTests(int argc, char** argv)
 			}
 			else if (arg == "-s")
 				simpleInput = true;
-			else if (arg == "-fmc")
-			{
-				if (++i >= argc) { Console::Err("Missing -fmc value\r\n"); return; }
-				diffParams.m_maxFullMatrixCells = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-smw")
-			{
-				if (++i >= argc) { Console::Err("Missing -smw value\r\n"); return; }
-				diffParams.m_slidingMatrixWidth = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-fsc")
-			{
-				if (++i >= argc) { Console::Err("Missing -fsc value\r\n"); return; }
-				diffParams.m_forceSplitNrCells = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-pns")
-			{
-				diffParams.m_preferNoSplit = true;
-			}
-			else if (arg == "-qma")
-			{
-				if (++i >= argc) { Console::Err("Missing -qma value\r\n"); return; }
-				diffParams.m_quality_match = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-qmt")
-			{
-				if (++i >= argc) { Console::Err("Missing -qmt value\r\n"); return; }
-				diffParams.m_quality_matchTrivial = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-qkm")
-			{
-				if (++i >= argc) { Console::Err("Missing -qkm value\r\n"); return; }
-				diffParams.m_quality_keystoneMultiple = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-qks")
-			{
-				if (++i >= argc) { Console::Err("Missing -qks value\r\n"); return; }
-				diffParams.m_quality_keystoneSingular = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-qmo")
-			{
-				if (++i >= argc) { Console::Err("Missing -qmo value\r\n"); return; }
-				diffParams.m_quality_momentum = Seq(argv[i]).ReadNrUInt32Dec();
-			}
-			else if (arg == "-dbg")
-			{
-				if (++i >= argc) { Console::Err("Missing -dbg filename\r\n"); return; }
-				dbgFileName = argv[i];
-			}
+			else if (arg == "-nls")
+				diffParams.m_limitSteps = false;
 			else
 				{ Console::Err(Str::Join("Unrecognized switch: ", arg, "\r\n")); return; }
 		}
@@ -255,33 +222,10 @@ void DiffTests(int argc, char** argv)
 		Console::Out(
 			"Usage: AtUnitTest diff [<oldFile> <newFile> | -s <oldText> <newText>] [options]\r\n"
 			"Options:\r\n"
-			" -fmc <n>    Set the value of DiffParams::m_maxFullMatrixCells\r\n"
-			" -smw <n>    Set the value of DiffParams::m_slidingMatrixWidth\r\n"
-			" -fsc <n>    Set the value of DiffParams::m_forceSplitNrCells\r\n"
-			" -pns        Set the value of DiffParams::m_preferNoSplit to true\r\n"
-			" -qma <n>    Set the value of DiffParams::m_quality_match\r\n"
-			" -qmt <n>    Set the value of DiffParams::m_quality_matchTrivial\r\n"
-			" -qkm <n>    Set the value of DiffParams::m_quality_keystoneMultiple\r\n"
-			" -qks <n>    Set the value of DiffParams::m_quality_keystoneSingular\r\n"
-			" -qmo <n>    Set the value of DiffParams::m_quality_momentum\r\n"
-			" -dbg <file> Write debug HTML into the specified file. File is overwritten\r\n");
+			" -nls    Set DiffParams::m_limitSteps to false\r\n");
 	}
 	else
 	{
-		Crypt::Initializer cryptInit;
-		
-		File dbgFile;
-		HtmlBuilder html;
-
-		if (dbgFileName.Any())
-		{
-			dbgFile.Open(dbgFileName, File::OpenArgs::DefaultOverwrite());
-			html.DefaultHead();
-			Diff::DebugCss(html);
-			html.EndHead().Body();
-			diffParams.m_debugHtml = &html;
-		}
-
 		if (!haveOldParam && !haveNewParam)
 		{
 			DiffTestSimple("",            "",        diffParams);
@@ -316,12 +260,6 @@ void DiffTests(int argc, char** argv)
 			File().Open(newParam, File::OpenArgs::DefaultRead()).ReadAllInto(linesNew);
 
 			DiffTest(linesOld, linesNew, Seq(), diffParams);
-		}
-
-		if (dbgFile.IsOpen())
-		{
-			html.EndBody().EndHtml();
-			dbgFile.Write(html.Final());
 		}
 	}
 }
