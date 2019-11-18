@@ -28,7 +28,7 @@ Atomic is denis bider's love-child library of all the good stuff. It's written i
 
 * `Originator`, a self-contained DLL which packs email message generation, SMTP sending functionality, and an outgoing mail queue.
 
-* `Diff`, a general-purpose, sliding-matrix diff algorithm that produces good output and efficiently compares inputs of any size.
+* `Diff`, a general-purpose implementation of the Myers diff algorithm, suitable for inputs of any size.
 
 * [BusyBeaver](https://denisbider.blogspot.com/2015/05/busybeaver-key-derivation-function.html), my password hashing algorithm and key derivation function.
 
