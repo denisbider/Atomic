@@ -114,6 +114,7 @@ namespace At
 
 
 	ENTITY_DEF_BEGIN(SmtpSenderCfg)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, memUsageLimitBytes, 2)
 	ENTITY_DEF_F_E_V(SmtpSenderCfg, ipVerPreference,    1)
 	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp4, 1)
 	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp6, 1)
@@ -133,6 +134,14 @@ namespace At
 	HtmlBuilder& SmtpSenderCfg_RenderRows(HtmlBuilder& html, SmtpSenderCfg const& cfg)
 	{
 		html.Tr()
+				.Td().P().Label("smtpSender_memUsageLimitBytes", "SMTP sender memory usage limit bytes").EndP().EndTd()
+				.Td()
+					.P().InputNumber().IdAndName("smtpSender_memUsageLimitBytes").Value(Str().UInt(cfg.f_memUsageLimitBytes)).EndP()
+					.P().Class("help").T("Message content is kept in memory when sending. If non-zero, the SMTP sender will avoid enqueueing messages "
+						"when in-memory content is above this size.").EndP()
+				.EndTd()
+			.EndTr()
+			.Tr()
 				.Td().P().Label("smtpSender_ipVerPreference", "SMTP sender IPv4/6 preference").EndP().EndTd()
 				.Td()
 					.P().Select().IdAndName("smtpSender_ipVerPreference").Fun(IpVerPreference::RenderOptions, cfg.f_ipVerPreference).EndSelect().EndP()
@@ -220,6 +229,7 @@ namespace At
 
 	void SmtpSenderCfg_ReadFromPostRequest(SmtpSenderCfg& cfg, HttpRequest const& req, Vec<Str>& errs)
 	{
+		cfg.f_memUsageLimitBytes   =  req.PostNvp("smtpSender_memUsageLimitBytes" ).Trim().ReadNrUInt64Dec();
 		Seq ipVerPreferenceStr     =  req.PostNvp("smtpSender_ipVerPreference"    );
 		Seq localInterfacesIp4Str  =  req.PostNvp("smtpSender_localInterfacesIp4" );
 		Seq localInterfacesIp6Str  =  req.PostNvp("smtpSender_localInterfacesIp6" );
@@ -245,7 +255,6 @@ namespace At
 			errs.Add("Invalid relay port number");
 		else
 			cfg.f_relayPort = relayPort;
-
 
 		SmtpTlsAssurance::E relayTlsRequirement;
 		if (!SmtpTlsAssurance::ReadNrAndVerify(relayTlsRequirementStr, relayTlsRequirement))
@@ -300,6 +309,19 @@ namespace At
 	ENTITY_DEF_FIELD(MailboxResult, failure)
 	ENTITY_DEF_CLOSE(MailboxResult);
 
+	
+	void MailboxResultCount::Count(PtrPair<MailboxResult> results)
+	{
+		for (MailboxResult const& r : results)
+			switch (r.f_state)
+			{
+			case SmtpDeliveryState::Success: ++m_nrSuccess; break;
+			case SmtpDeliveryState::TempFailure: ++m_nrTempFail; break;
+			case SmtpDeliveryState::PermFailure: ++m_nrPermFail; break;
+			default: EnsureThrow(!"Unexpected SmtpDeliveryState value");
+			}
+	}
+
 
 
 	ENTITY_DEF_BEGIN(SmtpMsgToSend)
@@ -309,11 +331,12 @@ namespace At
 	ENTITY_DEF_FLD_E(SmtpMsgToSend, tlsRequirement)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, additionalMatchDomains)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, baseSendSecondsMax)
-	ENTITY_DEF_FIELD(SmtpMsgToSend, minSendBytesPerSec)
+	ENTITY_DEF_FIELD(SmtpMsgToSend, nrBytesToAddOneSec)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, fromAddress)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, pendingMailboxes)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, toDomain)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, content)
+	ENTITY_DEF_FLD_V(SmtpMsgToSend, moreContentContext, 1)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, deliveryContext)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, mailboxResults)
 	ENTITY_DEF_CLOSE(SmtpMsgToSend);

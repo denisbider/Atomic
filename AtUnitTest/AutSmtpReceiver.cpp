@@ -14,10 +14,11 @@ public:
 	enum { MaxInMsgKb = 10*1000, MaxInMsgBytes = MaxInMsgKb * 1024 };
 	void SmtpReceiver_GetCfg(SmtpReceiverCfg& cfg) const override final;
 
-	EmailServerAuthResult SmtpReceiver_Authenticate(SockAddr const&, Seq, Seq, Seq, Rp<SmtpReceiverAuthCx>&) override final
+	EmailServerAuthResult SmtpReceiver_Authenticate(SockAddr const&, Schannel&, Seq, EhloHost const&, Seq, Seq, Seq, Rp<SmtpReceiverAuthCx>&) override final
 		{ return EmailServerAuthResult::InvalidCredentials; }
 
-	SmtpReceiveInstruction SmtpReceiver_OnMailFrom_NoAuth(SockAddr const& fromHost, Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx) override final;
+	SmtpReceiveInstruction SmtpReceiver_OnMailFrom_NoAuth(SockAddr const& fromHost, Schannel& conn, Seq ourName, EhloHost const& ehloHost,
+			Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx) override final;
 
 	static SmtpReceiveInstruction RandomReply(std::function<void(char const*)> action);
 
@@ -82,7 +83,8 @@ SmtpReceiveInstruction AutSmtpReceiver::RandomReply(std::function<void(char cons
 }
 
 
-SmtpReceiveInstruction AutSmtpReceiver::SmtpReceiver_OnMailFrom_NoAuth(SockAddr const& fromHost, Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx)
+SmtpReceiveInstruction AutSmtpReceiver::SmtpReceiver_OnMailFrom_NoAuth(SockAddr const& fromHost, Schannel&, Seq, EhloHost const&,
+			Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx)
 {
 	SmtpReceiveInstruction instr = RandomReply([&] (char const* replyText)
 		{ Console::Out(Str().Obj(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(fromMailbox)

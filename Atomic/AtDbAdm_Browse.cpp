@@ -79,7 +79,7 @@ namespace At
 				{
 					Opt<Mime::PartContent> content;
 					req.ForEachFileInput([&] (Mime::Part const& part, Seq) -> bool
-						{ content.Init(part); return false; } );
+						{ content.Init(part, req.GetPinStore()); return false; } );
 
 					     if (!content.Any())        AddPageErr("No import script found in request");
 					else if (!content->m_success)   AddPageErr("Error decoding import script");

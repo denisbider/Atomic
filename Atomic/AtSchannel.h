@@ -4,8 +4,10 @@
 #include "AtWriter.h"
 #include "AtWinStr.h"
 
+
 namespace At
 {
+
 	struct SecBufs : NoCopy
 	{
 		struct Owner { enum E { Internal, Sspi }; };
@@ -31,6 +33,16 @@ namespace At
 	};
 
 
+	struct TlsInfo
+	{
+		bool                         m_tlsStarted       {};
+		SECURITY_STATUS              m_connInfoStatus   {};
+		SecPkgContext_ConnectionInfo m_connInfo         {};
+		SECURITY_STATUS              m_cipherInfoStatus {};
+		SecPkgContext_CipherInfo     m_cipherInfo       {};
+	};
+
+
 	class Schannel : virtual public Reader, virtual public Writer
 	{
 	public:
@@ -40,6 +52,8 @@ namespace At
 
 		Schannel(Reader* reader = 0, Writer* writer = 0) : m_reader(reader), m_writer(writer) {} 
 		~Schannel();
+
+		PCtxtHandle GetCtxt() { return &m_ctxt; }
 
 		void SetReader(Reader* reader) { EnsureThrow(!m_reader); m_reader = reader; }
 		void SetWriter(Writer* writer) { EnsureThrow(!m_writer); m_writer = writer; }
@@ -60,6 +74,8 @@ namespace At
 		void InitCred(ProtoSide side);
 		void ValidateServerName(Seq serverName);		// For client use. If not called, or if an empty name is provided, server certificate is not validated
 		void StartTls();
+
+		void GetTlsInfo(TlsInfo& tlsInfo);
 
 	private:
 		Reader* m_reader {};
@@ -89,4 +105,5 @@ namespace At
 		struct HandshakeType { enum E { Initial, Renegotiate, Shutdown }; };
 		void CompleteHandshake(HandshakeType::E handshakeType);
 	};
+
 }

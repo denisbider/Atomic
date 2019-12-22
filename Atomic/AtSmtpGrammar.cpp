@@ -48,7 +48,7 @@ namespace At
 		DEF_RUID_B(Atom)
 		DEF_RUID_B(Dot_string)
 		DEF_RUID_B(Local_part)
-		DEF_RUID_B(c_Domain_AddrLit)
+		DEF_RUID_B(Domain_or_AddrLit)
 		DEF_RUID_B(Mailbox)
 		DEF_RUID_B(AtDomainList_Colon)
 		DEF_RUID_B(Path)
@@ -117,8 +117,8 @@ namespace At
         bool C_Atom                   (ParseNode& p) { return G_Repeat              (p, id_Atom,                Imf::C_atext_word                                                                             ); }
         bool C_Dot_string             (ParseNode& p) { return G_Req<1,0>            (p, id_Dot_string,          C_Atom, G_Repeat<G_Req<C_Dot, C_Atom>>                                                        ); }
         bool C_Local_part             (ParseNode& p) { return G_Choice              (p, id_Local_part,          C_Dot_string, C_Quoted_string                                                                 ); }
-        bool C_c_Domain_AddrLit       (ParseNode& p) { return G_Choice              (p, id_c_Domain_AddrLit,    C_Domain, C_AddrLit                                                                           ); }
-        bool C_Mailbox                (ParseNode& p) { return G_Req<1,1,1>          (p, id_Mailbox,             C_Local_part, C_At, C_c_Domain_AddrLit                                                        ); }
+        bool C_Domain_or_AddrLit      (ParseNode& p) { return G_Choice              (p, id_Domain_or_AddrLit,   C_Domain, C_AddrLit                                                                           ); }
+        bool C_Mailbox                (ParseNode& p) { return G_Req<1,1,1>          (p, id_Mailbox,             C_Local_part, C_At, C_Domain_or_AddrLit                                                       ); }
         bool C_AtDomainList_Colon     (ParseNode& p) { return G_Req<1,1>            (p, id_AtDomainList_Colon,  C_AtDomainList, C_Colon                                                                       ); }   
         bool C_Path                   (ParseNode& p) { return G_Req<1,0,1,1>        (p, id_Path,                C_Less, C_AtDomainList_Colon, C_Mailbox, C_Grtr                                               ); }
         bool C_EmptyPath              (ParseNode& p) { return G_SeqMatchExact       (p, id_EmptyPath,           "<>"                                                                                          ); }

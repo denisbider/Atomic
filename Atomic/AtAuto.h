@@ -1,9 +1,11 @@
 #pragma once
 
-#include "AtIncludes.h"
+#include "AtVec.h"
+
 
 namespace At
 {
+
 	template <class T>
 	class PtrHolder : NoCopy
 	{
@@ -35,6 +37,7 @@ namespace At
 	};
 
 
+
 	template <class T, class F>
 	class AutoAction : public PtrHolder<T>
 	{
@@ -58,4 +61,38 @@ namespace At
 
 	template <class T> using AutoFree    = AutoAction<T, AutoAction_Free   <T>>;
 	template <class T> using AutoSetZero = AutoAction<T, AutoAction_SetZero<T>>;
+
+
+
+	// AutoFreeVec
+
+	template <class T>
+	struct AutoFreeVec : Vec<T*>
+	{
+		~AutoFreeVec()
+		{
+			for (sizet i=0; i!=Len(); ++i)
+			{
+				T*& p = Ptr()[i];
+				delete p;
+				p = nullptr;
+			}
+		}
+
+		AutoFreeVec<T>& Add(AutoFree<T>& x)
+		{
+			Vec<T*>::Add(x.Ptr());
+			x.Dismiss();
+			return *this;
+		}
+
+		void Extract(sizet i, AutoFree<T>& x)
+		{
+			EnsureThrow(i < Len());
+			T*& p = Ptr()[i];
+			x.Set(p);
+			p = nullptr;
+		}
+	};
+
 }

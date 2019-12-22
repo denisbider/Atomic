@@ -2,7 +2,6 @@
 #include "AtSmtpReceiverThread.h"
 
 #include "AtNumCvt.h"
-#include "AtSchannel.h"
 #include "AtSmtpGrammar.h"
 #include "AtSocketReader.h"
 #include "AtSocketWriter.h"
@@ -111,8 +110,9 @@ namespace At
 			try
 			{
 				Rp<SmtpReceiverAuthCx> l_authCx;
+				EhloHost l_ehloHost;
 				bool     l_haveMailFrom {};
-				uint64   l_fromSize {};
+				uint64   l_fromSize     {};
 				sizet    l_maxDataBytes {};
 				Vec<Str> l_toMailboxes;
 
@@ -152,9 +152,14 @@ namespace At
 					}
 					
 					if (cmd.m_cmd == "helo")
+					{
+						l_ehloHost = ParseEhloHost(cmd.m_params);
 						SendReply(conn, 250, ourName);
+					}
 					else if (cmd.m_cmd == "ehlo")
 					{
+						l_ehloHost = ParseEhloHost(cmd.m_params);
+
 						// Supported: SIZE (RFC 1870); PIPELINING (RFC 2920); STARTTLS (RFC 3207); 8BITMIME (RFC 6152)
 						Str ehloReply;
 						ehloReply.SetAdd(ourName,
@@ -236,7 +241,7 @@ namespace At
 											authDataReader.DropByte();
 											Seq const password = authDataReader.Trim();
 
-											EmailServerAuthResult result = m_workPool->SmtpReceiver_Authenticate(workItem->m_saRemote,
+											EmailServerAuthResult result = m_workPool->SmtpReceiver_Authenticate(workItem->m_saRemote, conn, ourName, l_ehloHost,
 												authorizationIdentity, authenticationIdentity, password, l_authCx);
 
 											if (EmailServerAuthResult::Success == result)
@@ -266,6 +271,14 @@ namespace At
 					{
 						SendReply(conn, 250, "RSET command successful");
 						rset();
+					}
+					else if (cmd.m_cmd == "noop")
+					{
+						SendReply(conn, 250, "NOOP command successful");
+					}
+					else if (cmd.m_cmd == "vrfy")
+					{
+						SendReply(conn, 252, "VRFY command is a no-op");
 					}
 					else if (cmd.m_cmd == "mail")
 					{
@@ -302,7 +315,7 @@ namespace At
 										instr.Init(l_authCx->SmtpReceiverAuthCx_OnMailFrom_HaveAuth(fromMailbox));
 									else
 									{
-										instr.Init(m_workPool->SmtpReceiver_OnMailFrom_NoAuth(workItem->m_saRemote, fromMailbox, l_authCx));
+										instr.Init(m_workPool->SmtpReceiver_OnMailFrom_NoAuth(workItem->m_saRemote, conn, ourName, l_ehloHost, fromMailbox, l_authCx));
 										if (instr->m_accept)
 											EnsureThrow(l_authCx.Any());
 									}
@@ -403,6 +416,26 @@ namespace At
 		{
 			// Just close the connection.
 		}
+	}
+
+
+	EhloHost SmtpReceiverThread::ParseEhloHost(Seq host)
+	{
+		host = host.Trim();
+		if (!host.Any())
+			return EhloHost(EhloHostType::Empty, Seq());
+
+		ParseTree pt { host };
+		if (!pt.Parse(Smtp::C_Domain_or_AddrLit))
+			return EhloHost(EhloHostType::Invalid, host);
+
+		if (pt.Root().FlatFind(Smtp::id_Domain))
+			return EhloHost(EhloHostType::Domain, host);
+
+		if (pt.Root().FlatFind(Smtp::id_AddrLit))
+			return EhloHost(EhloHostType::AddrLit, host);
+
+		return EhloHost(EhloHostType::Unexpected, host);
 	}
 
 

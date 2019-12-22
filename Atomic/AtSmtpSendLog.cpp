@@ -55,15 +55,15 @@ namespace At
 
 	void TextSmtpSendLog::Enc_Msg(Enc& enc, SmtpMsgToSend const& msg)
 	{
-		enc.Add(" <msg id=\"")    .Obj  (msg.m_entityId)
-		   .Add("\" next=\"")     .Obj  (msg.f_nextAttemptTime, TimeFmt::IsoMicroZ)
-		   .Add("\" status=\"")   .Add  (SmtpMsgStatus::Name(msg.f_status))
-		   .Add("\" from=\"")     .Add  (msg.f_fromAddress)
-		   .Add("\" toDomain=\"") .Add  (msg.f_toDomain)
-		   .Add("\" len=\"")      .UInt (msg.f_content.Len())
-		   .Add("\" tlsReq=\"")   .Add  (SmtpTlsAssurance::Name(msg.f_tlsRequirement))
-		   .Add("\" baseSecs=\"") .UInt (msg.f_baseSendSecondsMax)
-		   .Add("\" minBps=\"")   .UInt (msg.f_minSendBytesPerSec)
+		enc.Add(" <msg id=\"")      .Obj  (msg.m_entityId)
+		   .Add("\" next=\"")       .Obj  (msg.f_nextAttemptTime, TimeFmt::IsoMicroZ)
+		   .Add("\" status=\"")     .Add  (SmtpMsgStatus::Name(msg.f_status))
+		   .Add("\" from=\"")       .Add  (msg.f_fromAddress)
+		   .Add("\" toDomain=\"")   .Add  (msg.f_toDomain)
+		   .Add("\" len=\"")        .UInt (msg.f_content.Len())
+		   .Add("\" tlsReq=\"")     .Add  (SmtpTlsAssurance::Name(msg.f_tlsRequirement))
+		   .Add("\" baseSecs=\"")   .UInt (msg.f_baseSendSecondsMax)
+		   .Add("\" nrBytes1Sec=\"").UInt (msg.f_nrBytesToAddOneSec)
 		   .Add("\" retry=\"");
 
 		bool needSpace {};

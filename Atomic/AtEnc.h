@@ -31,7 +31,8 @@ namespace At
 		struct Meter : NoCopy
 		{
 		public:
-			sizet Written() const { EnsureThrow(m_enc->m_len >= m_originLen); return m_enc->m_len - m_originLen; }
+			sizet WrittenLen() const { EnsureThrow(m_enc->m_len >= m_originLen); return m_enc->m_len - m_originLen; }
+			Seq   WrittenSeq() const { return Seq { m_enc->Ptr() + m_originLen, WrittenLen() }; }
 			bool  Met() const { return m_maxTotalLen == m_enc->m_len; }
 
 		protected:

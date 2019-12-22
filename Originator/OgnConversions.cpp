@@ -142,7 +142,7 @@ void MimePart_FromOgn(Mime::Part& part, OgnPartStats& stats, OgnMsgPart const& o
 		else
 		{
 			sizet encLen = Base64::EncodeBaseLen(content.n);
-			part.m_contentEncoded = Base64::MimeEncode(content, pinStore.GetEnc(encLen), Base64::Padding::Yes, Base64::NewLines::None());
+			part.m_contentEncoded = Base64::MimeEncode(content, pinStore.GetEnc(encLen), Base64::Padding::Yes, Base64::NewLines::Mime());
 		}
 
 		stats.m_totalContentBytes += part.m_contentEncoded.n;
@@ -211,20 +211,22 @@ void OgnMbxResults_FromSmtp(Vec<OgnMbxResult>& ognMbxResults, Vec<OgnMbxResultSt
 
 void OgnMsgToSend_FromSmtp(OgnMsgToSend& ognMsg, OgnMsgStorage& storage, SmtpMsgToSend const& smtpMsg)
 {
-	ognMsg.m_entityId				=   OgnObjId_FromObjId(smtpMsg.m_entityId);
-	ognMsg.m_nextAttemptTime		=                      smtpMsg.f_nextAttemptTime.ToFt();
-	ognMsg.m_status					=    (OgnMsgStatus::E) smtpMsg.f_status;
-	ognMsg.m_tlsRequirement			= (OgnTlsAssurance::E) smtpMsg.f_tlsRequirement;
-	ognMsg.m_baseSendSecondsMax		=                      smtpMsg.f_baseSendSecondsMax;
-	ognMsg.m_minSendBytesPerSec		=                      smtpMsg.f_minSendBytesPerSec;
-	ognMsg.m_fromAddress			=       OgnSeq_FromSeq(smtpMsg.f_fromAddress);
-	ognMsg.m_toDomain				=       OgnSeq_FromSeq(smtpMsg.f_toDomain);
-	ognMsg.m_content				=       OgnSeq_FromSeq(smtpMsg.f_content);
-	ognMsg.m_deliveryContext		=       OgnSeq_FromSeq(smtpMsg.f_deliveryContext);
+	ognMsg.m_entityId		 =   OgnObjId_FromObjId(smtpMsg.m_entityId);
+	ognMsg.m_nextAttemptTime =                      smtpMsg.f_nextAttemptTime.ToFt();
+	ognMsg.m_status			 =    (OgnMsgStatus::E) smtpMsg.f_status;
+	ognMsg.m_tlsRequirement	 = (OgnTlsAssurance::E) smtpMsg.f_tlsRequirement;
+	ognMsg.m_fromAddress	 =       OgnSeq_FromSeq(smtpMsg.f_fromAddress);
+	ognMsg.m_toDomain		 =       OgnSeq_FromSeq(smtpMsg.f_toDomain);
+	ognMsg.m_content		 =       OgnSeq_FromSeq(smtpMsg.f_content);
+	ognMsg.m_deliveryContext =       OgnSeq_FromSeq(smtpMsg.f_deliveryContext);
 
-	ognMsg.m_customRetrySchedule = true;
+	ognMsg.m_customTimeout      = true;
+	ognMsg.m_baseSendSecondsMax	= smtpMsg.f_baseSendSecondsMax;
+	ognMsg.m_nrBytesToAddOneSec	= smtpMsg.f_nrBytesToAddOneSec;
+
+	ognMsg.m_customRetrySchedule       = true;
 	ognMsg.m_nrFutureRetryDelayMinutes = smtpMsg.f_futureRetryDelayMinutes.Len();
-	ognMsg.m_futureRetryDelayMinutes = smtpMsg.f_futureRetryDelayMinutes.Ptr();
+	ognMsg.m_futureRetryDelayMinutes   = smtpMsg.f_futureRetryDelayMinutes.Ptr();
 
 	OgnSeqVec_FromStrVec(storage.m_additionalMatchDomains, smtpMsg.f_additionalMatchDomains);
 	ognMsg.m_nrAdditionalMatchDomains = storage.m_additionalMatchDomains.Len();

@@ -20,7 +20,7 @@ public:
 	Str          SmtpSender_SenderComputerName (Seq fromDomainName) const override final;
 	void         SmtpSender_AddSchannelCerts   (Schannel& conn)           override final;
 
-	SmtpDeliveryInstr::E SmtpSender_OnDeliveryResult_InTx(SmtpMsgToSend& msg, Vec<MailboxResult> const& mailboxResults,
+	SmtpDeliveryInstr::E SmtpSender_InTx_OnDeliveryResult(SmtpMsgToSend& msg, Vec<MailboxResult> const& mailboxResults,
 		SmtpTlsAssurance::E tlsAssuranceAchieved) override final;
 
 public:

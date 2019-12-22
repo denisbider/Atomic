@@ -202,7 +202,7 @@ namespace At
 			EncodeUInt16   (actvCodeBinary, NumCast<uint32>(data.m_upgradeExpiryTime.ToUnixTime()) / Time::SecondsPerDay);
 			EncodeUInt16   (actvCodeBinary, data.m_signatureKeyIdNr);
 			EncodeByte     (actvCodeBinary, 0);
-			EnsureThrow(meter.Written() == encodedDataLen);
+			EnsureThrow(meter.WrittenLen() == encodedDataLen);
 
 			Str digest;
 			m_sha512.Begin(m_provSha512.Ref());

@@ -7,14 +7,15 @@ namespace At
 {
 	namespace Mime
 	{
-		// The destination string is not cleared. Encoded data is appended to the string.
+		// Worst case: every byte requires a "=HH" hex encoding and a 3-byte newline ("=\r\n") has to be inserted every 75 characters
+		// For faster computation, we use "plainLen >> 6" as an overestimate of "plainLen / 75"
+		inline sizet QuotedPrintableEncode_MaxLen(sizet plainLen) { return 3*(plainLen + (plainLen >> 6)); }
 
-		void QuotedPrintableEncode(Seq plain, Enc& encoded);
+		Seq QuotedPrintableEncode(Seq plain, Enc& encoded);
 	
+		inline sizet QuotedPrintableDecode_MaxLen(sizet encodedLen) { return encodedLen; }
 
-		// The destination buffer is not cleared. Decoded data is appended.
-		// Invalid escape sequences are preserved verbatim.
-
-		void QuotedPrintableDecode(Seq& encoded, Enc& decoded);
+		// Invalid escape sequences are preserved verbatim
+		Seq QuotedPrintableDecode(Seq& encoded, Enc& decoded);
 	}
 }

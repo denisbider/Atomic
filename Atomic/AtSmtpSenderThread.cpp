@@ -92,6 +92,7 @@ namespace At
 	{
 		AutoFree<SmtpSenderWorkItem> workItem { (SmtpSenderWorkItem*) pvWorkItem };
 		Rp<SmtpMsgToSend>&           msg      { workItem->m_msg };
+		Seq                          content  { workItem->m_content };
 		
 		SockInit            sockInit;
 		Vec<MailboxResult>  mailboxResults;
@@ -112,18 +113,18 @@ namespace At
 				if (msg->f_baseSendSecondsMax > 0)
 				{
 					uint64 expireMsBase { NumCast<uint64>(msg->f_baseSendSecondsMax) * 1000 };
-					uint64 expireMsAdd { msg->f_content.Len() / PickMax<uint64>(msg->f_minSendBytesPerSec, 10) };
+					uint64 expireMsAdd { content.Len() / PickMax<uint64>(msg->f_nrBytesToAddOneSec, 10) };
 					timeouts.SetOverallExpireMs(expireMsBase + expireMsAdd);
 				}
 
 				// Does the message contain 8-bit characters?
-				bool contains8bit { Seq(msg->f_content).ContainsAnyByteNotOfType(Ascii::Is7Bit) };
+				bool contains8bit { content.ContainsAnyByteNotOfType(Ascii::Is7Bit) };
 
 				// Send the message
 				if (cfg.f_useRelay)
-					LookupRelayAndSendMsg(cfg, timeouts, msg.Ref(), contains8bit, mailboxResults, tlsAssuranceAchieved);
+					LookupRelayAndSendMsg(cfg, timeouts, msg.Ref(), content, contains8bit, mailboxResults, tlsAssuranceAchieved);
 				else
-					FindMailExchangersAndSendMsg(cfg, timeouts, msg.Ref(), contains8bit, mailboxResults, tlsAssuranceAchieved);
+					FindMailExchangersAndSendMsg(cfg, timeouts, msg.Ref(), content, contains8bit, mailboxResults, tlsAssuranceAchieved);
 			}
 			catch (DeliveryFailure& e)			
 			{
@@ -146,7 +147,7 @@ namespace At
 		m_workPool->GetStore().RunTx(GetStopCtl(), typeid(*this), [&] ()
 			{
 				Rp<SmtpMsgToSend> txMsg { new SmtpMsgToSend(msg.Ref()) };
-				SmtpDeliveryInstr::E instr = m_workPool->SmtpSender_OnDeliveryResult_InTx(txMsg.Ref(), mailboxResults, tlsAssuranceAchieved);
+				SmtpDeliveryInstr::E instr = m_workPool->SmtpSender_InTx_OnDeliveryResult(txMsg.Ref(), mailboxResults, tlsAssuranceAchieved);
 
 				txMsg->f_pendingMailboxes.Clear();
 				for (MailboxResult const& result : mailboxResults)
@@ -177,7 +178,7 @@ namespace At
 	}
 
 
-	void SmtpSenderThread::LookupRelayAndSendMsg(SmtpSenderCfg const& cfg, Timeouts const& timeouts, SmtpMsgToSend const& msg, bool contains8bit,
+	void SmtpSenderThread::LookupRelayAndSendMsg(SmtpSenderCfg const& cfg, Timeouts const& timeouts, SmtpMsgToSend const& msg, Seq const content, bool contains8bit,
 		Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved)
 	{
 		EnsureThrow(cfg.f_useRelay);
@@ -208,7 +209,7 @@ namespace At
 		for (Map<LookedUpAddr>::ConstIt addrIt = addrs.begin(); addrIt.Any(); ++addrIt)
 		{
 			if (SendAttempter::Result::Stop == sendAttempter.TrySendMsgToMailExchanger(
-					*this, cfg, timeouts, addrIt.Ref(), true, msg, contains8bit, mailboxResults, tlsAssuranceAchieved))
+					*this, cfg, timeouts, addrIt.Ref(), true, msg, content, contains8bit, mailboxResults, tlsAssuranceAchieved))
 				break;
 		}
 
@@ -216,7 +217,7 @@ namespace At
 	}
 
 
-	void SmtpSenderThread::FindMailExchangersAndSendMsg(SmtpSenderCfg const& cfg, Timeouts const& timeouts, SmtpMsgToSend const& msg, bool contains8bit,
+	void SmtpSenderThread::FindMailExchangersAndSendMsg(SmtpSenderCfg const& cfg, Timeouts const& timeouts, SmtpMsgToSend const& msg, Seq const content, bool contains8bit,
 		Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved)
 	{
 		EnsureThrow(!cfg.f_useRelay);
@@ -313,7 +314,7 @@ namespace At
 
 			// Try sending to this mail exchanger address
 			if (SendAttempter::Result::Stop == sendAttempter.TrySendMsgToMailExchanger(
-					*this, cfg, timeouts, *mxa, haveMxDomainMatch, msg, contains8bit, mailboxResults, tlsAssuranceAchieved))
+					*this, cfg, timeouts, *mxa, haveMxDomainMatch, msg, content, contains8bit, mailboxResults, tlsAssuranceAchieved))
 				break;
 		}
 
@@ -323,12 +324,12 @@ namespace At
 
 	SmtpSenderThread::SendAttempter::Result SmtpSenderThread::SendAttempter::TrySendMsgToMailExchanger(
 		SmtpSenderThread& outer, SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, bool haveMxDomainMatch,
-		SmtpMsgToSend const& msg, bool contains8bit, Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved)
+		SmtpMsgToSend const& msg, Seq const content, bool contains8bit, Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved)
 	{
 		try
 		{
 			mailboxResults.Clear();
-			outer.SendMsgToMailExchanger(cfg, timeouts, mxa, haveMxDomainMatch, msg, contains8bit, mailboxResults, tlsAssuranceAchieved);
+			outer.SendMsgToMailExchanger(cfg, timeouts, mxa, haveMxDomainMatch, msg, content, contains8bit, mailboxResults, tlsAssuranceAchieved);
 			
 			// No exception thrown indicates no blanket failure for all mailboxes being delivered to.
 			// It does not guarantee successful delivery to any mailbox - all of them may have failed
@@ -480,7 +481,7 @@ namespace At
 	//         -> Retry with TLS.
 
 	void SmtpSenderThread::SendMsgToMailExchanger(SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, bool haveMxDomainMatch,
-		SmtpMsgToSend const& msg, bool contains8bit, Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved)
+		SmtpMsgToSend const& msg, Seq const content, bool contains8bit, Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved)
 	{
 		enum { MaxReconnectsDueToLikelyDhIssue = 2 };
 		sizet nrReconnectsDueToLikelyDhIssue {};
@@ -723,9 +724,9 @@ namespace At
 			throw PermFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Capabilities, SmtpSendErr::Capabilities_8BitMimeRequired, Seq()));
 
 		// SIZE supported? Is there a max size?
-		if (l_supports_size && l_size_max > 0 && msg.f_content.Len() > l_size_max)
+		if (l_supports_size && l_size_max > 0 && content.Len() > l_size_max)
 			throw PermFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Capabilities, SmtpSendErr::Capabilities_Size,
-				Str("Destination MX message size limit: ").UInt(l_size_max).Add(" bytes, size of message: ").UInt(msg.f_content.Len()).Add(" bytes")));
+				Str("Destination MX message size limit: ").UInt(l_size_max).Add(" bytes, size of message: ").UInt(content.Len()).Add(" bytes")));
 
 		// Authenticate?
 		if (cfg.f_useRelay && cfg.f_relayAuthType != MailAuthType::None)
@@ -779,7 +780,7 @@ namespace At
 			mailFrom.ReserveExact(50 + msg.f_fromAddress.Len());
 			mailFrom.Add("MAIL FROM:<").Add(msg.f_fromAddress).Add(">");
 			if (l_supports_size)
-				mailFrom.Add(" SIZE=").UInt(msg.f_content.Len());
+				mailFrom.Add(" SIZE=").UInt(content.Len());
 			if (l_supports_8BitMime)
 				mailFrom.Add(If(contains8bit, char const*, " BODY=8BITMIME", " BODY=7BIT"));
 			mailFrom.Add("\r\n");
@@ -839,7 +840,7 @@ namespace At
 			// Send message content
 			{
 				// Escape dots in content, if needed, before sending
-				Seq orig       { msg.f_content };
+				Seq orig       { content };
 				Seq dataToSend { orig };
 				Str escaped;
 

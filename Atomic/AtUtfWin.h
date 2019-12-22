@@ -30,12 +30,15 @@ namespace At
 		{ Vec<wchar_t> convertBuf; StrCvtCp(in, out, inCodePage, outCodePage, convertBuf); }
 
 
-	// Use ToNormUtf8 instead of StrCvtCp when accepting input from external sources and converting it for internal use
+	// Use ToUtf8Norm instead of StrCvtCp when accepting input from external sources and converting it for internal use
 
-	void ToNormUtf8(Seq in, Str& out, UINT inCodePage, Vec<wchar_t>& convertBuf1, Vec<wchar_t>& convertBuf2);
+	void ToUtf8Norm(Seq in, Str& out, UINT inCodePage, Vec<wchar_t>& convertBuf1, Vec<wchar_t>& convertBuf2);
 
-	inline void ToNormUtf8(Seq in, Str& out, UINT inCodePage)
-		{ Vec<wchar_t> convertBuf1, convertBuf2; ToNormUtf8(in, out, inCodePage, convertBuf1, convertBuf2); }
+	inline void ToUtf8Norm(Seq in, Str& out, UINT inCodePage)
+		{ Vec<wchar_t> convertBuf1, convertBuf2; ToUtf8Norm(in, out, inCodePage, convertBuf1, convertBuf2); }
+
+	inline Str ToUtf8Norm(Seq in, UINT inCodePage)
+		{ Str s; ToUtf8Norm(in, s, inCodePage); return s; }
 
 
 	// For case insensitive comparisons and sorting, consider supporting LCMapStringEx(LCMAP_SORTKEY)

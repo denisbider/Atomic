@@ -440,8 +440,8 @@ namespace At
 		}
 	};
 
+
 	template <class T>         struct Vec    : VecCore<VecBaseHeap<T>>    { Vec   () = default; Vec   (sizet i) { Resize(i); } };
 	template <class T, uint C> struct VecFix : VecCore<VecBaseFixed<T,C>> { VecFix() = default; VecFix(sizet i) { Resize(i); } };
 
 }
-

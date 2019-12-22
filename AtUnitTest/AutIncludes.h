@@ -26,6 +26,7 @@
 #include "AtStr.h"
 #include "AtTextBuilder.h"
 #include "AtTime.h"
+#include "AtUtfWin.h"
 #include "AtWaitEsc.h"
 
 using namespace At;

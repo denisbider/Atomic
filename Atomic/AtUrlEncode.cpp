@@ -25,8 +25,8 @@ namespace At
 		
 			nameCp .Clear().UrlDecode(name);
 			valueCp.Clear().UrlDecode(value);
-			ToNormUtf8(nameCp,  nameUtf8,  inCp, convertBuf1, convertBuf2);
-			ToNormUtf8(valueCp, valueUtf8, inCp, convertBuf1, convertBuf2);
+			ToUtf8Norm(nameCp,  nameUtf8,  inCp, convertBuf1, convertBuf2);
+			ToUtf8Norm(valueCp, valueUtf8, inCp, convertBuf1, convertBuf2);
 
 			nvp.Add(nameUtf8, valueUtf8);
 		

@@ -1,12 +1,15 @@
 #include "AtIncludes.h"
 #include "AtUtfWin.h"
 
+#include "AtDllNormaliz.h"
 #include "AtNumCvt.h"
 #include "AtUtf8.h"
 #include "AtWinErr.h"
 
+
 namespace At
 {
+
 	void ToUtf16(Seq in, Vec<wchar_t>& out, UINT inCodePage, NullTerm::E nt)
 	{
 		if (!in.n)
@@ -50,13 +53,13 @@ namespace At
 			out.Resize(0);
 		else
 		{
-			int rc = NormalizeString(NormalizationC, pStr, nWideChars, 0, 0);
+			int rc = Call_NormalizeString(NormalizationC, pStr, nWideChars, 0, 0);
 			if (rc <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("NormalizeUtf16: Error in first call to NormalizeString"); }
 
 			out.Resize((sizet) rc);
 
-			rc = NormalizeString(NormalizationC, pStr, nWideChars, out.Ptr(), rc);
+			rc = Call_NormalizeString(NormalizationC, pStr, nWideChars, out.Ptr(), rc);
 			if (rc <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("NormalizeUtf16: Error in second call to NormalizeString"); }
 
@@ -130,7 +133,7 @@ namespace At
 	}
 
 
-	void ToNormUtf8(Seq in, Str& out, UINT inCodePage, Vec<wchar_t>& convertBuf1, Vec<wchar_t>& convertBuf2)
+	void ToUtf8Norm(Seq in, Str& out, UINT inCodePage, Vec<wchar_t>& convertBuf1, Vec<wchar_t>& convertBuf2)
 	{
 		out.Clear();
 	
@@ -140,13 +143,13 @@ namespace At
 			int inSize = NumCast<int>(in.n);
 			int wcCount = MultiByteToWideChar(inCodePage, 0, (LPCSTR) in.p, inSize, 0, 0);
 			if (wcCount <= 0)
-				{ LastWinErr e; throw e.Make<InputErr>("ToNormUtf8: Error in first call to MultiByteToWideChar"); }
+				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in first call to MultiByteToWideChar"); }
 
 			convertBuf1.Resize((sizet) wcCount);
 
 			wcCount = MultiByteToWideChar(inCodePage, 0, (LPCSTR) in.p, inSize, convertBuf1.Ptr(), wcCount);
 			if (wcCount <= 0)
-				{ LastWinErr e; throw e.Make<InputErr>("ToNormUtf8: Error in second call to MultiByteToWideChar"); }
+				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in second call to MultiByteToWideChar"); }
 
 			convertBuf1.Resize((sizet) wcCount);
 		
@@ -157,13 +160,13 @@ namespace At
 			// Convert to UTF-8
 			int mbCount = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR) convertBuf2.Ptr(), wcCount, 0, 0, 0, 0);
 			if (mbCount <= 0)
-				{ LastWinErr e; throw e.Make<InputErr>("ToNormUtf8: Error in first call to WideCharToMultiByte"); }
+				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in first call to WideCharToMultiByte"); }
 		
 			out.Resize((sizet) mbCount);
 
 			mbCount = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR) convertBuf2.Ptr(), wcCount, (LPSTR) out.Ptr(), mbCount, 0, 0);			
 			if (mbCount <= 0)
-				{ LastWinErr e; throw e.Make<InputErr>("ToNormUtf8: Error in second call to WideCharToMultiByte"); }
+				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in second call to WideCharToMultiByte"); }
 			
 			out.Resize((sizet) mbCount);
 		}

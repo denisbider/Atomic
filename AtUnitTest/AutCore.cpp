@@ -20,8 +20,8 @@ void TestStr(Seq desc, Str const& left, Str const& right, bool expected)
 	else
 	{
 		Str msg = "FAIL\r\n";
-		msg.Add("  l: ").Add(left).Add("\r\n")
-		   .Add("  r: ").Add(right).Add("\r\n");
+		msg.Add("  l: ").Add(left).Add(" (hex: ").Hex(left).Add(")\r\n")
+		   .Add("  r: ").Add(right).Add(" (hex: ").Hex(right).Add(")\r\n");
 		Console::Out(msg);
 	}
 };
@@ -95,6 +95,8 @@ void CoreTests()
 	TEST_STR_EQ(Str("a").Chars(100, 'a').Chars(1000, 'a'), Str().Chars(1101, 'a'));
 	TEST_STR_EQ(Str("a").Chars(100, 'a').Chars(1000, 'a').Resize(5), "aaaaa");
 	TEST_STR_EQ(Seq(Str("a").Chars(100, 'a').Chars(1000, 'a').Byte(0).CharPtr()), Str().Chars(1101, 'a'));
+
+	TEST_STR_EQ(ToUtf8Norm("\xE1\xE9\xED\xF3\xFA", 1250), "\xC3\xA1\xC3\xA9\xC3\xAD\xC3\xB3\xC3\xBA");
 
 	TEST_STR_EQ(Seq(Str().Dbl(0.0, 0)), "0.");
 	TEST_STR_EQ(Seq(Str().Dbl(0.0, 1)), "0.0");

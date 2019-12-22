@@ -586,6 +586,8 @@ namespace At
 		}
 
 
+		// Address
+
 		void Address::Read(ParseNode const& addressNode, PinStore& store)
 		{
 			EnsureThrow(addressNode.IsType(id_address));
@@ -603,6 +605,7 @@ namespace At
 			}
 		}
 
+
 		void Address::Write(MsgWriter& writer) const
 		{
 			if (m_type == Type::Mailbox)
@@ -612,6 +615,36 @@ namespace At
 		}
 
 
+		sizet Address::ExtractAddrSpecs(Vec<AddrSpec>& addrSpecs) const
+		{
+			sizet n {};
+
+			switch (m_type)
+			{
+			case Address::Type::Mailbox:
+				addrSpecs.Add(m_mbox.m_addr);
+				++n;
+				break;
+
+			case Address::Type::Group:
+				for (Mailbox const& m : m_group.m_mboxes)
+				{
+					addrSpecs.Add(m.m_addr);
+					++n;
+				}
+				break;
+
+			case Address::Type::None:
+				break;
+			}
+
+			return n;
+		}
+
+
+
+		// AddressList
+
 		void AddressList::Read(ParseNode const& addressListNode, PinStore& store)
 		{
 			EnsureThrow(addressListNode.IsType(id_address_list));
@@ -620,6 +653,7 @@ namespace At
 				if (c.IsType(id_address))
 					m_addresses.Add().Read(c, store);
 		}
+
 
 		void AddressList::Write(MsgWriter& writer) const
 		{
@@ -633,6 +667,15 @@ namespace At
 					a.Write(writer);
 				}
 			}
+		}
+
+
+		sizet AddressList::ExtractAddrSpecs(Vec<AddrSpec>& addrSpecs) const
+		{
+			sizet n {};
+			for (Address const& a : m_addresses)
+				n += a.ExtractAddrSpecs(addrSpecs);
+			return n;
 		}
 
 
@@ -882,19 +925,12 @@ namespace At
 			LocateParts();
 		}
 
-		bool Message::ReadMultipartBody(PinStore& store)
+		bool Message::ReadMultipartBody(PinStore& store, Mime::PartReadCx& prcx)
 		{
 			if (!IsMultipart()) return false;
-			if (!m_multipartBody.Read(m_contentEncoded, store)) return false;
-
+			bool success = m_multipartBody.Read(m_contentEncoded, store, prcx);
 			LocateParts();
-			return true;
-		}
-
-		void Message::ReadMultipartBody(ParseTree const& ptBody, PinStore& store)
-		{
-			m_multipartBody.Read(ptBody, store);
-			LocateParts();
+			return success;
 		}
 
 		void Message::Write(MsgWriter& writer) const
@@ -1076,16 +1112,24 @@ namespace At
 
 		// Email addresses
 
-		bool ExtractLocalPartAndDomainFromEmailAddress(Seq address, Str* localPart, Str* domain)
+		bool ReadEmailAddressAsAddrSpec(Seq address, AddrSpecWithStore& addrSpec)
 		{
 			ParseTree pt { address };
 			if (!pt.Parse(C_addr_spec))
 				return false;
 
 			ParseNode const& addrSpecNode { pt.Root().FlatFindRef(id_addr_spec) };
-			PinStore store { address.n };
-			AddrSpec addrSpec;
-			addrSpec.Read(addrSpecNode, store);
+			addrSpec.m_pinStore.Init(address.n);
+			addrSpec.Read(addrSpecNode, addrSpec.m_pinStore.Ref());
+			return true;
+		}
+
+
+		bool ExtractLocalPartAndDomainFromEmailAddress(Seq address, Str* localPart, Str* domain)
+		{
+			AddrSpecWithStore addrSpec;
+			if (!ReadEmailAddressAsAddrSpec(address, addrSpec))
+				return false;
 
 			if (localPart)
 				localPart->Set(addrSpec.m_localPart);

@@ -12,7 +12,7 @@ namespace At
 	void SmtpReceiver::SmtpReceiver_AddSchannelCerts(Schannel&)
 		{ throw NotImplemented(); }
 
-	EmailServerAuthResult SmtpReceiver::SmtpReceiver_Authenticate(SockAddr const&, Seq, Seq, Seq, Rp<SmtpReceiverAuthCx>&)
+	EmailServerAuthResult SmtpReceiver::SmtpReceiver_Authenticate(SockAddr const&, Schannel&, Seq, EhloHost const&, Seq, Seq, Seq, Rp<SmtpReceiverAuthCx>&)
 		{ throw NotImplemented(); }
 
 	EntVec<EmailSrvBinding> const& SmtpReceiver::EmailServer_GetCfgBindings()

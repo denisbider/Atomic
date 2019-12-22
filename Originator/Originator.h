@@ -379,8 +379,9 @@ struct OgnMsgToSend
 	OgnTlsAssurance::E	m_tlsRequirement            {};
 	size_t				m_nrAdditionalMatchDomains  {};
 	OgnSeq const*		m_additionalMatchDomains    {}; // If tlsRequirement == Tls_DomainMatch, additional domain names that also match; e.g. "google.com" for email sent to GMail
+	bool                m_customTimeout             {}; // If true, m_baseSendSecondsMax and m_nrBytesToAddOneSec are used. If false, these fields are ignored
 	uint64_t			m_baseSendSecondsMax        {}; // Pass zero to rely only on the extremely long timeouts defined by the SMTP RFC
-	uint64_t			m_minSendBytesPerSec        {}; // Used if m_baseSendSecondsMax != 0. The smaller this number, the more the maximum send time is extended by message size
+	uint64_t			m_nrBytesToAddOneSec        {}; // Used if m_baseSendSecondsMax != 0. The smaller this number, the more the maximum send time is extended by message size
 	OgnSeq				m_fromAddress               {};
 	size_t				m_nrPendingMailboxes        {};
 	OgnSeq const*		m_pendingMailboxes          {}; // Mailboxes are removed as delivery succeeds or permanently fails

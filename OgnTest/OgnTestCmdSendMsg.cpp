@@ -7,7 +7,7 @@
 void CmdSendMsg(CmdlArgs& args)
 {
 	bool haveRetryStr {};
-	std::string stgsFile, retryStr, tlsReqStr, baseSecsMaxStr, minBpsStr, fromAddr, toDomain, contentFile, ctx;
+	std::string stgsFile, retryStr, tlsReqStr, baseSecsMaxStr, nrBytes1SecStr, fromAddr, toDomain, contentFile, ctx;
 	std::vector<std::string> addlDomainStrs, mboxStrs;
 
 	while (args.More())
@@ -18,7 +18,7 @@ void CmdSendMsg(CmdlArgs& args)
 		else if (arg == "-retry"       ) { retryStr       = args.Next(); haveRetryStr = true; }
 		else if (arg == "-tlsreq"      )   tlsReqStr      = args.Next();
 		else if (arg == "-basesecsmax" )   baseSecsMaxStr = args.Next();
-		else if (arg == "-minbps"      )   minBpsStr      = args.Next();
+		else if (arg == "-nrbytes1sec" )   nrBytes1SecStr = args.Next();
 		else if (arg == "-from"        )   fromAddr       = args.Next();
 		else if (arg == "-todomain"    )   toDomain       = args.Next();
 		else if (arg == "-content"     )   contentFile    = args.Next();
@@ -55,9 +55,9 @@ void CmdSendMsg(CmdlArgs& args)
 		if (!StringToUInt64Dec(baseSecsMaxStr, msg.m_baseSendSecondsMax))
 			throw UsageErr("Unrecognized -basesecsmax parameter value: " + baseSecsMaxStr);
 
-	if (!minBpsStr.empty())
-		if (!StringToUInt64Dec(minBpsStr, msg.m_minSendBytesPerSec))
-			throw UsageErr("Unrecognized -minbps parameter value: " + minBpsStr);
+	if (!nrBytes1SecStr.empty())
+		if (!StringToUInt64Dec(nrBytes1SecStr, msg.m_nrBytesToAddOneSec))
+			throw UsageErr("Unrecognized -nrbytes1sec parameter value: " + nrBytes1SecStr);
 
 	std::vector<OgnSeq> addlDomainSeqs, mboxSeqs;
 	OgnSeqVec_FromStringVec(addlDomainStrs, addlDomainSeqs, msg.m_nrAdditionalMatchDomains, msg.m_additionalMatchDomains );

@@ -38,6 +38,20 @@
 #include <TlHelp32.h>
 
 
+// Macros that might require a newer Windows SDK version
+#ifndef SP_PROT_TLS1_3_SERVER
+#define SP_PROT_TLS1_3_SERVER 0x00001000
+#endif
+
+#ifndef SP_PROT_TLS1_3_CLIENT
+#define SP_PROT_TLS1_3_CLIENT 0x00002000
+#endif
+
+#ifndef SP_PROT_TLS1_3
+#define SP_PROT_TLS1_3 (SP_PROT_TLS1_3_SERVER | SP_PROT_TLS1_3_CLIENT)
+#endif
+
+
 // Macros not defined when compiling with "v140_xp" build tools
 #ifndef FILE_ATTRIBUTE_INTEGRITY_STREAM
 #define FILE_ATTRIBUTE_INTEGRITY_STREAM 0x00008000

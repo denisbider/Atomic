@@ -75,7 +75,7 @@ namespace At
 
 		Seq RawKnownHeader(HTTP_KNOWN_HEADER const& h) const	{ return Seq(h.pRawValue, h.RawValueLength); }
 		Seq RawKnownHeader(HTTP_HEADER_ID id) const				{ return RawKnownHeader(m_req->Headers.KnownHeaders[id]); }
-		Seq Referrer() const { if (!m_referrer.Any()) { m_referrer.Init(); ToNormUtf8(RawKnownHeader(HttpHeaderReferer), m_referrer.Ref(), CP_UTF8); } return m_referrer.Ref(); }
+		Seq Referrer() const { if (!m_referrer.Any()) { m_referrer.Init(); ToUtf8Norm(RawKnownHeader(HttpHeaderReferer), m_referrer.Ref(), CP_UTF8); } return m_referrer.Ref(); }
 	
 		InsensitiveNameValuePairsWithStore const& CookiesNvp () const { if (!m_cookiesNvp.Any()) ParseCookiesNvp(); return m_cookiesNvp.Ref();      }
 		InsensitiveNameValuePairsWithStore&       CfmNvp     ()       { if (!m_cfmNvp.Any())     m_cfmNvp.Init();   return m_cfmNvp.Ref();          }  // Initialized in WebRequestHandler::CheckCfmCookie()
@@ -95,6 +95,8 @@ namespace At
 
 		void ForEachFileInput(std::function<bool (Mime::Part const& part, Seq fileName)> action);
 		void ForEachLineInEachFileInput(std::function<bool (Mime::Part const& part, Seq fileName, Seq line)> action);
+
+		PinStore& GetPinStore() { return m_pinStore; }
 
 		uint64 RequestId() const { return m_req->RequestId; }
 		Time RequestTime() const { if (!m_requestTime) m_requestTime = Time::StrictNow(); return m_requestTime; }
@@ -128,7 +130,7 @@ namespace At
 		mutable Opt<InsensitiveNameValuePairsWithStore> m_queryNvp;
 		mutable Opt<InsensitiveNameValuePairsWithStore> m_postNvp;
 		mutable Vec<Seq> m_consumedPostFormSecurityElements;
-		mutable PinStore m_multipartPinStore { 4000 };
+		mutable PinStore m_pinStore { 4000 };
 		mutable Mime::MultipartBody m_multipartBody;
 
 		mutable Time m_requestTime;

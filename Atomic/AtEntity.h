@@ -277,7 +277,7 @@ namespace At
 		void       Load           (ObjId refObjId);
 		void       Put            (PutType::E putType, ObjId parentRefObjId);
 		ChildCount RemoveChildren ();
-		void       Remove         ();
+		void       Remove         ();		// Entity to be removed must not have children
 
 		// It is okay to pass ObjId::None for parentRefObjId, if and only if the parent has been previously read by the current transaction.
 		// If the parent has not been loaded, EnsureAbort will be triggered if parent is removed, and there is no parentRefObjId to cause a RetryTxException.
@@ -295,9 +295,14 @@ namespace At
 		// Use this to load any entity which is referenced by an ObjId contained in this entity.
 		// Do NOT use this to load this entity's parent: that would load the parent using the wrong refObjId,
 		// leading to subtle errors and inconsistencies. To load this entity's parent, use GetParent().
+		// Also do NOT use on contained entities: in that case, use it on the containing entity instead.
 		template <class EntityType>
 		Rp<EntityType> GetReferencedEntity(ObjId entityId) const
-			{ return m_store->GetEntityOfKind<EntityType>(entityId, m_contentObjId); }
+		{
+			EnsureThrow(m_store != nullptr);
+			EnsureThrow(m_contentObjId.Any());
+			return m_store->GetEntityOfKind<EntityType>(entityId, m_contentObjId);
+		}
 
 		template <EnumDir Direction = EnumDir::Forward>
 		void EnumAllChildren(std::function<bool (EntityChildInfo const&)> onMatch)

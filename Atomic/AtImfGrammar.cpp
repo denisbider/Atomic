@@ -647,7 +647,8 @@ namespace At
 		bool C_message_fields   (ParseNode& p) { return           G_Req<0,1>           (p, id_message_fields,   G_Repeat<C_tr_resent_fields>, C_main_fields                                                        ); }
 																					  																														     
 		bool C_body             (ParseNode& p) { return           G_Repeat             (p, id_body,             V_ByteAny                                                                                          ); }
-		bool C_message          (ParseNode& p) { return           G_Req<1,0,1>         (p, id_message,          C_message_fields, G_Req<C_CRLF, C_body>, N_End                                                     ); }
+		bool C_CRLF_body        (ParseNode& p) { return           G_Req<1,0>           (p, id_Append,           C_CRLF, C_body                                                                                     ); }
+		bool C_message          (ParseNode& p) { return           G_Req<1,0,1>         (p, id_message,          C_message_fields, C_CRLF_body, N_End                                                               ); }
 
 
 		bool C_opt_field_name(ParseNode& p)

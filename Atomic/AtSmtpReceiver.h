@@ -12,6 +12,18 @@
 namespace At
 {
 
+	enum class EhloHostType { Unexpected, Empty, Invalid, Domain, AddrLit };
+
+	struct EhloHost
+	{
+		EhloHostType m_type {};
+		Str          m_host;
+
+		EhloHost() {}
+		EhloHost(EhloHostType type, Seq host) : m_type(type), m_host(host) {}
+	};
+
+
 	struct SmtpReceiveInstruction
 	{
 		bool  m_accept;
@@ -21,6 +33,7 @@ namespace At
 
 		static SmtpReceiveInstruction Accept(sizet dataBytesToAccept)       { return SmtpReceiveInstruction(true, dataBytesToAccept, 0, Seq()); }
 		static SmtpReceiveInstruction Refuse(uint replyCode, Seq replyText) { return SmtpReceiveInstruction(false, 0, replyCode, replyText); }
+		static SmtpReceiveInstruction Refuse_Unexpected()                   { return SmtpReceiveInstruction(false, 0, 554, "5.3.0 Unexpected internal state"); }
 
 	private:
 		SmtpReceiveInstruction(bool accept, sizet dataBytesToAccept, uint replyCode, Seq replyText)
@@ -61,7 +74,7 @@ namespace At
 		virtual bool SmtpReceiver_AuthSupported    () { return false; }
 		virtual void SmtpReceiver_AddSchannelCerts (Schannel&);
 
-		virtual EmailServerAuthResult SmtpReceiver_Authenticate(SockAddr const& fromHost,
+		virtual EmailServerAuthResult SmtpReceiver_Authenticate(SockAddr const& fromHost, Schannel& conn, Seq ourName, EhloHost const& ehloHost,
 			Seq authorizationIdentity, Seq authenticationIdentity, Seq password, Rp<SmtpReceiverAuthCx>& authCx);
 
 		// Called instead of authCx.SmtpReceiverAuthCx_OnMailFrom_HaveAuth if authCx is null.
@@ -69,7 +82,8 @@ namespace At
 		// The resulting authCx will have OnRcptTo and OnData methods called, but not OnMailFrom.
 		// Just because this function returns SmtpReceiveInstruction::Accept doesn't mean the MAIL FROM command will be replied to positively.
 		// If dataBytesToAccept is less than the declared message size, the MAIL FROM command will be refused.
-		virtual SmtpReceiveInstruction SmtpReceiver_OnMailFrom_NoAuth(SockAddr const& fromHost, Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx) = 0;
+		virtual SmtpReceiveInstruction SmtpReceiver_OnMailFrom_NoAuth(SockAddr const& fromHost, Schannel& conn, Seq ourName, EhloHost const& ehloHost,
+			Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx) = 0;
 
 	private:
 		SmtpReceiverCfg m_cfg { Entity::Contained };

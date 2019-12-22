@@ -372,6 +372,17 @@ namespace At
 	}
 
 
+	void Schannel::GetTlsInfo(TlsInfo& tlsInfo)
+	{
+		tlsInfo.m_tlsStarted = TlsStarted();
+		if (tlsInfo.m_tlsStarted)
+		{
+			tlsInfo.m_connInfoStatus   = QueryContextAttributesW(&m_ctxt, SECPKG_ATTR_CONNECTION_INFO, &tlsInfo.m_connInfo   );
+			tlsInfo.m_cipherInfoStatus = QueryContextAttributesW(&m_ctxt, SECPKG_ATTR_CIPHER_INFO,     &tlsInfo.m_cipherInfo );		
+		}
+	}
+
+
 	void Schannel::SendTokenBufs(SecBufs const& bufs)
 	{
 		for (SecBuffer const& sb : bufs.m_bufs)

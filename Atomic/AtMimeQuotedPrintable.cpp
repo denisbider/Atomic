@@ -7,9 +7,9 @@ namespace At
 	{
 		// Quoted-Printable encoding and decoding implemented according to RFC 2045, section 6.7
 
-		void QuotedPrintableEncode(Seq plain, Enc& encoded)
+		Seq QuotedPrintableEncode(Seq plain, Enc& encoded)
 		{
-			encoded.ReserveInc(2 * plain.n);
+			Enc::Meter meter = encoded.IncMeter(QuotedPrintableEncode_MaxLen(plain.n));
 
 			sizet lineLen = 0;
 			while (plain.n != 0)
@@ -23,17 +23,17 @@ namespace At
 				}
 				else
 				{
-					uint c         { plain.ReadByte() };
-					bool endOfLine { (!plain.n || plain.StartsWithExact("\r\n")) };
-					bool verbatim  { ((c == 32 && !endOfLine)	||		// Skip !"#$ (33 -36). Also, space must be escaped at end of line
+					uint c         = plain.ReadByte();
+					bool endOfLine = (!plain.n || plain.StartsWithExact("\r\n"));
+					bool verbatim  = ((c == 32 && !endOfLine)	||		// Skip !"#$ (33 -36). Also, space must be escaped at end of line
 									  (c >= 37 && c <= 60)		||		// Skip =    (61)
 									  (c >= 62 && c <= 63)		||		// Skip @    (64)
 									  (c >= 65 && c <= 90)		||      // Skip [\]^ (91 - 94)
 									  (c == 95)					||      // Skip `    (96)
-									  (c >= 97 && c <= 122)) };			// Skip {|}~ (123 - 126)
+									  (c >= 97 && c <= 122));			// Skip {|}~ (123 - 126)
 
-					sizet newLen { lineLen + (verbatim ? 1 : 3)  };
-					sizet maxLen { (sizet) (endOfLine ? 76 : 75) };
+					sizet newLen = lineLen + (verbatim ? 1 : 3);
+					sizet maxLen = (sizet) (endOfLine ? 76 : 75);
 					if (newLen > maxLen)
 					{
 						encoded.Add("=\r\n");
@@ -52,16 +52,18 @@ namespace At
 					}
 				}
 			}
+
+			return meter.WrittenSeq();
 		}
 
 
-		void QuotedPrintableDecode(Seq& encoded, Enc& decoded)
+		Seq QuotedPrintableDecode(Seq& encoded, Enc& decoded)
 		{
-			decoded.ReserveInc(encoded.n);
+			Enc::Meter meter = decoded.IncMeter(encoded.n);
 
 			while (true)
 			{
-				Seq chunk { encoded.ReadToFirstByteOf("=\r\n") };
+				Seq chunk = encoded.ReadToFirstByteOf("=\r\n");
 				if (encoded.StartsWithExact("="))
 				{
 					decoded.Add(chunk);
@@ -69,7 +71,7 @@ namespace At
 					if (!encoded.n)
 						break;
 	
-					uint h { encoded.ReadHexEncodedByte() };
+					uint h = encoded.ReadHexEncodedByte();
 					if (h != UINT_MAX)
 						decoded.Byte((byte) h);
 					else
@@ -104,6 +106,8 @@ namespace At
 					decoded.Add("\r\n");
 				}
 			}
+
+			return meter.WrittenSeq();
 		}
 
 	}

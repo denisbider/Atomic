@@ -19,8 +19,9 @@ void MultipartTest(Seq encoded)
 
 		Mime::MultipartBody mltp;
 		PinStore store { 4000 };
-		if (!mltp.Read(encoded, store))
-			Console::Out("MultipartBody could not be read\r\n");
+		Mime::PartReadCx prcx;
+		if (!mltp.Read(encoded, store, prcx))
+			Console::Out(Str("MultipartBody could not be read\r\n").Obj(prcx));
 		else
 			Console::Out(Str().UInt(mltp.m_parts.Len()).Add(" body parts read\r\n"));
 	}

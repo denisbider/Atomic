@@ -5,6 +5,7 @@
 #include "AtEntityStore.h"
 #include "AtHtmlBuilder.h"
 #include "AtHttpRequest.h"
+#include "AtPtrPair.h"
 
 
 namespace At
@@ -124,6 +125,7 @@ namespace At
 
 
 	ENTITY_DECL_BEGIN(SmtpSenderCfg)
+	ENTITY_DECL_FIELD(uint64,			memUsageLimitBytes)			// Message content is kept in memory when sending. If non-zero, avoid enqueueing messages until in-memory content is below this size
 	ENTITY_DECL_FLD_E(IpVerPreference,	ipVerPreference)			// When making outgoing SMTP connections, whether to prefer IPv4, IPv6, or neither. Dominates destination domain MX preference
 	ENTITY_DECL_FIELD(Vec<Str>,         localInterfacesIp4)			// First send attempt uses first interface; if MX disconnects, binds next one and retries. If empty, does not bind socket
 	ENTITY_DECL_FIELD(Vec<Str>,         localInterfacesIp6)			// First send attempt uses first interface; if MX disconnects, binds next one and retries. If empty, does not bind socket
@@ -258,6 +260,20 @@ namespace At
 		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
 
 
+	struct MailboxResultCount
+	{
+		sizet m_nrSuccess  {};
+		sizet m_nrPermFail {};
+		sizet m_nrTempFail {};
+
+		MailboxResultCount() {}
+		MailboxResultCount(PtrPair<MailboxResult> results) { Count(results); }
+
+		// Does NOT clear counts before counting. Can be called multiple times on different result vectors for a cumulative count
+		void Count(PtrPair<MailboxResult> results);
+	};
+
+
 
 	ENTITY_DECL_BEGIN(SmtpMsgToSend)
 	ENTITY_DECL_FLD_K(Time,						nextAttemptTime, KeyCat::Key_NonStr_Multi)
@@ -266,11 +282,12 @@ namespace At
 	ENTITY_DECL_FLD_E(SmtpTlsAssurance,			tlsRequirement)
 	ENTITY_DECL_FIELD(Vec<Str>,					additionalMatchDomains)		// If tlsRequirement == Tls_DomainMatch, additional domain names that also match; e.g. "google.com" for email sent to GMail
 	ENTITY_DECL_FIELD(uint64,					baseSendSecondsMax)			// Pass zero to rely only on the extremely long timeouts defined by the SMTP RFC
-	ENTITY_DECL_FIELD(uint64,					minSendBytesPerSec)			// Used if baseSendSecondsMax != 0. The smaller this number, the more the maximum send time is extended by message size
+	ENTITY_DECL_FIELD(uint64,					nrBytesToAddOneSec)			// Used if baseSendSecondsMax != 0. The smaller this number, the more the maximum send time is extended by message size
 	ENTITY_DECL_FIELD(Str,						fromAddress)
 	ENTITY_DECL_FIELD(Vec<Str>,					pendingMailboxes)			// Mailboxes are removed as delivery succeeds or permanently fails
 	ENTITY_DECL_FIELD(Str,						toDomain)
-	ENTITY_DECL_FIELD(Str,						content)
+	ENTITY_DECL_FIELD(Str,						content)					// Either initial or full content of message. If initial, might only contain e.g. a "Received:" header
+	ENTITY_DECL_FIELD(Str,						moreContentContext)			// If non-empty, passed to a virtual method on sending to retrieve the full message content
 	ENTITY_DECL_FIELD(Str,						deliveryContext)			// Arbitrary binary data for use by the sending application
 	ENTITY_DECL_FIELD(EntVec<MailboxResult>,	mailboxResults)
 	ENTITY_DECL_CLOSE();

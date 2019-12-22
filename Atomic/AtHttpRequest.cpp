@@ -122,7 +122,7 @@ namespace At
 	{
 		ForEachFileInput( [&] (Mime::Part const& part, Seq fileName) -> bool
 			{
-				Mime::PartContent content { part };
+				Mime::PartContent content { part, m_pinStore };
 				if (content.m_success)
 				{
 					Seq reader { content.m_decoded };
@@ -271,11 +271,13 @@ namespace At
 			}
 			else if (RequestBodyType() == BodyType::MultipartFormData)
 			{
-				if (m_multipartPinStore.BytesPerStr() > m_body.n)
-					m_multipartPinStore.SetBytesPerStr(PickMax<sizet>(100, m_body.n));
+				if (m_pinStore.BytesPerStr() > m_body.n)
+					m_pinStore.SetBytesPerStr(PickMax<sizet>(100, m_body.n));
 
 				Seq bodyReader { m_body };
-				if (!m_multipartBody.Read(bodyReader, m_multipartPinStore))
+				Mime::PartReadCx prcx;
+				prcx.m_decodeDepth = 1;
+				if (!m_multipartBody.Read(bodyReader, m_pinStore, prcx))
 					throw Error(HttpStatus::BadRequest);
 
 				Vec<wchar_t> convertBuf1, convertBuf2;
@@ -291,10 +293,10 @@ namespace At
 							(!part.m_contentType.Any() || part.m_contentType->IsTextPlain()))
 						{
 							Seq name { part.m_contentDisp->m_params.Get("name") };
-							Mime::PartContent content { part };
+							Mime::PartContent content { part, m_pinStore };
 
-							ToNormUtf8(name,              nameUtf8,  cp, convertBuf1, convertBuf2);
-							ToNormUtf8(content.m_decoded, valueUtf8, cp, convertBuf1, convertBuf2);
+							ToUtf8Norm(name,              nameUtf8,  cp, convertBuf1, convertBuf2);
+							ToUtf8Norm(content.m_decoded, valueUtf8, cp, convertBuf1, convertBuf2);
 
 							postNvp.Add(nameUtf8, valueUtf8);
 						}

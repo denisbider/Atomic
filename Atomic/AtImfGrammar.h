@@ -174,6 +174,7 @@ namespace At
 		bool C_quoted_pair      (ParseNode& p);
 		bool C_comment          (ParseNode& p);
 		bool C_quoted_string    (ParseNode& p);
+		bool C_local_part       (ParseNode& p);
 		bool C_domain           (ParseNode& p);
 		bool C_atext_word       (ParseNode& p);
 		bool C_addr_spec        (ParseNode& p);

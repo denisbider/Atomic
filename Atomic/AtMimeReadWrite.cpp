@@ -237,27 +237,57 @@ namespace At
 
 
 
-		// MultipartBody
+		// PartReadErr
 
-		bool MultipartBody::Read(Seq& encoded, PinStore& store, sizet depth)
+		void PartReadErr::EncObj(Enc& enc) const
 		{
-			ParseTree pt(encoded);
-			if (!pt.Parse(Mime::C_multipart_body))
-				return false;
+			enc.Add("MIME part ");
 
-			for (ParseNode const& c : pt.Root().FlatFindRef(Mime::id_multipart_body))
-				if (c.IsType(Mime::id_body_part))
-					m_parts.Add().ReadPart(c, store, depth);
+			bool first {};
+			for (sizet n : m_errPartPath)
+			{
+				if (first) first = false; else enc.Ch('.');
+				enc.UInt(n);
+			}
 
-			return true;
+			enc.Add(": ").Add(m_errDesc);
 		}
 
 
-		void MultipartBody::Read(ParseTree const& ptBody, PinStore& store, sizet depth)
+
+		// PartReadCx
+
+		void PartReadCx::EncObj(Enc& enc) const
 		{
-			for (ParseNode const& c : ptBody.Root().FlatFindRef(Mime::id_multipart_body))
+			for (PartReadErr const& err : m_errs)
+				enc.Obj(err).Add("\r\n");
+		}
+
+
+
+		// MultipartBody
+
+		bool MultipartBody::Read(Seq& encoded, PinStore& store, PartReadCx& prcx)
+		{
+			ParseTree pt { encoded };
+			if (prcx.m_verboseParseErrs)
+				pt.RecordBestToStack();
+			if (!pt.Parse(Mime::C_multipart_body))
+				return prcx.AddParseErr(pt);
+
+			prcx.m_curPartPath.Add(0U);
+			OnExit popPartPath = [&prcx] { prcx.m_curPartPath.PopLast(); };
+
+			for (ParseNode const& c : pt.Root().FlatFindRef(Mime::id_multipart_body))
 				if (c.IsType(Mime::id_body_part))
-					m_parts.Add().ReadPart(c, store, depth);
+				{
+					++prcx.m_curPartPath.Last();
+					if (!m_parts.Add().ReadPart(c, store, prcx))
+						if (prcx.m_stopOnNestedErr)
+							return false;
+				}
+
+			return true;
 		}
 
 
@@ -336,7 +366,7 @@ namespace At
 		}
 
 
-		void Part::ReadPart(ParseNode const& partNode, PinStore& store, sizet depth)
+		bool Part::ReadPart(ParseNode const& partNode, PinStore& store, PartReadCx& prcx)
 		{
 			m_srcText = partNode.SrcText();
 
@@ -346,8 +376,16 @@ namespace At
 				else if (c.IsType(Mime::id_part_content))
 					m_contentEncoded = c.SrcText();
 
-			if (IsMultipart() && depth < MaxAutoDecodeDepth)
-				m_multipartBody.Read(m_contentEncoded, store, depth + 1);
+			if (IsMultipart())
+			{
+				if (prcx.m_curPartPath.Len() >= prcx.m_decodeDepth)
+					return prcx.AddDecodeDepthErr();
+
+				if (!m_multipartBody.Read(m_contentEncoded, store, prcx))
+					return false;
+			}
+
+			return true;
 		}
 
 
@@ -368,7 +406,7 @@ namespace At
 		}
 
 
-		bool Part::DecodeContent(Seq& decoded, Str& storage) const
+		bool Part::DecodeContent(Seq& decoded, PinStore& store) const
 		{
 			// Parts of type "multipart" must use an identity encoding ("7bit", "8bit" or "binary")
 			EnsureThrow(!IsMultipart());
@@ -382,23 +420,25 @@ namespace At
 				encType.EqualInsensitive("binary"))
 				{ decoded = m_contentEncoded; return true; }
 
-			if (encType.EqualInsensitive("quoted-printable")) { storage.Clear(); DecodeContent_QP     (storage); decoded = storage; return true; }
-			if (encType.EqualInsensitive("base64"))           { storage.Clear(); DecodeContent_Base64 (storage); decoded = storage; return true; }
+			if (encType.EqualInsensitive("quoted-printable")) { decoded = DecodeContent_QP     (store); return true; }
+			if (encType.EqualInsensitive("base64"))           { decoded = DecodeContent_Base64 (store); return true; }
 			return false;
 		}
 
 
-		void Part::DecodeContent_QP(Enc& enc) const
+		Seq Part::DecodeContent_QP(PinStore& store) const
 		{
 			Seq reader = m_contentEncoded;
-			QuotedPrintableDecode(reader, enc);
+			Enc& enc = store.GetEnc(QuotedPrintableDecode_MaxLen(reader.n));
+			return QuotedPrintableDecode(reader, enc);
 		}
 
 
-		void Part::DecodeContent_Base64(Enc& enc) const
+		Seq Part::DecodeContent_Base64(PinStore& store) const
 		{
 			Seq reader = m_contentEncoded;
-			Base64::MimeDecode(reader, enc);
+			Enc& enc = store.GetEnc(Base64::DecodeMaxLen(reader.n));
+			return Base64::MimeDecode(reader, enc);
 		}
 
 

@@ -93,6 +93,8 @@ namespace At
 
 			void Read(ParseNode const& addressNode, PinStore& store);
 			void Write(MsgWriter& writer) const;
+
+			sizet ExtractAddrSpecs(Vec<AddrSpec>& addrSpecs) const;
 		};
 
 
@@ -107,6 +109,9 @@ namespace At
 
 			void Read(ParseNode const& addressListNode, PinStore& store);
 			void Write(MsgWriter& writer) const;
+
+			// Does NOT clear addrSpecs before adding to it
+			sizet ExtractAddrSpecs(Vec<AddrSpec>& addrSpecs) const;
 		};
 
 
@@ -292,8 +297,7 @@ namespace At
 			bool Read(Seq message, PinStore& store);
 			void Read(ParseTree const& ptMessage, PinStore& store);
 
-			bool ReadMultipartBody(PinStore& store);
-			void ReadMultipartBody(ParseTree const& ptBody, PinStore& store);
+			bool ReadMultipartBody(PinStore& store, Mime::PartReadCx& prcx);
 
 			// Write() will produce a body from m_multipartBody if IsMultipart() is true, and there are any parts.
 			// If IsMultipart() is false, or there are no parts, it will write the verbatim body in m_content.
@@ -310,6 +314,9 @@ namespace At
 
 		// Email addresses
 
+		struct AddrSpecWithStore : AddrSpec { Opt<PinStore> m_pinStore; };
+
+		bool ReadEmailAddressAsAddrSpec(Seq address, AddrSpecWithStore& addrSpec);
 		bool ExtractLocalPartAndDomainFromEmailAddress(Seq address, Str* localPart, Str* domain);
 		void NormalizeEmailAddress(ParseTree const& ptAddrSpec, PinStore& store, Str& normalized);
 		bool NormalizeEmailAddress(Seq address, Str& normalized);

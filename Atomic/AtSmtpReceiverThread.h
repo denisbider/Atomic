@@ -13,6 +13,8 @@ namespace At
 	private:
 		void WorkPoolThread_ProcessWorkItem(void* pvWorkItem) override;
 
+		EhloHost ParseEhloHost(Seq host);
+
 		void SendReply(Writer& writer, uint code, Seq text);
 		void SendNegativeReply(Writer& writer, uint code, Seq text);
 	};

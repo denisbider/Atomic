@@ -123,27 +123,55 @@ namespace At
 		};
 
 
+		struct PartReadErr
+		{
+			Vec<sizet> m_errPartPath;
+			Str m_errDesc;
+
+			void EncObj(Enc& enc) const;
+		};
+
+
+		// HTML emails in multipart format use up to 3 levels of nesting depth:
+		// * depth=1: multipart/mixed; contains multipart/alternative as first part, followed by non-multipart attachments
+		// * depth=2: multipart/alternative; contains text/plain as first part, followed by HTML within multipart/related
+		// * depth=3: multipart/related; contains text/html as first part, followed by non-multipart inline content referenced by HTML
+		// In addition, some implementations may encapsulate this in a fourth layer or more, adding a legal disclaimer of some sort.
+
+		enum { MaxAutoDecodeDepth = 5 };	// Decodes up to 5 multipart levels automatically by default (1, 2, 3, 4 and 5)
+
+		struct PartReadCx
+		{
+			bool             m_stopOnNestedErr {};
+			bool             m_verboseParseErrs {};
+			sizet            m_decodeDepth { MaxAutoDecodeDepth };
+			Vec<sizet>       m_curPartPath;
+			Vec<PartReadErr> m_errs;
+
+			bool AddParseErr(ParseTree const& pt)
+				{ PartReadErr& x = m_errs.Add(); x.m_errPartPath = m_curPartPath; x.m_errDesc.Obj(pt, ParseTree::BestAttempt); return false; }
+
+			bool AddDecodeDepthErr()
+				{ PartReadErr& x = m_errs.Add(); x.m_errPartPath = m_curPartPath; x.m_errDesc.Set("Multipart decode depth exceeded"); return false; }
+
+			// Appends error descriptions as one or more lines terminated by "\r\n". Appends nothing if m_errs is empty
+			void EncObj(Enc& enc) const;
+		};
+
+
 		struct Part;
 
 		struct MultipartBody
 		{
 			Vec<Part> m_parts;
 
-			bool Read(Seq& encoded, PinStore& store, sizet depth = 0);
-			void Read(ParseTree const& ptBody, PinStore& store, sizet depth = 0);
+			bool Read(Seq& encoded, PinStore& store, PartReadCx& prcx);
 			void Write(MsgWriter& writer, Seq boundary) const;
 		};
 
 
 		struct Part
 		{
-			// HTML emails in multipart format use up to 3 levels of nesting depth:
-			// * depth=0: multipart/mixed; contains multipart/alternative as first part, followed by non-multipart attachments
-			// * depth=1: multipart/alternative; contains text/plain as first part, followed by HTML within multipart/related
-			// * depth=2: multipart/related; contains text/html as first part, followed by non-multipart inline content referenced by HTML
-
-			enum { MaxAutoDecodeDepth = 3 };	// Decodes up to 4 multipart levels automatically by default (0, 1, 2, and 3)
-
 			Seq m_srcText;
 
 			mutable Opt<ContentType> m_contentType;		// If IsMultipart(), WriteMimeFields adds "boundary" parameter if not present
@@ -168,18 +196,18 @@ namespace At
 			void ReadPartHeader(ParseNode const& partHeaderNode, PinStore& store);			
 
 			// Called from MultipartBody::Read, Write
-			void ReadPart(ParseNode const& partNode, PinStore& store, sizet depth = 0);
+			bool ReadPart(ParseNode const& partNode, PinStore& store, PartReadCx& prcx);
 			void WritePart(MsgWriter& writer) const;
 
 			// Avoid calling (will assert) for parts of type IsMultipart(). Those must use identity encoding ("7bit", "8bit" or "binary").
 			// "storage" is written to only if a non-identity encoding is used. Returns false if Content-Transfer-Encoding not recognized.
-			bool DecodeContent(Seq& decoded, Str& storage) const;
+			bool DecodeContent(Seq& decoded, PinStore& store) const;
 
 		private:
 			mutable Str m_boundaryStorage;
 
-			void DecodeContent_QP     (Enc& enc) const;
-			void DecodeContent_Base64 (Enc& enc) const;
+			Seq DecodeContent_QP     (PinStore& store) const;
+			Seq DecodeContent_Base64 (PinStore& store) const;
 		};
 
 
@@ -187,9 +215,8 @@ namespace At
 		{
 			bool m_success;
 			Seq  m_decoded;
-			Str  m_storage;
 
-			PartContent(Part const& part) { m_success = part.DecodeContent(m_decoded, m_storage); }
+			PartContent(Part const& part, PinStore& store) { m_success = part.DecodeContent(m_decoded, store); }
 		};
 
 	}
