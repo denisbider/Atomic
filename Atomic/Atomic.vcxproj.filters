@@ -478,6 +478,9 @@
     <ClCompile Include="AtDllNtDll.cpp">
       <Filter>Windows DLLs</Filter>
     </ClCompile>
+    <ClCompile Include="AtWinVer.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1031,6 +1034,9 @@
     </ClInclude>
     <ClInclude Include="AtDllNtDll.h">
       <Filter>Windows DLLs</Filter>
+    </ClInclude>
+    <ClInclude Include="AtWinVer.h">
+      <Filter>Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

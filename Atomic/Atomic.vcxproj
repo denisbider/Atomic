@@ -259,6 +259,7 @@
     <ClCompile Include="AtWebServerThread.cpp" />
     <ClCompile Include="AtWinGui.cpp" />
     <ClCompile Include="AtWinSecurity.cpp" />
+    <ClCompile Include="AtWinVer.cpp" />
     <ClCompile Include="AtWorkPool.cpp" />
     <ClCompile Include="AtWorkPoolThread.cpp" />
     <ClCompile Include="AtCountries.cpp" />
@@ -413,6 +414,7 @@
     <ClInclude Include="AtWaitEsc.h" />
     <ClInclude Include="AtWinGui.h" />
     <ClInclude Include="AtAuxStorage.h" />
+    <ClInclude Include="AtWinVer.h" />
     <ClInclude Include="AtWriter.h" />
     <ClInclude Include="AtBhtpn.h" />
     <ClInclude Include="AtBhtpnGrammar.h" />

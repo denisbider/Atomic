@@ -4,6 +4,7 @@
 #include "AtDllGetFunc.h"
 #include "AtInitOnFirstUse.h"
 #include "AtSpinLock.h"
+#include "AtWinVer.h"
 
 #pragma warning (push)
 #pragma warning (disable: 4073)		// L3: initializers put in library initialization area
@@ -28,7 +29,7 @@ namespace At
 	HMODULE GetDll_normaliz()
 	{
 		InitOnFirstUse(&a_normaliz_initFlag,
-			[] { a_normaliz_h = LoadLibraryExW(L"normaliz.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32); } );
+			[] { a_normaliz_h = LoadLibraryExW(L"normaliz.dll", NULL, WinVer() >= WinVista() ? LOAD_LIBRARY_SEARCH_SYSTEM32 : 0U); } );
 
 		return a_normaliz_h;
 	}

@@ -28,7 +28,7 @@ namespace At
 	HMODULE GetDll_ntdll()
 	{
 		InitOnFirstUse(&a_ntdll_initFlag,
-			[] { a_ntdll_h = LoadLibraryExW(L"ntdll.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32); } );
+			[] { a_ntdll_h = GetModuleHandleW(L"ntdll.dll"); } );
 
 		return a_ntdll_h;
 	}
@@ -36,6 +36,8 @@ namespace At
 
 	#pragma warning (disable: 4191)	// 'type cast': unsafe conversion from 'FARPROC' to '...'
 	ATDLL_GETFUNC_IMPL(ntdll, RtlNtStatusToDosError)
+	ATDLL_GETFUNC_IMPL(ntdll, RtlGetVersion)
+	ATDLL_GETFUNC_IMPL(ntdll, RtlVerifyVersionInfo)
 	ATDLL_GETFUNC_IMPL(ntdll, RtlIpv4StringToAddressA)
 	ATDLL_GETFUNC_IMPL(ntdll, RtlIpv4StringToAddressW)
 	ATDLL_GETFUNC_IMPL(ntdll, RtlIpv6StringToAddressA)
@@ -57,6 +59,22 @@ namespace At
 		if (!fn) return false;
 		err = fn(st);
 		return true;
+	}
+
+
+	LONG Call_RtlGetVersion(RTL_OSVERSIONINFOEXW* a)
+	{
+		FuncType_RtlGetVersion fn = GetFunc_RtlGetVersion();
+		if (fn) return fn(a);
+		return STATUS_NOT_IMPLEMENTED;
+	}
+	
+
+	LONG Call_RtlVerifyVersionInfo(RTL_OSVERSIONINFOEXW* a, ULONG b, ULONGLONG c)
+	{
+		FuncType_RtlVerifyVersionInfo fn = GetFunc_RtlVerifyVersionInfo();
+		if (fn) return fn(a, b, c);
+		return STATUS_NOT_IMPLEMENTED;
 	}
 
 

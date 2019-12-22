@@ -12,6 +12,14 @@ namespace At
 	FuncType_RtlNtStatusToDosError GetFunc_RtlNtStatusToDosError();
 	bool TryCall_RtlNtStatusToDosError(NTSTATUS st, int64& err);
 
+	typedef LONG (__stdcall* FuncType_RtlGetVersion)(RTL_OSVERSIONINFOEXW*);
+	FuncType_RtlGetVersion GetFunc_RtlGetVersion();
+	LONG Call_RtlGetVersion(RTL_OSVERSIONINFOEXW*);
+
+	typedef LONG (__stdcall* FuncType_RtlVerifyVersionInfo)(RTL_OSVERSIONINFOEXW*, ULONG, ULONGLONG);
+	FuncType_RtlVerifyVersionInfo GetFunc_RtlVerifyVersionInfo();
+	LONG Call_RtlVerifyVersionInfo(RTL_OSVERSIONINFOEXW*, ULONG, ULONGLONG);
+		
 	typedef LONG (__stdcall* FuncType_RtlIpv4StringToAddressA)(PCSTR, BOOLEAN, LPCSTR*, struct in_addr*);
 	FuncType_RtlIpv4StringToAddressA GetFunc_RtlIpv4StringToAddressA();
 	LONG Call_RtlIpv4StringToAddressA(PCSTR, BOOLEAN, LPCSTR*, struct in_addr*);

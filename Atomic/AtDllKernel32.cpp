@@ -28,7 +28,7 @@ namespace At
 	HMODULE GetDll_kernel32()
 	{
 		InitOnFirstUse(&a_kernel32_initFlag,
-			[] { a_kernel32_h = LoadLibraryExW(L"kernel32.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32); } );
+			[] { a_kernel32_h = GetModuleHandleW(L"kernel32.dll"); } );
 
 		return a_kernel32_h;
 	}
