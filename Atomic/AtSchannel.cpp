@@ -29,7 +29,7 @@ namespace At
 			m_sbd.pBuffers = nullptr;
 			m_bufs.Clear();
 
-			EnsureReportWithCode(stLastErr == SEC_E_OK, stLastErr);
+			EnsureReportWithNr(stLastErr == SEC_E_OK, stLastErr);
 		}
 	}
 
@@ -94,7 +94,7 @@ namespace At
 		if (m_haveCredHandle)
 		{
 			SECURITY_STATUS st { FreeCredentialsHandle(&m_credHandle) };
-			EnsureReportWithCode(st == SEC_E_OK, st);
+			EnsureReportWithNr(st == SEC_E_OK, st);
 		}
 
 		for (PCCERT_CONTEXT cert : m_certs)
@@ -103,7 +103,7 @@ namespace At
 		if (m_haveCtxt)
 		{
 			SECURITY_STATUS st { DeleteSecurityContext(&m_ctxt) };
-			EnsureReportWithCode(st == SEC_E_OK, st);
+			EnsureReportWithNr(st == SEC_E_OK, st);
 		}
 	}
 

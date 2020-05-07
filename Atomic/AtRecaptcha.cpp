@@ -31,7 +31,7 @@ namespace At
 			Str post;
 			post.ReserveExact(100 + m_secret.Len() + response.n)
 				.Add("secret=").UrlEncode(m_secret)
-				.Add("&remoteip=").UrlEncode(Str(Str::From, req.RemoteAddr(), SockAddr::AddrOnly))
+				.Add("&remoteip=").UrlEncode(Str::From(req.RemoteAddr(), SockAddr::AddrOnly))
 				.Add("&response=").UrlEncode(response);
 		
 			Str verifyResponse;

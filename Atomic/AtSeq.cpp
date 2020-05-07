@@ -72,6 +72,15 @@ namespace At
 	}
 
 
+	uint Seq::LastByte() noexcept
+	{
+		if (!n)
+			return UINT_MAX;
+
+		return p[n-1];
+	}
+
+
 	uint Seq::ReadByte() noexcept
 	{
 		if (!n)
@@ -341,7 +350,7 @@ namespace At
 
 	uint64 Seq::ReadNrUInt64(byte base, uint64 max) noexcept
 	{
-		EnsureAbortWithCode(base >= 2 && base <= 36, base);
+		EnsureAbortWithNr(base >= 2 && base <= 36, base);
 
 		uint64 v = 0;
 		while (n)

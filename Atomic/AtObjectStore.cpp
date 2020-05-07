@@ -422,7 +422,7 @@ namespace At
 	ObjectStore::~ObjectStore()
 	{
 		if (m_tlsIndex != TLS_OUT_OF_INDEXES)
-			EnsureReportWithCode(TlsFree(m_tlsIndex), GetLastError());
+			EnsureReportWithNr(TlsFree(m_tlsIndex), GetLastError());
 	}
 
 

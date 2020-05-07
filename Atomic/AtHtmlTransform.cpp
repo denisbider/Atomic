@@ -66,7 +66,7 @@ namespace At
 					ElemInfo const* ei = FindElemInfo_ByTagExact(elemTagLower);
 					if (ei && ei->m_embedAction == EmbedAction::Allow)
 					{
-								if (ei->m_type == ElemType::Void    ) html.AddVoidElem    (elemTagLower);
+							 if (ei->m_type == ElemType::Void    ) html.AddVoidElem    (elemTagLower);
 						else if (ei->m_type == ElemType::NonVoid ) html.AddNonVoidElem (elemTagLower);
 						else EnsureThrow(!"Unexpected ElemType");
 

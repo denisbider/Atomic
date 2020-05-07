@@ -39,7 +39,7 @@ private:
 
 void AutSmtpReceiver::WorkPool_LogEvent(WORD eventType, Seq text)
 {
-	Console::Out(Str().Obj(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Add(LogEventType::Desc(eventType)).Add(": ").Add(text).SetEndExact("\r\n"));
+	Console::Out(Str::From(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Add(LogEventType::Desc(eventType)).Add(": ").Add(text).SetEndExact("\r\n"));
 }
 
 
@@ -87,7 +87,7 @@ SmtpReceiveInstruction AutSmtpReceiver::SmtpReceiver_OnMailFrom_NoAuth(SockAddr 
 			Seq fromMailbox, Rp<SmtpReceiverAuthCx>& authCx)
 {
 	SmtpReceiveInstruction instr = RandomReply([&] (char const* replyText)
-		{ Console::Out(Str().Obj(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(fromMailbox)
+		{ Console::Out(Str::From(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(fromMailbox)
 			.Add(", reply: ").Add(replyText).Add("\r\n")); } );
 
 	if (instr.m_accept)
@@ -101,7 +101,7 @@ SmtpReceiveInstruction AutSmtpReceiver::AuthCx::SmtpReceiverAuthCx_OnMailFrom_Ha
 {
 	m_fromMailbox = fromMailbox;
 	return RandomReply([&] (char const* replyText)
-		{ Console::Out(Str().Obj(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(m_fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(fromMailbox)
+		{ Console::Out(Str::From(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(m_fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(fromMailbox)
 			.Add(", reply: ").Add(replyText).Add("\r\n")); } );
 }
 
@@ -109,7 +109,7 @@ SmtpReceiveInstruction AutSmtpReceiver::AuthCx::SmtpReceiverAuthCx_OnMailFrom_Ha
 SmtpReceiveInstruction AutSmtpReceiver::AuthCx::SmtpReceiverAuthCx_OnRcptTo(Seq toMailbox)
 {
 	return RandomReply([&] (char const* replyText)
-		{ Console::Out(Str().Obj(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(m_fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(m_fromMailbox)
+		{ Console::Out(Str::From(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(m_fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(m_fromMailbox)
 			.Add(", rcpt to: ").Add(toMailbox).Add(", reply: ").Add(replyText).Add("\r\n")); } );
 }
 
@@ -121,7 +121,7 @@ SmtpReceiveInstruction AutSmtpReceiver::AuthCx::SmtpReceiverAuthCx_OnData(Vec<St
 		toStr.IfAny("; ").Add(mbox);
 
 	return RandomReply([&] (char const* replyText)
-		{ Console::Out(Str().Obj(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(m_fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(m_fromMailbox)
+		{ Console::Out(Str::From(Time::StrictNow(), TimeFmt::IsoMicroZ).Add(" ").Obj(m_fromHost, SockAddr::AddrPort).Add(": Mail from ").Add(m_fromMailbox)
 			.Add(", to: ").Add(toStr).Add(", data size: ").UInt(data.n).Add(", reply: ").Add(replyText).Add("\r\n")); } );
 }
 

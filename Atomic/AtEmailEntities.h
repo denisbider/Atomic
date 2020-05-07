@@ -5,7 +5,7 @@
 #include "AtEntityStore.h"
 #include "AtHtmlBuilder.h"
 #include "AtHttpRequest.h"
-#include "AtPtrPair.h"
+#include "AtSlice.h"
 
 
 namespace At
@@ -176,6 +176,8 @@ namespace At
 		SmtpEnhStatus() {}
 
 		static SmtpEnhStatus None() { return SmtpEnhStatus(); }
+		static SmtpEnhStatus GenericTempFail() { return SmtpEnhStatus(0x0400000000ULL); }
+		static SmtpEnhStatus GenericPermFail() { return SmtpEnhStatus(0x0500000000ULL); }
 		static SmtpEnhStatus FromUint(uint64 value) { return SmtpEnhStatus(value); }
 		static SmtpEnhStatus Read(Seq& reader);
 
@@ -203,7 +205,7 @@ namespace At
 	public:
 		SmtpReplyCode m_code;
 		SmtpEnhStatus m_enhStatus;
-		Vec<Str>      m_lines;						// Reply lines with first 4 characters (reply code and separator) removed. Enhanced status code is NOT removed
+		Vec<Str>      m_lines;						// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
 
 		void EncObj(Enc& s) const;
 	};
@@ -217,7 +219,7 @@ namespace At
 	ENTITY_DECL_FIELD(uint64,        replyCode)
 	ENTITY_DECL_FIELD(uint64,        enhStatus)
 	ENTITY_DECL_FIELD(Str,           desc)
-	ENTITY_DECL_FIELD(Vec<Str>,      lines)
+	ENTITY_DECL_FIELD(Vec<Str>,      lines)			// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
 	ENTITY_DECL_CLOSE();
 	
 	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendErr::E err, LookedUpAddr const* mx,
@@ -237,6 +239,11 @@ namespace At
 
 	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendErr::E err, SmtpServerReply const& reply, Seq desc)
 		{ return SmtpSendFailure_New(stage, err, &mx, reply.m_code, reply.m_enhStatus, desc, &reply.m_lines); }
+
+	// Encodes an SmtpSendFailure as one or more plain text lines compliant with the message/delivery-status (DSN) field "Diagnostic-Code" of type "smtp".
+	// Since the DSN format does not define escaping, this function uses HTML entities to encode non-ASCII characters, invalid bytes, parentheses and ampersands.
+	// Additional information is appended as a comment. Parentheses in reply lines or error description are encoded as &lpar; and &rpar; to avoid interference with comments.
+	void SmtpSendFailure_EncodeAsSmtpDiagnosticCode(SmtpSendFailure const& f, Enc& s, SmtpDeliveryState::E deliveryState);
 
 
 
@@ -267,10 +274,10 @@ namespace At
 		sizet m_nrTempFail {};
 
 		MailboxResultCount() {}
-		MailboxResultCount(PtrPair<MailboxResult> results) { Count(results); }
+		MailboxResultCount(Slice<MailboxResult> results) { Count(results); }
 
 		// Does NOT clear counts before counting. Can be called multiple times on different result vectors for a cumulative count
-		void Count(PtrPair<MailboxResult> results);
+		void Count(Slice<MailboxResult> results);
 	};
 
 
@@ -286,7 +293,7 @@ namespace At
 	ENTITY_DECL_FIELD(Str,						fromAddress)
 	ENTITY_DECL_FIELD(Vec<Str>,					pendingMailboxes)			// Mailboxes are removed as delivery succeeds or permanently fails
 	ENTITY_DECL_FIELD(Str,						toDomain)
-	ENTITY_DECL_FIELD(Str,						content)					// Either initial or full content of message. If initial, might only contain e.g. a "Received:" header
+	ENTITY_DECL_FIELD(Str,						contentPart1)				// Either initial or full content of message. If initial, might only contain e.g. a "Received:" header
 	ENTITY_DECL_FIELD(Str,						moreContentContext)			// If non-empty, passed to a virtual method on sending to retrieve the full message content
 	ENTITY_DECL_FIELD(Str,						deliveryContext)			// Arbitrary binary data for use by the sending application
 	ENTITY_DECL_FIELD(EntVec<MailboxResult>,	mailboxResults)

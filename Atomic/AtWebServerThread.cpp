@@ -40,15 +40,15 @@ namespace At
 			try
 			{
 				ReqTxExclusive::E rtx { reqHandlerCreator->ReqTxExclusivity() };
-				if ( rtx == ReqTxExclusive::Always ||
-					(rtx == ReqTxExclusive::IfPost && req.IsPost()))
+				if ( ReqTxExclusive::Always == rtx ||
+					(ReqTxExclusive::IfPost == rtx && req.IsPost()))
 					store.RunTxExclusive(tx);
 				else
 					store.RunTx(GetStopCtl(), typeid(reqHandlerCreator.Ref()), tx);
 			}
 			catch (AbortTxOnSuccess const&) {}
 
-			if (reqResult == ReqResult::Continue)
+			if (ReqResult::Continue == reqResult)
 			{
 				errMsg = "Request processed. Error generating response";
 				reqHandler->GenResponse(req);

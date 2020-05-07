@@ -40,7 +40,7 @@ namespace At
 			Str m_uri;
 		};
 
-		HttpRequest(HTTP_REQUEST* req, WebServerType::E serverType) : m_req(req), m_serverType(serverType) {}
+		HttpRequest(HTTP_REQUEST* req, WebServerType::E serverType) : m_req(req), m_serverType(serverType), m_multipartBody(Mime::Part::Root) {}
 	
 		void SetBody(Seq body) { m_body = body; }	// Body data must be stored externally for the lifetime of the request
 	
@@ -131,7 +131,7 @@ namespace At
 		mutable Opt<InsensitiveNameValuePairsWithStore> m_postNvp;
 		mutable Vec<Seq> m_consumedPostFormSecurityElements;
 		mutable PinStore m_pinStore { 4000 };
-		mutable Mime::MultipartBody m_multipartBody;
+		mutable Mime::Part m_multipartBody;
 
 		mutable Time m_requestTime;
 

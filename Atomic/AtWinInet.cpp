@@ -9,9 +9,9 @@ namespace At
 {
 	WinInet::~WinInet()
 	{
-		if (m_hRequest) EnsureReportWithCode(InternetCloseHandle(m_hRequest), GetLastError());
-		if (m_hConnect) EnsureReportWithCode(InternetCloseHandle(m_hConnect), GetLastError());
-		if (m_hWinInet) EnsureReportWithCode(InternetCloseHandle(m_hWinInet), GetLastError());
+		if (m_hRequest) EnsureReportWithNr(InternetCloseHandle(m_hRequest), GetLastError());
+		if (m_hConnect) EnsureReportWithNr(InternetCloseHandle(m_hConnect), GetLastError());
+		if (m_hWinInet) EnsureReportWithNr(InternetCloseHandle(m_hWinInet), GetLastError());
 	}
 
 	

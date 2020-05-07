@@ -175,36 +175,38 @@ namespace At
 				return pWrite;
 			}
 
-			void ForEachWord(Seq s, std::function<void(Seq word, bool isFirst, bool isLast)> onWord)
+			bool ForEachWord(Seq s, std::function<void(Seq word, bool isFirst, bool isLast)> onWord)
 			{
 				Seq reader { s.Trim() };
-				if (reader.n)
+				if (!reader.n)
+					return false;
+
+				Seq firstWord { reader.ReadToFirstByteOf(Seq::AsciiWsBytes) };
+				if (!reader.n)
 				{
-					Seq firstWord { reader.ReadToFirstByteOf(Seq::AsciiWsBytes) };
-					if (!reader.n)
-					{
-						// No whitespace in string - single word
-						onWord(firstWord, true, true);
-					}
-					else
-					{
-						// String has at least two words separated by whitespace
-						onWord(firstWord, true, false);
-						reader.DropToFirstByteNotOf(Seq::AsciiWsBytes);
-
-						// Write out the mid words, if any
-						Seq mid { reader.ReadToAfterLastByteOf(Seq::AsciiWsBytes) };
-						while (mid.n)
-						{
-							Seq midWord = mid.ReadToFirstByteOf(Seq::AsciiWsBytes);
-							mid.DropToFirstByteNotOf(Seq::AsciiWsBytes);
-							onWord(midWord, false, false);
-						}
-
-						// Last word
-						onWord(reader, false, true);
-					}
+					// No whitespace in string - single word
+					onWord(firstWord, true, true);
 				}
+				else
+				{
+					// String has at least two words separated by whitespace
+					onWord(firstWord, true, false);
+					reader.DropToFirstByteNotOf(Seq::AsciiWsBytes);
+
+					// Write out the mid words, if any
+					Seq mid { reader.ReadToAfterLastByteOf(Seq::AsciiWsBytes) };
+					while (mid.n)
+					{
+						Seq midWord = mid.ReadToFirstByteOf(Seq::AsciiWsBytes);
+						mid.DropToFirstByteNotOf(Seq::AsciiWsBytes);
+						onWord(midWord, false, false);
+					}
+
+					// Last word
+					onWord(reader, false, true);
+				}
+
+				return true;
 			}
 		
 		}  // anon
@@ -223,9 +225,9 @@ namespace At
 			return Seq(pStart, write.AddUpTo(pWrite));
 		}
 
-		void WriteQuotedString(MsgWriter& writer, Seq value, char const* strClose)
+		void WriteQuotedString(MsgWriter& writer, Seq value, Seq afterClose)
 		{
-			ForEachWord(value, [&] (Seq word, bool isFirst, bool isLast)
+			bool anyWords = ForEachWord(value, [&] (Seq word, bool isFirst, bool isLast)
 				{
 					MsgSectionScope section { writer };
 					
@@ -248,8 +250,20 @@ namespace At
 					}
 
 					if (isLast)
-						writer.Add(strClose);
+					{
+						writer.Add("\"");
+						if (afterClose.n)
+							writer.Add(afterClose);
+					}
 				} );
+
+			if (!anyWords)
+			{
+				MsgSectionScope section { writer };
+				writer.Add("\"\"");
+				if (afterClose.n)
+					writer.Add(afterClose);
+			}
 		}
 
 
@@ -576,7 +590,7 @@ namespace At
 			if (m_mboxes.Any())
 			{
 				m_mboxes.First().Write(writer);
-				for (Mailbox const& mbox : m_mboxes.Slice(1))
+				for (Mailbox const& mbox : m_mboxes.GetSlice(1))
 				{
 					writer.Add(", ");
 					mbox.Write(writer);
@@ -661,7 +675,7 @@ namespace At
 			{
 				m_addresses.First().Write(writer);
 
-				for (Address const& a : m_addresses.Slice(1))
+				for (Address const& a : m_addresses.GetSlice(1))
 				{
 					writer.Add(", ");
 					a.Write(writer);
@@ -864,7 +878,7 @@ namespace At
 
 		// Message
 
-		void Message::ReadHeader(ParseNode const& messageFieldsNode, PinStore& store)
+		void Message::ReadHeaders(ParseNode const& messageFieldsNode, PinStore& store)
 		{
 			EnsureThrow(messageFieldsNode.IsType(id_message_fields));
 			ParseNode const& fieldsNode { messageFieldsNode.FlatFindRef(id_main_fields) };
@@ -885,7 +899,7 @@ namespace At
 			}
 		}
 
-		void Message::WriteHeader(MsgWriter& writer) const
+		void Message::WriteHeaders(MsgWriter& writer) const
 		{
 			if (m_date     .Any()) m_date     ->Write(writer);
 			if (m_from     .Any()) m_from     ->Write(writer);
@@ -903,6 +917,8 @@ namespace At
 
 		bool Message::Read(Seq message, PinStore& store)
 		{
+			m_hdrs = Seq();
+
 			ParseTree pt { message };
 			if (!pt.Parse(C_message))
 				return false;
@@ -916,7 +932,8 @@ namespace At
 			m_srcText = ptMessage.Root().SrcText();
 
 			ParseNode const& messageFieldsNode { ptMessage.Root().FrontFindRef(id_message_fields) };
-			ReadHeader(messageFieldsNode, store);
+			m_hdrs = messageFieldsNode.SrcText();
+			ReadHeaders(messageFieldsNode, store);
 
 			ParseNode const* bodyNode { ptMessage.Root().FirstChild().FlatFind(id_body) };
 			if (bodyNode != nullptr)
@@ -928,17 +945,21 @@ namespace At
 		bool Message::ReadMultipartBody(PinStore& store, Mime::PartReadCx& prcx)
 		{
 			if (!IsMultipart()) return false;
-			bool success = m_multipartBody.Read(m_contentEncoded, store, prcx);
+			bool success = Part::ReadMultipartBody(m_contentEncoded, store, prcx);
 			LocateParts();
 			return success;
 		}
 
 		void Message::Write(MsgWriter& writer) const
 		{
-			WriteHeader(writer);
+			m_hdrs = Seq();
+			sizet hdrsStartPos = writer.GetStr().Len();
+			WriteHeaders(writer);
+			sizet hdrsEndPos = writer.GetStr().Len();
+
 			writer.Add("\r\n");
 			
-			if (!IsMultipart() || !m_multipartBody.m_parts.Any())
+			if (!IsMultipart() || !m_parts.Any())
 			{
 				writer.AddVerbatim(m_contentEncoded);
 				if (!m_contentEncoded.EndsWithExact("\r\n"))
@@ -949,8 +970,12 @@ namespace At
 				// If not set previously by caller, boundary is set in WriteMimeFields()
 				Seq boundary { m_contentType->m_params.Get("boundary") };
 				EnsureThrow(boundary.n);
-				m_multipartBody.Write(writer, boundary);
+				WriteMultipartBody(writer, boundary);
 			}
+
+			EnsureThrow(hdrsEndPos <= writer.GetStr().Len());
+			EnsureThrow(hdrsStartPos <= hdrsEndPos);
+			m_hdrs = Seq { writer.GetStr().Ptr() + hdrsStartPos, hdrsEndPos - hdrsStartPos };
 		}
 
 
@@ -1000,7 +1025,7 @@ namespace At
 				else if (m_contentType->IsTextHtml())
 					m_htmlContentPart = this;
 			}
-			else if (m_multipartBody.m_parts.Any())
+			else if (m_parts.Any())
 			{
 				if (m_contentType->IsMultipartMixed() || m_contentType->IsMultipartReport())
 					LocateParts_Mixed(*this);
@@ -1021,7 +1046,7 @@ namespace At
 			sizet firstAttachmentPart = 1;
 
 			{
-				Mime::Part const& firstPart = mixPart.m_multipartBody.m_parts.First();					
+				Mime::Part const& firstPart = mixPart.m_parts.First();					
 				if (!firstPart.m_contentType.Any())
 					m_plainTextContentPart = &firstPart;
 				else
@@ -1038,7 +1063,7 @@ namespace At
 			}
 
 			// Attachments
-			for (Mime::Part const& part : mixPart.m_multipartBody.m_parts.Slice(firstAttachmentPart))
+			for (Mime::Part const& part : mixPart.m_parts.GetSlice(firstAttachmentPart))
 			{
 				bool special {};
 				if (part.m_contentType.Any())
@@ -1059,7 +1084,7 @@ namespace At
 			EnsureThrow(!m_plainTextContentPart);
 			EnsureThrow(!m_htmlContentPart);
 
-			for (Mime::Part const& part : altPart.m_multipartBody.m_parts)
+			for (Mime::Part const& part : altPart.m_parts)
 			{
 				if (part.m_contentType.Any())
 				{
@@ -1091,7 +1116,7 @@ namespace At
 			EnsureThrow(!m_htmlContentPart);
 
 			bool isFirst = true;
-			for (Mime::Part const& part : relPart.m_multipartBody.m_parts)
+			for (Mime::Part const& part : relPart.m_parts)
 			{
 				if (isFirst)
 				{

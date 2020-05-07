@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AtAuxStorage.h"
+#include "AtSlice.h"
 
 
 namespace At
@@ -23,8 +24,9 @@ namespace At
 		Enc::Write IncWrite(sizet writeBytes) { return GetEnc(writeBytes).IncWrite(writeBytes); }
 
 		Seq AddStr(Seq s);
-		Seq AddStrFromParts(Seq const* first, Seq const* beyondLast);
-		Seq AddStrFromParts(Vec<Seq> const& v) { return AddStrFromParts(v.begin(), v.end()); }
+		Seq AddStrFromParts(Slice<Seq> parts);
+		Seq AddStrFromParts(Seq a, Seq b)        { Seq parts[2] = { a, b };    return AddStrFromParts(parts); }
+		Seq AddStrFromParts(Seq a, Seq b, Seq c) { Seq parts[3] = { a, b, c }; return AddStrFromParts(parts); }
 
 	private:
 		sizet    m_bytesPerStr {};

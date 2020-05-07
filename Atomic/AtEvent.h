@@ -31,14 +31,18 @@ namespace At
 		void Create(ECreateManual) { Create(0, true, false, 0); }
 		void Create(LPSECURITY_ATTRIBUTES sa, BOOL manual, BOOL initState, LPCTSTR name);
 
-		HANDLE Handle() const { return m_h; }
-		void Signal() { Signal(m_h); }
-		void ClearSignal() { ClearSignal(m_h); }
-		bool IsSignaled() const { return IsSignaled(m_h); }
+		HANDLE Handle         () const             { return m_h; }
+		void   Signal         ()                   { Signal(m_h); }
+		void   ClearSignal    ()                   { ClearSignal(m_h); }
+		bool   Wait           (DWORD waitMs) const { return Wait(m_h, waitMs); }
+		void   WaitIndefinite () const             { return WaitIndefinite(m_h); }
+		bool   IsSignaled     () const             { return IsSignaled(m_h); }
 
-		static void Signal(HANDLE h);
-		static void ClearSignal(HANDLE h);
-		static bool IsSignaled(HANDLE h);
+		static void Signal         (HANDLE h);
+		static void ClearSignal    (HANDLE h);
+		static bool Wait           (HANDLE h, DWORD waitMs);
+		static void WaitIndefinite (HANDLE h);
+		static bool IsSignaled     (HANDLE h) { return Wait(h, 0); }
 
 	private:
 		HANDLE m_h {};

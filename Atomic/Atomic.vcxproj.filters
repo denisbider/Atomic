@@ -481,6 +481,9 @@
     <ClCompile Include="AtWinVer.cpp">
       <Filter>Windows</Filter>
     </ClCompile>
+    <ClCompile Include="AtStr.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1017,9 +1020,6 @@
     <ClInclude Include="AtDiff.h">
       <Filter>Algorithms and Services</Filter>
     </ClInclude>
-    <ClInclude Include="AtPtrPair.h">
-      <Filter>Foundation</Filter>
-    </ClInclude>
     <ClInclude Include="AtDllBCrypt.h">
       <Filter>Windows DLLs</Filter>
     </ClInclude>
@@ -1037,6 +1037,12 @@
     </ClInclude>
     <ClInclude Include="AtWinVer.h">
       <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSlice.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBitFlagDescriber.h">
+      <Filter>Algorithms and Services</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

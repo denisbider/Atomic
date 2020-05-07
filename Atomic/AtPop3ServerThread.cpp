@@ -148,7 +148,7 @@ namespace At
 						else
 						{
 							l_password = Seq(cmd.m_params).Trim();
-							EmailServerAuthResult result = m_workPool->Pop3Server_Authenticate(workItem->m_saRemote, l_userName, l_password, l_authCx);
+							EmailServerAuthResult result = m_workPool->Pop3Server_Authenticate(workItem->m_saRemote, conn, l_userName, l_password, l_authCx);
 
 							if (EmailServerAuthResult::Success == result)
 							{
@@ -170,7 +170,7 @@ namespace At
 								case EmailServerAuthResult::InvalidCredentials:  SendSingleLineReply(conn, Pop3ReplyType::Err, "[AUTH] PASS command failed, credentials invalid"); break;
 								case EmailServerAuthResult::AttemptsTooFrequent: SendSingleLineReply(conn, Pop3ReplyType::Err, "[AUTH] PASS command failed, attempts too frequent"); break;
 								case EmailServerAuthResult::TransactionFailed:   SendSingleLineReply(conn, Pop3ReplyType::Err, "[SYS/TEMP] PASS command failed, could not complete transaction"); break;
-								default: EnsureThrowWithCode(!"Unexpected EmailServerAuthResult", (int64) result);
+								default: EnsureThrowWithNr(!"Unexpected EmailServerAuthResult", (int64) result);
 								}
 							}
 						}

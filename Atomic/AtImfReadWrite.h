@@ -13,7 +13,7 @@ namespace At
 		// Strings
 
 		Seq ReadQuotedString(ParseNode const& qsNode, PinStore& store);
-		void WriteQuotedString(MsgWriter& writer, Seq value, char const* strClose = "\"");
+		void WriteQuotedString(MsgWriter& writer, Seq value, Seq afterClose = Seq());
 
 
 		Seq ReadPhrase(ParseNode const& phraseNode, PinStore& store);
@@ -94,6 +94,7 @@ namespace At
 			void Read(ParseNode const& addressNode, PinStore& store);
 			void Write(MsgWriter& writer) const;
 
+			// Does NOT clear addrSpecs before adding to it
 			sizet ExtractAddrSpecs(Vec<AddrSpec>& addrSpecs) const;
 		};
 
@@ -271,6 +272,8 @@ namespace At
 		class Message : public Mime::Part
 		{
 		public:
+			Seq mutable       m_hdrs;
+
 			Opt<DateField>    m_date;
 			Opt<FromField>    m_from;
 			Opt<SenderField>  m_sender;
@@ -289,18 +292,22 @@ namespace At
 			Vec<Mime::Part const*> m_htmlRelatedParts;
 			Vec<Mime::Part const*> m_attachmentParts;
 
-			void ReadHeader(ParseNode const& messageFieldsNode, PinStore& store);
-			void WriteHeader(MsgWriter& writer) const;
+			Message() : Mime::Part(Mime::Part::Root) {}
+
+			void ReadHeaders(ParseNode const& messageFieldsNode, PinStore& store);
+			void WriteHeaders(MsgWriter& writer) const;
 
 			// The Read() methods do not automatically read a multipart body, if there is one.
 			// To read a multipart body (if there is one), follow up Read() with ReadMultipartBody().
+			// If successful, updates m_hdrs to point to the part of input that contains message fields.
 			bool Read(Seq message, PinStore& store);
 			void Read(ParseTree const& ptMessage, PinStore& store);
 
 			bool ReadMultipartBody(PinStore& store, Mime::PartReadCx& prcx);
 
-			// Write() will produce a body from m_multipartBody if IsMultipart() is true, and there are any parts.
+			// Write() will produce a body from m_parts if IsMultipart() is true, and there are any parts.
 			// If IsMultipart() is false, or there are no parts, it will write the verbatim body in m_content.
+			// Updates m_hdrs to point to the part of output that contains message fields.
 			void Write(MsgWriter& writer) const;
 
 		private:

@@ -60,7 +60,7 @@ namespace At
 		   .Add("\" status=\"")     .Add  (SmtpMsgStatus::Name(msg.f_status))
 		   .Add("\" from=\"")       .Add  (msg.f_fromAddress)
 		   .Add("\" toDomain=\"")   .Add  (msg.f_toDomain)
-		   .Add("\" len=\"")        .UInt (msg.f_content.Len())
+		   .Add("\" lenPart1=\"")   .UInt (msg.f_contentPart1.Len())
 		   .Add("\" tlsReq=\"")     .Add  (SmtpTlsAssurance::Name(msg.f_tlsRequirement))
 		   .Add("\" baseSecs=\"")   .UInt (msg.f_baseSendSecondsMax)
 		   .Add("\" nrBytes1Sec=\"").UInt (msg.f_nrBytesToAddOneSec)
@@ -77,7 +77,8 @@ namespace At
 			enc.UInt(rdm);
 		}
 
-		enc.Add("\" cx=\"").HtmlAttrValue(msg.f_deliveryContext, Html::CharRefs::Escape).Add("\">\r\n");
+		enc.Add("\" mcCx=\"").HtmlAttrValue(msg.f_moreContentContext, Html::CharRefs::Escape)
+		   .Add("\" dvCx=\"").HtmlAttrValue(msg.f_deliveryContext, Html::CharRefs::Escape).Add("\">\r\n");
 
 		for (Str const& md : msg.f_additionalMatchDomains)
 			enc.Add("  <match domain=\"").HtmlAttrValue(md, Html::CharRefs::Escape).Add("\" />\r\n");

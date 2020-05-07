@@ -14,7 +14,9 @@ namespace At
 		class MsgWriter : public AuxStorage
 		{
 		public:
-			MsgWriter(Str& s, sizet maxLineLen = 78);
+			MsgWriter(Str& s, sizet maxLineLen = 78);		// Can pass maxLineLen == SIZE_MAX for no limit
+
+			Str const& GetStr() const { return m_s; }
 
 			// BeginSection() begins a section in which portions cannot be separated with folding whitespace.
 			// CloseSection() ends such a section. Multiple calls can be nested, and must be balanced out.
@@ -29,12 +31,12 @@ namespace At
 			MsgWriter& AddVerbatim(Seq text) { EnsureThrow(!m_sectionDepth); m_s.Add(text); return *this; }
 
 		private:
-			Str& m_s;
-			sizet m_curLineLen;
-			sizet m_maxLineLen;
+			Str&        m_s;
+			sizet const m_maxLineLen;
 
-			Str m_section;
-			sizet m_sectionDepth {};
+			sizet       m_curLineLen;
+			Str         m_section;
+			sizet       m_sectionDepth {};
 		};
 
 

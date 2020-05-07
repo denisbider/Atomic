@@ -49,6 +49,7 @@ namespace At
 		virtual void      WP_GenErrorResponse(HttpRequest& req, uint statusCode);
 
 		virtual Seq		  WP_LoginPagePath       () const { throw ZLitErr("WP_LoginPagePath not implemented"); }
+		virtual Seq       WP_LoginPageCfmContext () const { throw ZLitErr("WP_LoginPageCfmContext not implemented"); }
 		virtual Seq		  WP_DefaultLoginDest    () const { return "/"; }
 		virtual sizet     WP_MaxSessionsPerUser  () const { return   3; }
 		virtual uint      WP_AccessUpdateMinutes () const { return   5; }
@@ -87,9 +88,14 @@ namespace At
 		static WebLoginResult::E CheckUserPassword(EntityStore& store, Rp<AppUser>& appUser, Seq user, Seq password, Seq remoteIdAddr);
 
 	private:
+		bool m_confirmation {};
+
 		ReqResult Login         (EntityStore& store, HttpRequest& req);
 		ReqResult ValidateLogin (EntityStore& store, HttpRequest& req, PageLogin loginType);
 		ReqResult Logout        (EntityStore& store, HttpRequest& req);
+
+	protected:
+		bool Confirmation() const { return m_confirmation; }
 	};
 
 
@@ -102,7 +108,7 @@ namespace At
 		WebPage_Error(uint64 statusCode) : m_statusCode((uint) statusCode) {}
 
 		PageLogin WP_LoginType () const                     override final { return PageLogin::Ignore; }
-		ReqResult WP_Process   (EntityStore&, HttpRequest&) override final { throw HttpRequest::Error(m_statusCode); }
+		ReqResult WP_Process   (EntityStore&, HttpRequest&) override final { m_processError.Init(m_statusCode); return ReqResult::Continue; }
 
 	private:
 		uint m_statusCode;

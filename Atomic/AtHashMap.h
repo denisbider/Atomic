@@ -21,18 +21,17 @@ namespace At
 		HashMap<T>& SetNrBuckets(sizet nrBuckets) { EnsureThrow(m_v.Len() == 0); m_v.Resize(nrBuckets); return *this; }
 		sizet NrBuckets() const { return m_v.Len(); }
 
-		HashMap<T>& Add(T const& x) { T c{x}; return Add(c.Key(), std::move(c)); }
-		HashMap<T>& Add(T&&      x) {         return Add(x.Key(), std::move(x)); }
+		T& Add(T const& x) { T c{x}; return Add(c.Key(), std::move(c)); }
+		T& Add(T&&      x) {         return Add(x.Key(), std::move(x)); }
 
 		template <typename... Args>
-		HashMap<T>& Add(KeyOrRef k, Args&&... args)
+		T& Add(KeyOrRef k, Args&&... args)
 		{
 			sizet nrBuckets { NrBuckets() };
 			EnsureThrow(nrBuckets);
 
 			sizet bucketIndex { NumCast<sizet>(T::HashOfKey(k) % nrBuckets) };
-			m_v[bucketIndex].Add(std::forward<Args>(args)...);
-			return *this;
+			return m_v[bucketIndex].Add(std::forward<Args>(args)...);
 		}
 
 		T* Find(KeyOrRef k)

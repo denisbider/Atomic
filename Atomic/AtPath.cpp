@@ -273,7 +273,7 @@ namespace At
 			if (!FindClose(m_h))
 			{
 				DWORD err = GetLastError();
-				EnsureReportWithCode(!"Error in FindClose", err);
+				EnsureReportWithNr(!"Error in FindClose", err);
 			}
 		}
 	}

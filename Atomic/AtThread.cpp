@@ -60,7 +60,7 @@ namespace At
 		{
 			if (IsDebuggerPresent())
 			{
-				Str threadDesc { Str::NullTerminate, obj->ThreadDesc() };
+				Str threadDesc = Str::NullTerminate(obj->ThreadDesc());
 				MSVC_SetThreadName((DWORD) -1, threadDesc.CharPtr());
 			}
 		}
@@ -132,7 +132,7 @@ namespace At
 			OnExit terminateThread { [&]
 				{
 					if (!TerminateThread(h, 0xDEADBEEF))
-						EnsureAbortWithCode(!"Error in TerminateThread", GetLastError());
+						EnsureAbortWithNr(!"Error in TerminateThread", GetLastError());
 
 					obj->Release();		// Release new thread's reference. We still have our own
 				} };
@@ -142,7 +142,7 @@ namespace At
 
 			DWORD preResumeSuspendCount { ResumeThread(h) };
 			if (preResumeSuspendCount == (DWORD) -1)
-				EnsureAbortWithCode(!"Error in ResumeThread", GetLastError());
+				EnsureAbortWithNr(!"Error in ResumeThread", GetLastError());
 			EnsureAbort(preResumeSuspendCount == 1);
 		}
 	}

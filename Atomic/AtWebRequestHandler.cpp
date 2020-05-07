@@ -72,31 +72,31 @@ namespace At
 	namespace { Str CfmCookieName(Seq token) { return Str().ReserveExact(3 + token.n).Add("cfm").Add(token); } }
 
 
-	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq context, Seq name, Seq value)
+	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq name, Seq value)
 	{
 		InsensitiveNameValuePairs nvp;
 		nvp.Add(name, value);
-		return AddCfmCookie(req, context, nvp);
+		return AddCfmCookie(req, nvp);
 	}
 
-	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq context, Seq name1, Seq value1, Seq name2, Seq value2)
+	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq name1, Seq value1, Seq name2, Seq value2)
 	{
 		InsensitiveNameValuePairs nvp;
 		nvp.Add(name1, value1);
 		nvp.Add(name2, value2);
-		return AddCfmCookie(req, context, nvp);
+		return AddCfmCookie(req, nvp);
 	}
 
-	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq context, Seq name1, Seq value1, Seq name2, Seq value2, Seq name3, Seq value3)
+	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq name1, Seq value1, Seq name2, Seq value2, Seq name3, Seq value3)
 	{
 		InsensitiveNameValuePairs nvp;
 		nvp.Add(name1, value1);
 		nvp.Add(name2, value2);
 		nvp.Add(name3, value3);
-		return AddCfmCookie(req, context, nvp);
+		return AddCfmCookie(req, nvp);
 	}
 
-	Str WebRequestHandler::AddCfmCookie(HttpRequest& req, Seq context, InsensitiveNameValuePairsBase const& nvp)
+	Str WebRequestHandler::AddCfmCookieWithContext(HttpRequest& req, Seq context, InsensitiveNameValuePairsBase const& nvp)
 	{
 		// Calculate encoded size of cookie plaintext
 		uint64 ftReqTime   { req.RequestTime().ToFt() };
@@ -135,10 +135,11 @@ namespace At
 	}
 
 
-	bool WebRequestHandler::CheckCfmCookie(HttpRequest& req, Seq context)
+	bool WebRequestHandler::CheckCfmCookie(HttpRequest& req)
 	{
+		Seq  context = typeid(*this).name();
+		Seq  token   = req.QueryNvp("cfm");
 		bool success {};
-		Seq  token   { req.QueryNvp("cfm") };
 		if (token.n == Token::Len)
 		{
 			Str cfmCookieName { CfmCookieName(token) };
@@ -299,6 +300,9 @@ namespace At
 
 	void WebRequestHandler::SetFileResponse(Seq fullPath, Seq contentType)
 	{
+		// This implementation is currently highly inefficient if the server is being bombarded with requests.
+		// Needs to be replaced with a caching implementation. Also needs to not throw, and instead fail efficiently, if the file is not found.
+
 		HANDLE hFile = CreateFileW(WinStr(fullPath).Z(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
 		if (hFile == INVALID_HANDLE_VALUE)
 		{

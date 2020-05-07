@@ -74,6 +74,7 @@ namespace At
 		virtual bool SmtpReceiver_AuthSupported    () { return false; }
 		virtual void SmtpReceiver_AddSchannelCerts (Schannel&);
 
+		// authorizationIdentity, authenticationIdentity and password are already whitespace-trimmed
 		virtual EmailServerAuthResult SmtpReceiver_Authenticate(SockAddr const& fromHost, Schannel& conn, Seq ourName, EhloHost const& ehloHost,
 			Seq authorizationIdentity, Seq authenticationIdentity, Seq password, Rp<SmtpReceiverAuthCx>& authCx);
 

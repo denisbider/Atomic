@@ -65,7 +65,7 @@ void DkimTest(int argc, char** argv)
 				pt.RecordBestToStack();
 				if (!pt.Parse(Imf::C_message))
 				{
-					Console::Out(Str().Obj(pt, ParseTree::BestAttempt).Add("\r\n"));
+					Console::Out(Str::From(pt, ParseTree::BestAttempt).Add("\r\n"));
 					throw "Message was NOT parsed.";
 				}
 

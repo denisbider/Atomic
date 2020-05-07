@@ -16,7 +16,7 @@ namespace
 
 namespace At
 {
-	ReqResult DbAdm_Browse::WP_Process(EntityStore& store, HttpRequest& req)
+	ReqResult DbAdm_Browse::WHP_Process(EntityStore& store, HttpRequest& req)
 	{
 		Seq entityIdStr { req.QueryNvp("entityId") };
 		ObjId entityId;
@@ -68,7 +68,7 @@ namespace At
 								{
 									m_entity->Update();
 
-									SetRedirectResponse(HttpStatus::SeeOther, Str(DAP_Env_MountPath()).Add("browse?entityId=").UrlEncode(Str().Obj(entityId)));
+									SetRedirectResponse(HttpStatus::SeeOther, Str(DAP_Env_MountPath()).Add("browse?entityId=").UrlEncode(Str::From(entityId)));
 									return ReqResult::Done;
 								}
 							}
@@ -96,11 +96,11 @@ namespace At
 					m_entity->RemoveChildren();
 					m_entity->Remove();
 
-					SetRedirectResponse(HttpStatus::SeeOther, Str(DAP_Env_MountPath()).Add("browse?entityId=").UrlEncode(Str().Obj(m_entity->m_parentId)));
+					SetRedirectResponse(HttpStatus::SeeOther, Str(DAP_Env_MountPath()).Add("browse?entityId=").UrlEncode(Str::From(m_entity->m_parentId)));
 					return ReqResult::Done;
 				}
 				else
-					throw HttpRequest::Error(HttpStatus::BadRequest);
+					return ReqResult::BadRequest;
 			}
 
 			store.EnumAllChildren(m_entity->m_entityId,
@@ -131,7 +131,7 @@ namespace At
 					if (childNode.IsType(Json::id_Value))
 					{
 						if (!childNode.IsType(Json::id_Object))
-							AddPageErr(Str().Obj(childNode, ParseNode::TagRowCol).Add(": Expecting JSON object representing an instruction"));
+							AddPageErr(Str::From(childNode, ParseNode::TagRowCol).Add(": Expecting JSON object representing an instruction"));
 						else
 						{
 							try
@@ -237,7 +237,7 @@ namespace At
 							}
 							catch (Json::DecodeErr const& e)
 							{
-								AddPageErr(Str().Obj(childNode, ParseNode::TagRowCol).Add(": Error decoding import script instruction: ").Add(e.what()));
+								AddPageErr(Str::From(childNode, ParseNode::TagRowCol).Add(": Error decoding import script instruction: ").Add(e.what()));
 								break;
 							}
 						}
@@ -261,9 +261,9 @@ namespace At
 						.P().B().UInt(m_nrEntitiesInserted).EndB().T(" entities inserted.").EndP();
 
 			Str browsePath = DAP_Env_MountPath();
-			browsePath.Add("browse?entityId=").UrlEncode(Str().Obj(m_entity->m_entityId));
+			browsePath.Add("browse?entityId=").UrlEncode(Str::From(m_entity->m_entityId));
 
-			html.H1().A().Href(Str(DAP_Env_MountPath()).Add("browse?entityId=").UrlEncode(Str().Obj(m_entity->m_entityId))).T(m_entity->GetKindName()).T(" ").T(Str().Obj(m_entity->m_entityId)).EndA().EndH1();
+			html.H1().A().Href(Str(DAP_Env_MountPath()).Add("browse?entityId=").UrlEncode(Str::From(m_entity->m_entityId))).T(m_entity->GetKindName()).T(" ").T(Str::From(m_entity->m_entityId)).EndA().EndH1();
 		
 			if (m_entity->m_parentId == ObjId::None)
 				html.P().T("Root entity").EndP();
@@ -324,7 +324,7 @@ namespace At
 								.Td().T("ObjId").EndTd()
 							.EndTr();
 
-						for (EntityChildInfo const& eci : m_children.Slice(curKindStart, nrChildrenOfKind))
+						for (EntityChildInfo const& eci : m_children.GetSlice(curKindStart, nrChildrenOfKind))
 						{
 							Str childIdStr;
 							childIdStr.Obj(eci.m_entityId);

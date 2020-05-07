@@ -29,7 +29,7 @@ namespace At
 			ParseTree pt2 { content };
 			pt2.RecordBestToStack();
 			EnsureThrow(!pt2.Parse(Css::C_Tokens));
-			throw Str().Obj(pt2, ParseTree::BestAttempt);
+			throw Str::From(pt2, ParseTree::BestAttempt);
 		}
 
 		CssPack_ProcessNode(enc, pt.Root());

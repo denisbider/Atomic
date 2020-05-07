@@ -138,10 +138,10 @@ namespace At
 									wi->m_msg->Update();
 
 									if (!wi->m_msg->f_moreContentContext.Any())
-										wi->m_content = wi->m_msg->f_content;
+										wi->m_content = wi->m_msg->f_contentPart1;
 									else
 									{
-										wi->m_contentStorage = wi->m_msg->f_content;
+										wi->m_contentStorage = wi->m_msg->f_contentPart1;
 										SmtpSender_InTx_LoadMoreContent(wi->m_msg.Ref(), wi->m_contentStorage);
 										wi->m_content = wi->m_contentStorage;
 									}

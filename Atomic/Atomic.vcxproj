@@ -245,6 +245,7 @@
     <ClCompile Include="AtSocketWriter.cpp" />
     <ClCompile Include="AtSeedGrammar.cpp" />
     <ClCompile Include="AtStopCtl.cpp" />
+    <ClCompile Include="AtStr.cpp" />
     <ClCompile Include="AtTagStack.cpp" />
     <ClCompile Include="AtTextBuilder.cpp" />
     <ClCompile Include="AtTextLog.cpp" />
@@ -381,7 +382,7 @@
     <ClInclude Include="AtParseTree.h" />
     <ClInclude Include="AtPop3ServerThread.h" />
     <ClInclude Include="AtPostFormSecurity.h" />
-    <ClInclude Include="AtPtrPair.h" />
+    <ClInclude Include="AtSlice.h" />
     <ClInclude Include="AtRange.h" />
     <ClInclude Include="AtRwLock.h" />
     <ClInclude Include="AtScripts.h" />
@@ -519,6 +520,7 @@
     <ClInclude Include="AtRpAnchor.h" />
     <ClInclude Include="AtParseNode.h" />
     <ClInclude Include="AtUtf16.h" />
+    <ClInclude Include="AtBitFlagDescriber.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Atomic.natvis" />

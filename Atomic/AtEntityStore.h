@@ -371,6 +371,8 @@ namespace At
 			return entity;
 		}
 
+		Rp<T> GetParentOf(Entity const& x) { return GetEntity(x.m_parentId, x.m_entityId); }
+
 	private:
 		EntityStore& m_store;
 		EntityByIdMap<T> m_entities;

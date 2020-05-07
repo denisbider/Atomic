@@ -12,7 +12,21 @@
 
 namespace At
 {
-	enum class ReqResult { Invalid, Done, Continue };
+	enum class ReqResult
+	{
+		Invalid, Done, Continue,
+
+		BadRequest       = HttpStatus::BadRequest,
+		Unauthorized     = HttpStatus::Unauthorized,
+		Forbidden        = HttpStatus::Forbidden,
+		NotFound         = HttpStatus::NotFound,
+		MethodNotAllowed = HttpStatus::MethodNotAllowed,
+		TooManyRequests  = HttpStatus::TooManyRequests,
+	};
+
+	inline bool ReqResult_IsStatus(ReqResult v) { return ((int) v) >= 100; }
+	inline HttpStatus::E ReqResult_GetStatus(ReqResult v) { return (HttpStatus::E) v; }
+
 
 	class WebRequestHandler : public RefCountable
 	{
@@ -49,12 +63,18 @@ namespace At
 		// CheckCfmCookie returns true if a valid confirmation cookie is found corresponding to a "&cfm=" query parameter.
 		// If CheckCfmCookie returns true, it will initialize CfmNvp in HttpRequest.
 		enum { MaxCfmCookieAgeSeconds = 300, MaxCfmContextBytes = 1000, MaxCfmPairs = 100, MaxCfmNameBytes = 100, MaxCfmValueBytes = 1000 };
-		Str  AddCfmCookie   (HttpRequest& req, Seq context) { return AddCfmCookie(req, context, InsensitiveNameValuePairs()); }
-		Str  AddCfmCookie   (HttpRequest& req, Seq context, Seq name,  Seq value);
-		Str  AddCfmCookie   (HttpRequest& req, Seq context, Seq name1, Seq value1, Seq name2, Seq value2);
-		Str  AddCfmCookie   (HttpRequest& req, Seq context, Seq name1, Seq value1, Seq name2, Seq value2, Seq name3, Seq value3);
-		Str  AddCfmCookie   (HttpRequest& req, Seq context, InsensitiveNameValuePairsBase const& nvp);
-		bool CheckCfmCookie (HttpRequest& req, Seq context);
+		Str AddCfmCookie(HttpRequest& req) { return AddCfmCookie(req, InsensitiveNameValuePairs()); }
+		Str AddCfmCookie(HttpRequest& req, Seq name,  Seq value);
+		Str AddCfmCookie(HttpRequest& req, Seq name1, Seq value1, Seq name2, Seq value2);
+		Str AddCfmCookie(HttpRequest& req, Seq name1, Seq value1, Seq name2, Seq value2, Seq name3, Seq value3);
+		Str AddCfmCookie(HttpRequest& req, InsensitiveNameValuePairsBase const& nvp) { return AddCfmCookieWithContext(req, typeid(*this).name(), nvp); }
+
+		template <class DerivedWrh>
+		Str AddCfmCookieFor(HttpRequest& req, InsensitiveNameValuePairsBase const& nvp) { return AddCfmCookieWithContext(req, typeid(DerivedWrh).name(), nvp); }
+
+		Str AddCfmCookieWithContext(HttpRequest& req, Seq context, InsensitiveNameValuePairsBase const& nvp);
+
+		bool CheckCfmCookie(HttpRequest& req);
 
 		void AddSessionCookie          (HttpRequest& req, Seq n, Seq v, Seq d, Seq p)              { AddCookie(n, v, d, p, req.GetCookieSecure_Strict(), req.GetCookieHttpOnly(), 0       ); }
 		void AddSavedCookie            (HttpRequest& req, Seq n, Seq v, Seq d, Seq p, int expSecs) { AddCookie(n, v, d, p, req.GetCookieSecure_Strict(), req.GetCookieHttpOnly(), expSecs ); }

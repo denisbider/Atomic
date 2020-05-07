@@ -118,6 +118,17 @@ namespace At
 	}
 
 
+	SYSTEMTIME const& Time::ToSystemTimeOpt(Opt<SYSTEMTIME>& sto) const
+	{
+		if (sto.Any())
+			return sto.Ref();
+
+		SYSTEMTIME& st = sto.Init();
+		ToSystemTime(st);
+		return st;
+	}
+
+
 	Time Time::ReadIsoStyleTimeStr(Seq& s) noexcept
 	{
 		SYSTEMTIME st {};
@@ -197,35 +208,42 @@ namespace At
 		{ "", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 
 
-	void Time::Enc_DateWithNamedMonth(Enc& s, char const* const* monthNames) const
+	void Time::Enc_DateWithNamedMonth(Enc& s, Opt<SYSTEMTIME>& sto, char const* const* monthNames) const
 	{
 		s.ReserveInc(9 + 1 + 2 + 2 + 4);	// "March 6, 2019"
 
-		SYSTEMTIME st;
-		ToSystemTime(st);
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 
 		if (st.wMonth < 1 || st.wMonth > 12) throw ErrWithCode<>(st.wMonth, __FUNCTION__ ": Unexpected month");
 		s.Add(monthNames[st.wMonth]).Ch(' ').UInt(st.wDay).Add(", ").UInt(st.wYear);
 	}
 
 
-	void Time::Enc_YyyyMmDd(Enc& s) const
+	void Time::Enc_YyyyMmDd(Enc& s, Opt<SYSTEMTIME>& sto) const
 	{
 		s.ReserveInc(4 + 1 + 2 + 1 + 2);	// "2019-03-06"
 
-		SYSTEMTIME st;
-		ToSystemTime(st);
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 
 		s.UInt(st.wYear, 10, 4).Ch('-').UInt(st.wMonth, 10, 2).Ch('-').UInt(st.wDay, 10, 2);
 	}
 
 
-	void Time::Enc_Http(Enc& s) const
+	void Time::Enc_Time24(Enc& s, Opt<SYSTEMTIME>& sto) const
+	{
+		s.ReserveInc(2 + 1 + 2);			// "09:07"
+
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
+
+		s.UInt(st.wHour, 10, 2).Ch(':').UInt(st.wMinute, 10, 2);
+	}
+
+
+	void Time::Enc_Http(Enc& s, Opt<SYSTEMTIME>& sto) const
 	{
 		s.ReserveInc(29);	// "Wed, 06 Mar 2019 23:59:59 GMT"
 
-		SYSTEMTIME st;
-		ToSystemTime(st);
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 
 		s.Add(DayOfWeekToStr3(st.wDayOfWeek))
 			.Add(", ").UInt(st.wDay, 10, 2)
@@ -238,12 +256,11 @@ namespace At
 	}
 
 
-	void Time::Enc_Email(Enc& s) const
+	void Time::Enc_Email(Enc& s, Opt<SYSTEMTIME>& sto) const
 	{
 		s.ReserveInc(31);	// "Wed, 6 Mar 2019 23:59:59 +0000"
 
-		SYSTEMTIME st;
-		ToSystemTime(st);
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 
 		s.Add(DayOfWeekToStr3(st.wDayOfWeek))
 			.Add(", ").UInt(st.wDay)
@@ -256,12 +273,11 @@ namespace At
 	}
 
 
-	void Time::Enc_Iso(Enc& s, TimeFmt::EIso fmt, char delim) const
+	void Time::Enc_Iso(Enc& s, Opt<SYSTEMTIME>& sto, TimeFmt::EIso fmt, char delim) const
 	{
 		s.ReserveInc(27);	// "2019-03-06 23:59:59.000000Z"
 		
-		SYSTEMTIME st;
-		ToSystemTime(st);
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 
 		s			.UInt(st.wYear,   10, 4)
 			.Ch('-').UInt(st.wMonth,  10, 2)
@@ -294,12 +310,11 @@ namespace At
 	}
 
 
-	void Time::Enc_Dense(Enc& s) const
+	void Time::Enc_Dense(Enc& s, Opt<SYSTEMTIME>& sto) const
 	{
 		s.ReserveInc(15);	// "20190306-235959"
 		
-		SYSTEMTIME st;
-		ToSystemTime(st);
+		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 
 		s	.UInt(st.wYear,   10, 4)
 			.UInt(st.wMonth,  10, 2)

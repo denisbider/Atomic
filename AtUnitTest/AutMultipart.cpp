@@ -17,13 +17,13 @@ void MultipartTest(Seq encoded)
 	{
 		Console::Out("Parsed\r\n");
 
-		Mime::MultipartBody mltp;
+		Mime::Part part { Mime::Part::Root };
 		PinStore store { 4000 };
 		Mime::PartReadCx prcx;
-		if (!mltp.Read(encoded, store, prcx))
-			Console::Out(Str("MultipartBody could not be read\r\n").Obj(prcx));
+		if (!part.ReadMultipartBody(encoded, store, prcx))
+			Console::Out(Str("Multipart body could not be read\r\n").Obj(prcx));
 		else
-			Console::Out(Str().UInt(mltp.m_parts.Len()).Add(" body parts read\r\n"));
+			Console::Out(Str().UInt(part.m_parts.Len()).Add(" body parts read\r\n"));
 	}
 }
 

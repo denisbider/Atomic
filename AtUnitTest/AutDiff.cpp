@@ -10,9 +10,9 @@ Str DescInputUnit(Seq src, Diff::InputUnit const& iu)
 }
 
 
-void CheckDiffCorrect(PtrPair<Diff::DiffUnit> diff, PtrPair<Diff::InputUnit> inputOld, PtrPair<Diff::InputUnit> inputNew)
+void CheckDiffCorrect(Slice<Diff::DiffUnit> diff, Slice<Diff::InputUnit> inputOld, Slice<Diff::InputUnit> inputNew)
 {
-	auto expectLine = [] (Seq src, PtrPair<Diff::InputUnit>& input, Diff::InputUnit const& iu, sizet& linesMatched) -> bool
+	auto expectLine = [] (Seq src, Slice<Diff::InputUnit>& input, Diff::InputUnit const& iu, sizet& linesMatched) -> bool
 		{
 			if (!input.Any())
 			{
@@ -242,6 +242,8 @@ void DiffTests(int argc, char** argv)
 			DiffTestSimple("bca",         "ab",      diffParams);
 			DiffTestSimple("abcd",        "bcda",    diffParams);
 			DiffTestSimple("bcda",        "abcd",    diffParams);
+			DiffTestSimple("abc",         "cbacba",  diffParams);
+			DiffTestSimple("cbacba",      "abc",     diffParams);
 			DiffTestSimple("abcoeppklmn", "op",      diffParams);
 			DiffTestSimple("abcabba",     "cbabac",  diffParams);
 			DiffTestSimple("abgdef",      "gh",      diffParams);

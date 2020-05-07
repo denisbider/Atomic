@@ -134,24 +134,14 @@ void MimePart_FromOgn(Mime::Part& part, OgnPartStats& stats, OgnMsgPart const& o
 
 	if (!ognPart.m_isNested)
 	{
-		part.m_contentEnc.Init(Seq("base64"));
-
-		Seq content = Seq_FromOgn(ognPart.m_content);
-		if (!content.n)
-			part.m_contentEncoded = Seq();
-		else
-		{
-			sizet encLen = Base64::EncodeBaseLen(content.n);
-			part.m_contentEncoded = Base64::MimeEncode(content, pinStore.GetEnc(encLen), Base64::Padding::Yes, Base64::NewLines::Mime());
-		}
-
+		part.EncodeContent_Base64(Seq_FromOgn(ognPart.m_content), pinStore);
 		stats.m_totalContentBytes += part.m_contentEncoded.n;
 	}
 	else
 	{
 		for (sizet i=0; i!=ognPart.m_nested.m_nrParts; ++i)
 		{
-			Mime::Part& nestedPart = part.m_multipartBody.m_parts.Add();
+			Mime::Part& nestedPart = part.AddChildPart();
 			MimePart_FromOgn(nestedPart, stats, ognPart.m_nested.m_parts[i], pinStore);
 		}
 	}
@@ -217,7 +207,7 @@ void OgnMsgToSend_FromSmtp(OgnMsgToSend& ognMsg, OgnMsgStorage& storage, SmtpMsg
 	ognMsg.m_tlsRequirement	 = (OgnTlsAssurance::E) smtpMsg.f_tlsRequirement;
 	ognMsg.m_fromAddress	 =       OgnSeq_FromSeq(smtpMsg.f_fromAddress);
 	ognMsg.m_toDomain		 =       OgnSeq_FromSeq(smtpMsg.f_toDomain);
-	ognMsg.m_content		 =       OgnSeq_FromSeq(smtpMsg.f_content);
+	ognMsg.m_content		 =       OgnSeq_FromSeq(smtpMsg.f_contentPart1);
 	ognMsg.m_deliveryContext =       OgnSeq_FromSeq(smtpMsg.f_deliveryContext);
 
 	ognMsg.m_customTimeout      = true;

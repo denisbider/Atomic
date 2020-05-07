@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AtPtrPair.h"
 #include "AtSeq.h"
+#include "AtSlice.h"
 
 
 namespace At
@@ -39,7 +39,7 @@ namespace At
 		// - Good worst-case performance: for large inputs, space/time cost is O(max(N,M)), but might not find best diff for large and complex inputs.
 		// - Does not use recursion: uses a sliding matrix that is limited in width for easy control of the quality/performance tradeoff.
 		// - Trivially handles common head and tail: the matrix algorithm is used between first and last difference in the inputs.
-		void Generate(PtrPair<InputUnit> inputOld, PtrPair<InputUnit> inputNew, Vec<DiffUnit>& diff, DiffParams const& params);
+		void Generate(Slice<InputUnit> inputOld, Slice<InputUnit> inputNew, Vec<DiffUnit>& diff, DiffParams const& params);
 
 	}
 }

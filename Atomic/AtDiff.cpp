@@ -51,7 +51,7 @@ namespace At
 				Vec<Occurrence> m_occurrencesOld;
 				Vec<Occurrence> m_occurrencesNew;
 
-				void Build(PtrPair<InputUnit> inputOld, PtrPair<InputUnit> inputNew)
+				void Build(Slice<InputUnit> inputOld, Slice<InputUnit> inputNew)
 				{
 					m_uniqueUnitStorage.FixReserve(inputOld.Len() + inputNew.Len());
 					m_occurrencesOld.FixReserve(inputOld.Len());
@@ -166,8 +166,8 @@ namespace At
 					EnsureThrow(m_xAxis.Any() == m_yAxis.Any());
 					if (m_xAxis.Any())
 					{
-						m_nrDiags = m_xAxis.Len() + m_yAxis.Len() + 1;
-						m_diagMin = -(NumCast<ptrdiff>(m_yAxis.Len()));
+						m_nrDiags = m_xAxis.Len() + m_yAxis.Len() + 3;
+						m_diagMin = -(NumCast<ptrdiff>(m_yAxis.Len() + 1));
 
 						// Set maximum number of steps to approximate square root of input size, but not less than 4000
 						m_maxNrSteps = 1;
@@ -463,7 +463,7 @@ namespace At
 			};
 
 
-			void CutCommonTail(PtrPair<InputUnit>& inputOld, PtrPair<InputUnit>& inputNew)
+			void CutCommonTail(Slice<InputUnit>& inputOld, Slice<InputUnit>& inputNew)
 			{
 				while (inputOld.Any() && inputNew.Any())
 				{
@@ -476,7 +476,7 @@ namespace At
 			}
 
 			
-			void TrivialDiff(PtrPair<InputUnit>& inputOld, PtrPair<InputUnit>& inputNew, Vec<DiffUnit>& diff)
+			void TrivialDiff(Slice<InputUnit>& inputOld, Slice<InputUnit>& inputNew, Vec<DiffUnit>& diff)
 			{
 				while (inputOld.Any() && inputNew.Any())
 				{
@@ -505,7 +505,7 @@ namespace At
 		using namespace Internal;
 
 
-		void Generate(PtrPair<InputUnit> inputOld, PtrPair<InputUnit> inputNew, Vec<DiffUnit>& diff, DiffParams const& params)
+		void Generate(Slice<InputUnit> inputOld, Slice<InputUnit> inputNew, Vec<DiffUnit>& diff, DiffParams const& params)
 		{
 			diff.ReserveExact(inputOld.Len() + inputNew.Len());
 

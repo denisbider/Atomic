@@ -11,6 +11,13 @@ namespace At
 	{
 		// EmbedCx
 
+		enum class AbsContentUrlBeh		// Behavior for embedded content URLs that specify an absolute URL (not relative, not fragment ID)
+		{
+			Remove,		// Remove absolute content URLs
+			Preload,	// Replace absolute content URLs with deterministic relative URLs, populate EmbedCx::m_preloadUrls so the remote URLs can be preloaded
+			Preserve,	// Preserve absolute content URLs as they are, allowing for direct embedding of remote content
+		};
+
 		struct PreloadUrl
 		{
 			Seq m_origUrl;
@@ -28,14 +35,19 @@ namespace At
 		{
 			EmbedCx(PinStore& store) : m_store(store) {}
 
-			PinStore&       m_store;
-			Seq             m_idPrefix;
-			Map<PreloadUrl> m_preloadUrls;
-			ElemEmbedCx     m_elemCx;					// Reconstruct this between elements
+			// Input parameters
+			PinStore&        m_store;
+			Seq              m_idPrefix;
+			AbsContentUrlBeh m_absContentUrlBeh {};
+
+			// Initialized during embedding
+			sizet            m_nrAbsContentUrls {};
+			Map<PreloadUrl>  m_preloadUrls;
+			ElemEmbedCx      m_elemCx;					// Reconstruct this between elements
 
 			void OnNewElem() { Reconstruct(m_elemCx); }
 
-			virtual Seq SanitizeRelUrl(Seq relUrl) = 0;		// Should return a URL (relative or absolute) that actually serves the original relative URL
+			virtual Seq GetUrlForCid(Seq cid) = 0;			// Should return a URL (relative or absolute) that attempts to serve the resource identified by Content-ID
 		};
 
 

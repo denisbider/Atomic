@@ -68,7 +68,7 @@ namespace At
 	File::~File() noexcept
 	{
 		if (m_hFile != INVALID_HANDLE_VALUE)
-			EnsureReportWithCode(CloseHandle(m_hFile), GetLastError());
+			EnsureReportWithNr(CloseHandle(m_hFile), GetLastError());
 	}
 
 

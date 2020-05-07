@@ -62,7 +62,7 @@ void ActvTests(int argc, char** argv)
 
 		Actv::ActvCodeData data2;
 		Actv::ActvCodeData::DecodeResult result = data2.Decode(actvCodeBinary2);
-		EnsureThrowWithCode(result == Actv::ActvCodeData::DecodeResult::OK, (int64) result);
+		EnsureThrowWithNr(result == Actv::ActvCodeData::DecodeResult::OK, (int64) result);
 
 		EnsureThrow(data == data2);
 		EnsureThrow(!(data != data2));

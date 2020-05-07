@@ -5,12 +5,6 @@
 #include "AtPwHash.h"
 
 
-namespace
-{
-	char const* const c_zLoginExpiredCookieContext = "At: WebPage: Session expired";
-}	// anon
-
-
 namespace At
 {
 	// WebLoginErr
@@ -42,67 +36,85 @@ namespace At
 		try
 		{ 
 			if (!WP_ValidateMethod(req))
-				throw HttpRequest::Error(HttpStatus::MethodNotAllowed);
-
-			PageLogin loginType = WP_LoginType();
-			switch (loginType)
 			{
-			case PageLogin::Ignore:
-				reqResult = WP_Process(store, req);
-				break;
+				m_processError.Init(HttpStatus::MethodNotAllowed);
+				reqResult = ReqResult::Continue;
+			}
+			else
+			{
+				if (req.IsGetOrHead())
+					m_confirmation = CheckCfmCookie(req);
 
-			case PageLogin::IsLoginPage:
-				reqResult = ValidateLogin(store, req, loginType);
-				if (reqResult != ReqResult::Done)
+				PageLogin loginType = WP_LoginType();
+				switch (loginType)
 				{
-					reqResult = Login(store, req);
-					if (reqResult != ReqResult::Done)
-						reqResult = WP_Process(store, req);
-				}
-				break;
-
-			case PageLogin::IsLogoutPage:
-				reqResult = ValidateLogin(store, req, loginType);
-				if (reqResult != ReqResult::Done)
-				{
-					reqResult = Logout(store, req);
-					if (reqResult != ReqResult::Done)
-						reqResult = WP_Process(store, req);
-				}
-				break;
-
-			case PageLogin::Accept:
-				reqResult = ValidateLogin(store, req, loginType);
-				if (reqResult != ReqResult::Done)
+				case PageLogin::Ignore:
 					reqResult = WP_Process(store, req);
-				break; 
+					break;
 
-			case PageLogin::Require_Relaxed:
-			case PageLogin::Require_Strict:
-				reqResult = ValidateLogin(store, req, loginType);
-				if (reqResult != ReqResult::Done)
-					if (m_login.m_state == Login::State::LoggedIn)
-						reqResult = WP_Process(store, req);
-					else
+				case PageLogin::IsLoginPage:
+					reqResult = ValidateLogin(store, req, loginType);
+					if (ReqResult::Continue == reqResult)
 					{
-						Str loginReturnUrl;
-						if (req.IsPost())
-							loginReturnUrl = WP_LoginPagePath();
+						reqResult = Login(store, req);
+						if (ReqResult::Continue == reqResult)
+							reqResult = WP_Process(store, req);
+					}
+					break;
+
+				case PageLogin::IsLogoutPage:
+					reqResult = ValidateLogin(store, req, loginType);
+					if (ReqResult::Continue == reqResult)
+					{
+						reqResult = Logout(store, req);
+						if (ReqResult::Continue == reqResult)
+							reqResult = WP_Process(store, req);
+					}
+					break;
+
+				case PageLogin::Accept:
+					reqResult = ValidateLogin(store, req, loginType);
+					if (ReqResult::Continue == reqResult)
+						reqResult = WP_Process(store, req);
+					break; 
+
+				case PageLogin::Require_Relaxed:
+				case PageLogin::Require_Strict:
+					reqResult = ValidateLogin(store, req, loginType);
+					if (ReqResult::Continue == reqResult)
+						if (m_login.m_state == Login::State::LoggedIn)
+							reqResult = WP_Process(store, req);
 						else
 						{
-							loginReturnUrl = MakeLoginReturnUrl(req);
-							if (m_login.m_state == Login::State::Expired_ThisPage)
-								loginReturnUrl.Add("&cfm=").Add(AddCfmCookie(req, c_zLoginExpiredCookieContext));
+							Str loginReturnUrl;
+							if (req.IsPost())
+								loginReturnUrl = WP_LoginPagePath();
+							else
+							{
+								loginReturnUrl = MakeLoginReturnUrl(req);
+								if (m_login.m_state == Login::State::Expired_ThisPage)
+								{
+									InsensitiveNameValuePairs nvp;
+									nvp.Add("loginExpired", "1");
+									loginReturnUrl.Add("&cfm=").Add(AddCfmCookieWithContext(req, WP_LoginPageCfmContext(), nvp));
+								}
+							}
+
+							SetRedirectResponse(HttpStatus::SeeOther, loginReturnUrl);
+							reqResult = ReqResult::Done;
 						}
+					break;
 
-						SetRedirectResponse(HttpStatus::SeeOther, loginReturnUrl);
-						reqResult = ReqResult::Done;
-					}
-				break;
+				default:
+					reqResult = ReqResult::Invalid;
+					EnsureThrowWithNr(!"Unrecognized page login type", (int64) loginType);
+				}
 
-			default:
-				reqResult = ReqResult::Invalid;
-				EnsureThrow(!"Unrecognized page login type");
+				if (ReqResult_IsStatus(reqResult))
+				{
+					m_processError.Init(ReqResult_GetStatus(reqResult));
+					reqResult = ReqResult::Continue;
+				}
 			}
 		}
 		catch (HttpRequest::Redirect const& e)
@@ -136,7 +148,7 @@ namespace At
 		if (!m_loginDest.Any())
 			m_loginDest = WP_DefaultLoginDest();
 		else if (!IsInternalRedirDest(m_loginDest))
-			throw HttpRequest::Error(HttpStatus::BadRequest);
+			return ReqResult::BadRequest;
 
 		if (req.IsGetOrHead())
 		{
@@ -146,8 +158,11 @@ namespace At
 				// to the login page from another page in a way that suggests the other page has a stricter login session expiry.
 				// In this case, let the user log in again so they can access that page.
 
-				if (CheckCfmCookie(req, c_zLoginExpiredCookieContext))
-					m_login.m_state = Login::State::Expired_OtherPage;
+				if (Confirmation())
+				{
+					if (req.CfmNvp("loginExpired") == "1")
+						m_login.m_state = Login::State::Expired_OtherPage;
+				}
 				else
 				{
 					SetRedirectResponse(HttpStatus::SeeOther, m_loginDest);
@@ -250,7 +265,7 @@ namespace At
 				if (m_login.m_sessionIndex != SIZE_MAX &&
 					WP_ValidateAppUser(store, req, m_login.m_expiry))
 				{
-					Str remoteAddrOnly { Str::From, req.RemoteAddr(), SockAddr::AddrOnly };
+					Str remoteAddrOnly = Str::From(req.RemoteAddr(), SockAddr::AddrOnly);
 
 					Time expiryAnchorTime;
 					uint expiryMinutes {};
@@ -381,7 +396,7 @@ namespace At
 		changeAppUser.f_pwVersion += 1;
 		changeAppUser.f_loginSessions.Clear();
 
-		Str remoteAddrOnly { Str::From, req.RemoteAddr(), SockAddr::AddrOnly };
+		Str remoteAddrOnly = Str::From(req.RemoteAddr(), SockAddr::AddrOnly);
 
 		if (m_login.m_state != Login::State::LoggedIn || changeAppUser.m_entityId != m_login.m_appUser->m_entityId)
 		{

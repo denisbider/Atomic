@@ -286,17 +286,105 @@ namespace At
 	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendErr::E err, LookedUpAddr const* mx,
 		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines)
 	{
-		Rp<SmtpSendFailure> sfi = new SmtpSendFailure(Entity::Contained);
-		sfi->f_stage = stage;
-		sfi->f_err = err;
+		Rp<SmtpSendFailure> f = new SmtpSendFailure(Entity::Contained);
+		f->f_stage = stage;
+		f->f_err = err;
 		if (mx)
-			mx->EncObj(sfi->f_mx);
-		sfi->f_replyCode = code.Value();
-		sfi->f_enhStatus = enhStatus.ToUint();
-		sfi->f_desc      = desc;
+			mx->EncObj(f->f_mx);
+		f->f_replyCode = code.Value();
+		f->f_enhStatus = enhStatus.ToUint();
+		f->f_desc      = desc;
 		if (lines)
-			sfi->f_lines = *lines;
-		return sfi;
+			f->f_lines = *lines;
+		return f;
+	}
+
+
+	void SmtpSendFailure_EncodeAsSmtpDiagnosticCode(SmtpSendFailure const& f, Enc& s, SmtpDeliveryState::E deliveryState)
+	{
+		bool needNewLine {};
+
+		auto addLine = [&needNewLine, &s] (Seq line)
+			{
+				line = line.Trim();
+				if (line.n)
+				{
+					if (needNewLine) s.Add("\r\n "); else needNewLine = true;
+
+					while (line.n)
+					{
+						uint c;
+						if (Utf8::ReadResult::OK != Utf8::ReadCodePoint(line, c))	{ s.Add("&#65533;"); line.DropByte(); }		// Unicode replacement character
+						else if (c == '&')											s.Add("&amp;");
+						else if (c == '(')											s.Add("&lpar;");
+						else if (c == ')')											s.Add("&rpar;");
+						else if (c < 32 || c > 126)									s.Add("&#").UInt(c).Ch(';');
+					}
+				}
+			};
+
+		auto beginComment = [&needNewLine, &s] ()
+			{
+				if (needNewLine) s.Add("\r\n "); else needNewLine = true;
+				s.Ch('(');
+			};
+
+		auto endComment = [&s] () { s.Ch(')'); };
+
+		if (!f.f_lines.Any())
+		{
+			if (SmtpDeliveryState::TempFailure == deliveryState)
+				addLine("420 Temporary delivery failure");
+			else
+				addLine("520 Permanent delivery failure");
+		}
+		else
+		{
+			Str linePrefixed;
+			for (sizet i=0; i!=f.f_lines.Len(); ++i)
+			{
+				Seq line = f.f_lines[i];
+				char sep = (i + 1 < f.f_lines.Len()) ? '-' : ' ';
+				linePrefixed.Clear().ReserveAtLeast(4 + line.n);
+				linePrefixed.UInt(f.f_replyCode).Ch(sep).Add(line);
+				addLine(linePrefixed);
+			}
+		}
+
+		beginComment();
+
+		Str line;
+		line.SetAdd("Send stage ", SmtpSendStage::Name(f.f_stage), ", ");
+
+		Seq errName = SmtpSendErr::Name(f.f_err);
+		Seq errDesc = SmtpSendErr::Desc(f.f_err);
+		if (errName.EqualInsensitive(errDesc))
+		{
+			line.Add("error ").Add(errName);
+			if (f.f_desc.Any())
+				line.Ch(';');
+			addLine(line);
+		}
+		else
+		{
+			line.Add("error ").Add(errName).Add(":");
+			addLine(line);
+
+			line.Set(errDesc);
+			if (f.f_desc.Any())
+				line.Ch(';');
+			addLine(line);
+		}
+
+		Seq descReader = f.f_desc;
+		while (descReader.n)
+		{
+			Seq descLine = descReader.ReadToFirstByteOf("\r\n");
+			descReader.DropToFirstByteNotOf("\r\n\t ");
+			addLine(descLine);
+		}
+
+		endComment();
 	}
 
 
@@ -310,7 +398,7 @@ namespace At
 	ENTITY_DEF_CLOSE(MailboxResult);
 
 	
-	void MailboxResultCount::Count(PtrPair<MailboxResult> results)
+	void MailboxResultCount::Count(Slice<MailboxResult> results)
 	{
 		for (MailboxResult const& r : results)
 			switch (r.f_state)
@@ -335,7 +423,7 @@ namespace At
 	ENTITY_DEF_FIELD(SmtpMsgToSend, fromAddress)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, pendingMailboxes)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, toDomain)
-	ENTITY_DEF_FIELD(SmtpMsgToSend, content)
+	ENTITY_DEF_FIELD(SmtpMsgToSend, contentPart1)
 	ENTITY_DEF_FLD_V(SmtpMsgToSend, moreContentContext, 1)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, deliveryContext)
 	ENTITY_DEF_FIELD(SmtpMsgToSend, mailboxResults)
@@ -353,7 +441,7 @@ namespace At
 		else
 		{
 			s.Add(", content:\r\n").Add(m_lines[0]).Add("\r\n");
-			for (Str const& line : m_lines.Slice(1))
+			for (Str const& line : m_lines.GetSlice(1))
 				s.Add(line).Add("\r\n");
 		}
 	}

@@ -16,7 +16,7 @@ namespace At
 
 	struct StrErr : public Exception
 	{
-		StrErr(Seq msg) : m_s(Str::NullTerminate, msg) {}	
+		StrErr(Seq msg) : m_s(Str::NullTerminate(msg)) {}	
 		char const* what() const override { return m_s.CharPtr(); }
 		Str const& S() const { return m_s; }
 	protected:

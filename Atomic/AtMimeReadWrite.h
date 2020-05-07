@@ -35,6 +35,7 @@ namespace At
 
 			void Read(ParseNode const& fieldNode, PinStore& store);
 			void Write(MsgWriter& writer) const;
+			void WriteContent(MsgWriter& writer) const;
 
 			bool EqualType(Seq t)            const { return m_type.EqualInsensitive(t); }
 			bool EqualSubType(Seq t, Seq st) const { return m_type.EqualInsensitive(t) && m_subType.EqualInsensitive(st); }
@@ -49,6 +50,9 @@ namespace At
 			bool IsMultipartFormData    () const { return EqualSubType ("multipart",   "form-data"             ); }
 			bool IsAppWwwFormUrlEncoded () const { return EqualSubType ("application", "x-www-form-urlencoded" ); }
 			bool IsMsgDeliveryStatus    () const { return EqualSubType ("message",     "delivery-status"       ); }
+
+			// Must pass already decoded content
+			bool IsSafeAsUntrustedInlineContent(Seq content) const;
 		};
 
 
@@ -97,6 +101,11 @@ namespace At
 
 			void Read(ParseNode const& fieldNode, PinStore& store);
 			void Write(MsgWriter& writer) const;
+			void WriteContent(MsgWriter& writer) const;
+
+			bool IsInline     () const { return m_type.EqualInsensitive("inline"     ); }
+			bool IsAttachment () const { return m_type.EqualInsensitive("attachment" ); }
+			bool IsFormData   () const { return m_type.EqualInsensitive("form-data"  ); }
 		};
 
 
@@ -159,32 +168,35 @@ namespace At
 		};
 
 
-		struct Part;
-
-		struct MultipartBody
-		{
-			Vec<Part> m_parts;
-
-			bool Read(Seq& encoded, PinStore& store, PartReadCx& prcx);
-			void Write(MsgWriter& writer, Seq boundary) const;
-		};
-
-
 		struct Part
 		{
-			Seq m_srcText;
+			Vec<sizet>               m_loc;				// []: message itself; [0]: first part; [1]: second part; [2,3]: third part of second part
+			Seq                      m_srcText;
 
 			mutable Opt<ContentType> m_contentType;		// If IsMultipart(), WriteMimeFields adds "boundary" parameter if not present
 
-			Opt<ContentEnc>     m_contentEnc;
-			Opt<ContentId>      m_contentId;
-			Opt<ContentDesc>    m_contentDesc;
-			Opt<ContentDisp>    m_contentDisp;
-			Opt<MimeVersion>    m_mimeVersion;
-			Vec<ExtensionField> m_extensionFields;
+			Opt<ContentEnc>          m_contentEnc;
+			Opt<ContentId>           m_contentId;
+			Opt<ContentDesc>         m_contentDesc;
+			Opt<ContentDisp>         m_contentDisp;
+			Opt<MimeVersion>         m_mimeVersion;
+			Vec<ExtensionField>      m_extensionFields;
 
-			Seq m_contentEncoded;
-			MultipartBody m_multipartBody;
+			Seq                      m_contentEncoded;
+			Vec<Part>                m_parts;
+
+			enum ERoot { Root };
+			
+			static void EncLoc(Enc& e, Slice<sizet> loc);
+			static bool ReadLoc(Vec<sizet>& loc, Seq& reader);		// Does NOT clear loc before adding to it
+
+			Part(ERoot) {}
+			Part(Slice<sizet> parentLoc, sizet indexInParent) { m_loc.ReserveExact(parentLoc.Len() + 1); m_loc.AddSlice(parentLoc).Add(indexInParent); }
+
+			void EncLoc(Enc& e) const { EncLoc(e, m_loc); }
+
+			Part& AddChildPart() { return m_parts.Add(m_loc, m_parts.Len()); }
+			Part const* GetPartByLoc(Slice<sizet> loc) const;		// Returns nullptr if can't find part with specified location. Empty loc returns this part
 
 			bool IsMultipart() const { return m_contentType.Any() && m_contentType->IsMultipart(); }
 
@@ -195,13 +207,23 @@ namespace At
 			// Called from ReadPart
 			void ReadPartHeader(ParseNode const& partHeaderNode, PinStore& store);			
 
-			// Called from MultipartBody::Read, Write
+			// Called from ReadPart, WritePart
+			bool ReadMultipartBody(Seq& encoded, PinStore& store, PartReadCx& prcx);
+			void WriteMultipartBody(MsgWriter& writer, Seq boundary) const;
+
+			// Called from ReadMultipartBody, WriteMultipartBody
 			bool ReadPart(ParseNode const& partNode, PinStore& store, PartReadCx& prcx);
 			void WritePart(MsgWriter& writer) const;
 
 			// Avoid calling (will assert) for parts of type IsMultipart(). Those must use identity encoding ("7bit", "8bit" or "binary").
 			// "storage" is written to only if a non-identity encoding is used. Returns false if Content-Transfer-Encoding not recognized.
 			bool DecodeContent(Seq& decoded, PinStore& store) const;
+
+			// Encodes the specified content using Base64, placing it into the PinStore. Sets m_contentEnc, m_contentEncoded
+			void EncodeContent_Base64(Seq content, PinStore& store);
+
+			// Encodes the specified content as quoted-printable, placing it into the PinStore. Sets m_contentEnc, m_contentEncoded
+			void EncodeContent_QP(Seq content, PinStore& store);
 
 		private:
 			mutable Str m_boundaryStorage;

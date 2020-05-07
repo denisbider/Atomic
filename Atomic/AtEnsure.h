@@ -7,6 +7,17 @@
 namespace At
 {
 
+	struct OnFail { enum E { Report, Throw, Abort }; };
+
+
+	// This completely overrides all Ensure failure handling normally provided by Atomic.
+	// Use this if your application has your own Ensure failure handlers with desirable functionality.
+
+	typedef void (*EnsureFailHandler)(OnFail::E onFail, char const* locAndDesc);
+
+	void SetEnsureFailHandler(EnsureFailHandler handler);
+
+
 	// By default, an interactive EnsureReportHandler is set. The interactive handler will output information
 	// about an Ensure failure either to STDOUT (if available), or otherwise, using an interactive dialog box.
 	//
@@ -18,8 +29,6 @@ namespace At
 
 	void SetEnsureReportHandler_EventLog(wchar_t const* sourceName, DWORD eventId);
 
-
-	struct OnFail { enum E { Report, Throw, Abort }; };
 
 	struct InternalInconsistency : public std::exception {};
 
@@ -40,15 +49,15 @@ namespace At
 	#define EnsureAbort(TEST)    ((TEST) ? 0 : (At::EnsureFail_Abort  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST), 0))
 
 
-	__declspec(noinline) void EnsureFailWithCode(OnFail::E onFail, char const* locAndDesc, int64 code);
+	__declspec(noinline) void EnsureFailWithNr(OnFail::E onFail, char const* locAndDesc, int64 nr);
 
-	__declspec(noinline) void EnsureFailWithCode_Report (char const* locAndDesc, int64 code);
-	__declspec(noinline) void EnsureFailWithCode_Throw  (char const* locAndDesc, int64 code);
-	__declspec(noinline) void EnsureFailWithCode_Abort  (char const* locAndDesc, int64 code);
+	__declspec(noinline) void EnsureFailWithNr_Report (char const* locAndDesc, int64 nr);
+	__declspec(noinline) void EnsureFailWithNr_Throw  (char const* locAndDesc, int64 nr);
+	__declspec(noinline) void EnsureFailWithNr_Abort  (char const* locAndDesc, int64 nr);
 
-	#define EnsureReportWithCode(TEST, CODE)   ((TEST) ? 0 : (At::EnsureFailWithCode_Report ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, CODE), 0))
-	#define EnsureThrowWithCode(TEST, CODE)    ((TEST) ? 0 : (At::EnsureFailWithCode_Throw  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, CODE), 0))
-	#define EnsureAbortWithCode(TEST, CODE)    ((TEST) ? 0 : (At::EnsureFailWithCode_Abort  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, CODE), 0))
+	#define EnsureReportWithNr(TEST, NR)   ((TEST) ? 0 : (At::EnsureFailWithNr_Report ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, NR), 0))
+	#define EnsureThrowWithNr(TEST, NR)    ((TEST) ? 0 : (At::EnsureFailWithNr_Throw  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, NR), 0))
+	#define EnsureAbortWithNr(TEST, NR)    ((TEST) ? 0 : (At::EnsureFailWithNr_Abort  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, NR), 0))
 
 
 	__declspec(noinline) void EnsureFailWithDesc(OnFail::E onFail, char const* desc, char const* funcOrFile, long line);

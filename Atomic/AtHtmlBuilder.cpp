@@ -132,7 +132,7 @@ namespace At
 		{
 			Str checkboxId = Str::Join(idAndName, "_present");		// Must be kept in sync with HttpRequest::GetOptStrFromNvp
 			
-			InputCheckbox().IdAndName(checkboxId).Value("1").CheckedIf(optStr.Any()).Span("cfmInput", "Present");
+			InputCheckbox().IdAndName(checkboxId).CheckedIf(optStr.Any()).Span("cfmInput", "Present");
 			InputText(t).IdAndName(idAndName).Value(value).DisabledIf(!optStr.Any());
 
 			AddJs_Args(c_js_AtHtmlBuilder_CheckboxEnable)
@@ -160,7 +160,7 @@ namespace At
 		{
 			Str checkboxId = Str::Join(idAndName, "_present");		// Must be kept in sync with HttpRequest::GetOptStrFromNvp
 
-			P().InputCheckbox().IdAndName(checkboxId).Value("1").CheckedIf(optStr.Any()).Span("cfmInput", "Present").EndP();
+			P().InputCheckbox().IdAndName(checkboxId).CheckedIf(optStr.Any()).Span("cfmInput", "Present").EndP();
 			TextArea(d).IdAndName(idAndName).DisabledIf(!optStr.Any()).T(value).EndTextArea();
 
 			AddJs_Args(c_js_AtHtmlBuilder_CheckboxEnable)
@@ -179,7 +179,7 @@ namespace At
 		GenUniqueId(inputId);
 		checkboxId.SetAdd(inputId, "Checkbox");
 
-		InputCheckbox().Id(checkboxId).Name(Str("confirm_").Add(submitName)).Value("1").Span("cfmInput", confirmText)
+		InputCheckbox().Id(checkboxId).Name(Str("confirm_").Add(submitName)).Span("cfmInput", confirmText)
 			.InputSubmit(submitName, submitText).Id(inputId).Disabled();
 
 		AddJs_Args(c_js_AtHtmlBuilder_CheckboxEnable)

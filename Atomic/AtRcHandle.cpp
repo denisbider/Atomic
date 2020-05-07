@@ -8,6 +8,6 @@ namespace At
 	RcHandle::~RcHandle()
 	{
 		if (IsValid())
-			EnsureReportWithCode(CloseHandle(m_handle), GetLastError());
+			EnsureReportWithNr(CloseHandle(m_handle), GetLastError());
 	}
 }

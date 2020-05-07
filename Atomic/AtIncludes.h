@@ -172,6 +172,7 @@ namespace At
 	enum class ProtoSide { None, Client, Server };
 	enum class Normalize { No, Yes };
 	enum class Enabled   { No, Yes };
+	enum class Editable  { No, Yes };
 
 
 	struct Exception         : public std::exception {};

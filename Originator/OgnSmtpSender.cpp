@@ -48,10 +48,17 @@ void OgnSmtpSender::SmtpSender_AddSchannelCerts(Schannel& /*conn*/)
 }
 
 
-SmtpDeliveryInstr::E OgnSmtpSender::SmtpSender_InTx_OnDeliveryResult(SmtpMsgToSend&, Vec<MailboxResult> const&, SmtpTlsAssurance::E)
+SmtpDeliveryInstr::E OgnSmtpSender::SmtpSender_InTx_OnDeliveryResult(SmtpMsgToSend&, Seq, Vec<MailboxResult> const&, SmtpTlsAssurance::E)
 {
 	return SmtpDeliveryInstr::KeepTrying;
 }
+
+
+void OgnSmtpSender::SmtpSender_InTx_OnMsgRemoved(SmtpMsgToSend const&)
+{
+	// Nothing to do.
+}
+
 
 
 

@@ -277,7 +277,7 @@ namespace At
 				Seq bodyReader { m_body };
 				Mime::PartReadCx prcx;
 				prcx.m_decodeDepth = 1;
-				if (!m_multipartBody.Read(bodyReader, m_pinStore, prcx))
+				if (!m_multipartBody.ReadMultipartBody(bodyReader, m_pinStore, prcx))
 					throw Error(HttpStatus::BadRequest);
 
 				Vec<wchar_t> convertBuf1, convertBuf2;

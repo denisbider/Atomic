@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AtNum.h"
+#include "AtOpt.h"
 #include "AtSatCast.h"
 #include "AtStr.h"
 
@@ -48,8 +49,9 @@ namespace At
 	struct TimeFmt
 	{
 		enum EEngDateAbbr { EngDateAbbr };		// "Jan 1, 2019"
-		enum EEngDateFull { EngDateFull };	// "January 1, 2019"
-		enum EYyyyMmDd    { YyyyMmDd };		// YYYY-mm-dd
+		enum EEngDateFull { EngDateFull };		// "January 1, 2019"
+		enum EYyyyMmDd    { YyyyMmDd };			// YYYY-mm-dd
+		enum ETime24      { Time24 };			// "09:07"
 		enum EHttp        { Http };
 		enum EEmail       { Email };
 		enum EIso         { IsoZ=1,
@@ -57,7 +59,7 @@ namespace At
 						    IsoSecZ   = IsoSec   | IsoZ,
 						    IsoMilliZ = IsoMilli | IsoZ,
 						    IsoMicroZ = IsoMicro | IsoZ };
-		enum EDense       { Dense };
+		enum EDense       { Dense };			// "20190306-235959"
 		enum EDuration    { DurationDays, DurationHours, DurationMinutes, DurationSeconds, DurationMilliseconds };
 	};
 
@@ -98,12 +100,14 @@ namespace At
 		Time& operator+= (Time t)       noexcept { m_ft = SatAdd<uint64>(m_ft, t.m_ft); return *this; }
 		Time& operator-= (Time t)       noexcept { m_ft = SatSub<uint64>(m_ft, t.m_ft); return *this; }
 		Time& operator*= (uint n)       noexcept { m_ft = SatMul<uint64>(m_ft,      n); return *this; }
+		Time& operator/= (uint n)       noexcept { m_ft /= n; return *this; }
 
 		Time  operator++ (int)          noexcept { Time prev{*this}; operator++(); return prev; }
 		Time  operator-- (int)          noexcept { Time prev{*this}; operator--(); return prev; }
 		Time  operator+  (Time t) const noexcept { return Time(*this).operator+=(t); }
 		Time  operator-  (Time t) const noexcept { return Time(*this).operator-=(t); }
 		Time  operator*  (uint n) const noexcept { return Time(*this).operator*=(n); }
+		Time  operator/  (uint n) const noexcept { return Time(*this).operator/=(n); }
 
 		bool  operator<  (Time t) const noexcept { return m_ft <  t.m_ft; }
 		bool  operator<= (Time t) const noexcept { return m_ft <= t.m_ft; }
@@ -153,29 +157,28 @@ namespace At
 		static Time ReadIsoStyleTimeStr(Seq& s) noexcept;
 		static Time FromIsoStyleTimeStr(Seq s) noexcept { return ReadIsoStyleTimeStr(s); }
 
-		void Enc_EngDateAbbr (Enc& s) const { Enc_DateWithNamedMonth(s, sc_monthNames_englishAbbr); }
-		void Enc_EngDateFull (Enc& s) const { Enc_DateWithNamedMonth(s, sc_monthNames_englishFull); }
-		void Enc_YyyyMmDd    (Enc& s) const;
-		void Enc_Http        (Enc& s) const;
-		void Enc_Email       (Enc& s) const;
-		void Enc_Iso         (Enc& s, TimeFmt::EIso fmt, char delim=' ') const;
-		void Enc_Dense       (Enc& s) const;
+		// In common situations, the Enc_Xxxx methods need to be called multiple times in a row.
+		// Passing Opt<SYSTEMTIME>& allows to avoid superfluous conversions from the internal representation to SYSTEMTIME.
 
-		void EncObj(Enc& s, TimeFmt::EEngDateAbbr)       const { Enc_EngDateAbbr (s      ); }
-		void EncObj(Enc& s, TimeFmt::EEngDateFull)       const { Enc_EngDateFull (s      ); }
-		void EncObj(Enc& s, TimeFmt::EYyyyMmDd)          const { Enc_YyyyMmDd    (s      ); }
-		void EncObj(Enc& s, TimeFmt::EHttp)              const { Enc_Http        (s      ); }
-		void EncObj(Enc& s, TimeFmt::EEmail)             const { Enc_Email       (s      ); }
-		void EncObj(Enc& s, TimeFmt::EIso f, char d=' ') const { Enc_Iso         (s, f, d); }
-		void EncObj(Enc& s, TimeFmt::EDense)             const { Enc_Dense       (s      ); }
+		void Enc_Iso(Enc& s, Opt<SYSTEMTIME>& sto, TimeFmt::EIso fmt, char delim=' ') const;
 
-		void EncObj(Enc& s, TimeFmt::EEngDateAbbr f,         Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f   ); }
-		void EncObj(Enc& s, TimeFmt::EEngDateFull f,         Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f   ); }
-		void EncObj(Enc& s, TimeFmt::EYyyyMmDd    f,         Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f   ); }
-		void EncObj(Enc& s, TimeFmt::EHttp        f,         Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f   ); }
-		void EncObj(Enc& s, TimeFmt::EEmail       f,         Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f   ); }
-		void EncObj(Enc& s, TimeFmt::EIso         f, char d, Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f, d); }
-		void EncObj(Enc& s, TimeFmt::EDense       f,         Seq dflt) const { if (!Any()) s.Add(dflt); else EncObj(s, f   ); }
+		void Enc_EngDateAbbr (Enc& s, Opt<SYSTEMTIME>& sto) const { Enc_DateWithNamedMonth(s, sto, sc_monthNames_englishAbbr); }
+		void Enc_EngDateFull (Enc& s, Opt<SYSTEMTIME>& sto) const { Enc_DateWithNamedMonth(s, sto, sc_monthNames_englishFull); }
+		void Enc_YyyyMmDd    (Enc& s, Opt<SYSTEMTIME>& sto) const;
+		void Enc_Time24      (Enc& s, Opt<SYSTEMTIME>& sto) const;
+		void Enc_Http        (Enc& s, Opt<SYSTEMTIME>& sto) const;
+		void Enc_Email       (Enc& s, Opt<SYSTEMTIME>& sto) const;
+		void Enc_IsoSec      (Enc& s, Opt<SYSTEMTIME>& sto) const { return Enc_Iso(s, sto, TimeFmt::IsoSec); }
+		void Enc_Dense       (Enc& s, Opt<SYSTEMTIME>& sto) const;
+
+		void EncObj(Enc& s, TimeFmt::EEngDateAbbr)       const { Opt<SYSTEMTIME> sto; Enc_EngDateAbbr (s, sto      ); }
+		void EncObj(Enc& s, TimeFmt::EEngDateFull)       const { Opt<SYSTEMTIME> sto; Enc_EngDateFull (s, sto      ); }
+		void EncObj(Enc& s, TimeFmt::EYyyyMmDd)          const { Opt<SYSTEMTIME> sto; Enc_YyyyMmDd    (s, sto      ); }
+		void EncObj(Enc& s, TimeFmt::ETime24)            const { Opt<SYSTEMTIME> sto; Enc_Time24      (s, sto      ); }
+		void EncObj(Enc& s, TimeFmt::EHttp)              const { Opt<SYSTEMTIME> sto; Enc_Http        (s, sto      ); }
+		void EncObj(Enc& s, TimeFmt::EEmail)             const { Opt<SYSTEMTIME> sto; Enc_Email       (s, sto      ); }
+		void EncObj(Enc& s, TimeFmt::EIso f, char d=' ') const { Opt<SYSTEMTIME> sto; Enc_Iso         (s, sto, f, d); }
+		void EncObj(Enc& s, TimeFmt::EDense)             const { Opt<SYSTEMTIME> sto; Enc_Dense       (s, sto      ); }
 
 		void EncObj(Enc& s, TimeFmt::EDuration duration) const;
 
@@ -187,7 +190,8 @@ namespace At
 	private:
 		uint64 m_ft {};
 
-		void Enc_DateWithNamedMonth(Enc& s, char const* const* monthNames) const;
+		SYSTEMTIME const& ToSystemTimeOpt(Opt<SYSTEMTIME>& sto) const;
+		void Enc_DateWithNamedMonth(Enc& s, Opt<SYSTEMTIME>& sto, char const* const* monthNames) const;
 
 		static int64  constexpr UnixTimeOrigin   { 116444736000000000LL };
 

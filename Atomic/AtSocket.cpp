@@ -22,7 +22,7 @@ namespace At
 
 	SockInit::~SockInit()
 	{
-		EnsureReportWithCode(WSACleanup() == 0, WSAGetLastError());
+		EnsureReportWithNr(WSACleanup() == 0, WSAGetLastError());
 	}
 
 
@@ -76,7 +76,7 @@ namespace At
 	SockAddr& SockAddr::ParseWithPort(Seq s, uint defaultPort)
  	{
 		EnsureThrow(defaultPort <= 65535);	
-		Str addrPart { Str::NullTerminate, s.ReadToByte(':') };
+		Str addrPart = Str::NullTerminate(s.ReadToByte(':'));
 		LPCSTR terminator = nullptr;
 		LONG retVal = Call_RtlIpv6StringToAddressA(addrPart.CharPtr(), &terminator, &m_sa.sa6.sin6_addr);
 		if (retVal == NO_ERROR)
@@ -528,7 +528,7 @@ namespace At
 	Socket::~Socket()
 	{
 		if (m_s != INVALID_SOCKET)
-			EnsureReportWithCode(closesocket(m_s) == 0, WSAGetLastError());
+			EnsureReportWithNr(closesocket(m_s) == 0, WSAGetLastError());
 	}
 
 

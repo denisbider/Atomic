@@ -48,7 +48,7 @@ namespace At
 					{
 						writer.Add(name);
 						writer.Add("=");
-						Imf::WriteQuotedString(writer, value, "\"; ");
+						Imf::WriteQuotedString(writer, value, "; ");
 					}
 
 					name = pair.m_name;
@@ -88,7 +88,13 @@ namespace At
 		void ContentType::Write(MsgWriter& writer) const
 		{
 			writer.Add("Content-Type: ");
+			WriteContent(writer);
+			writer.Add("\r\n");
+		}
 
+
+		void ContentType::WriteContent(MsgWriter& writer) const
+		{
 			{
 				MsgSectionScope section { writer };
 				writer.Add(m_type).Add("/").Add(m_subType);
@@ -97,7 +103,27 @@ namespace At
 			}
 
 			WriteParams(writer);
-			writer.Add("\r\n");
+		}
+
+
+		bool ContentType::IsSafeAsUntrustedInlineContent(Seq content) const
+		{
+			// To determine if a type is likely safe, we follow the MIME Sniffing Standard as implemented by browsers:
+			// https://mimesniff.spec.whatwg.org/#no-sniff-flag
+
+			// May want to expand this with other content types besides images (e.g. audio, video) if it becomes necessary.
+			// At the time of this writing, audio/video seems unlikely (and poor form) to be embedded in email, where this is currently used.
+
+			if (EqualType("image"))
+			{
+				if (m_subType.EqualInsensitive("bmp"  )) { return content.StartsWithExact("BM"); }
+				if (m_subType.EqualInsensitive("gif"  )) { return content.StartsWithExact("GIF87a") || content.StartsWithExact("GIF89a"); }
+				if (m_subType.EqualInsensitive("webp" )) { return content.StripPrefixExact("RIFF") && content.n>=10 && content.DropBytes(4).StartsWithExact("WEBPVP"); }
+				if (m_subType.EqualInsensitive("png"  )) { return content.StartsWithExact("PNG\r\n\x1A\n"); }
+				if (m_subType.EqualInsensitive("jpeg" )) { return content.StartsWithExact("\xFF\xD8\xFF"); }
+			}
+
+			return false;
 		}
 
 
@@ -176,7 +202,13 @@ namespace At
 		void ContentDisp::Write(MsgWriter& writer) const
 		{
 			writer.Add("Content-Disposition: ");
+			WriteContent(writer);
+			writer.Add("\r\n");
+		}
 
+
+		void ContentDisp::WriteContent(MsgWriter& writer) const
+		{
 			{
 				MsgSectionScope section { writer };
 				writer.Add(m_type);
@@ -185,7 +217,6 @@ namespace At
 			}
 
 			WriteParams(writer);
-			writer.Add("\r\n");
 		}
 
 
@@ -265,57 +296,58 @@ namespace At
 
 
 
-		// MultipartBody
+		// Part
 
-		bool MultipartBody::Read(Seq& encoded, PinStore& store, PartReadCx& prcx)
+		void Part::EncLoc(Enc& e, Slice<sizet> loc)
 		{
-			ParseTree pt { encoded };
-			if (prcx.m_verboseParseErrs)
-				pt.RecordBestToStack();
-			if (!pt.Parse(Mime::C_multipart_body))
-				return prcx.AddParseErr(pt);
+			while (true)
+			{
+				e.Ch('/');
+				if (!loc.Any()) break;
+				e.UInt(loc.First());
+				loc.PopFirst();
+			}
+		}
 
-			prcx.m_curPartPath.Add(0U);
-			OnExit popPartPath = [&prcx] { prcx.m_curPartPath.PopLast(); };
 
-			for (ParseNode const& c : pt.Root().FlatFindRef(Mime::id_multipart_body))
-				if (c.IsType(Mime::id_body_part))
-				{
-					++prcx.m_curPartPath.Last();
-					if (!m_parts.Add().ReadPart(c, store, prcx))
-						if (prcx.m_stopOnNestedErr)
-							return false;
-				}
+		bool Part::ReadLoc(Vec<sizet>& loc, Seq& reader)
+		{
+			if (!reader.StripPrefixExact("/"))
+				return false;
+
+			do
+			{
+				uint c = reader.FirstByte();
+				if (UINT_MAX == c) return false;
+				if (!Ascii::IsDecDigit(c)) return false;
+
+				uint64 n = reader.ReadNrUInt64Dec();
+				if (UINT64_MAX == n) return false;
+				if (SIZE_MAX < n) return false;
+
+				loc.Add((sizet) n);
+			}
+			while (reader.StripPrefixExact("/"));
 
 			return true;
 		}
 
 
-		void MultipartBody::Write(MsgWriter& writer, Seq boundary) const
+		Part const* Part::GetPartByLoc(Slice<sizet> loc) const
 		{
-			EnsureThrow(m_parts.Any());
-
-			for (Part const& part : m_parts)
+			Part const* p = this;
+			while (loc.Any())
 			{
-				// Part boundary
-				{
-					MsgSectionScope section { writer };
-					writer.Add("--").Add(boundary).Add("\r\n");
-				}
+				sizet i = loc.First();
+				if (p->m_parts.Len() <= i)
+					return nullptr;
 
-				part.WritePart(writer);
+				p = &(p->m_parts[i]);
+				loc.PopFirst();
 			}
-
-			// End boundary
-			{
-				MsgSectionScope section { writer };
-				writer.Add("--").Add(boundary).Add("--\r\n");
-			}
+			return p;
 		}
 
-
-
-		// Part
 
 		bool Part::TryReadMimeField(ParseNode const& fieldNode, PinStore& store)
 		{
@@ -366,6 +398,53 @@ namespace At
 		}
 
 
+		bool Part::ReadMultipartBody(Seq& encoded, PinStore& store, PartReadCx& prcx)
+		{
+			ParseTree pt { encoded };
+			if (prcx.m_verboseParseErrs)
+				pt.RecordBestToStack();
+			if (!pt.Parse(Mime::C_multipart_body))
+				return prcx.AddParseErr(pt);
+
+			prcx.m_curPartPath.Add(0U);
+			OnExit popPartPath = [&prcx] { prcx.m_curPartPath.PopLast(); };
+
+			for (ParseNode const& c : pt.Root().FlatFindRef(Mime::id_multipart_body))
+				if (c.IsType(Mime::id_body_part))
+				{
+					++prcx.m_curPartPath.Last();
+					if (!AddChildPart().ReadPart(c, store, prcx))
+						if (prcx.m_stopOnNestedErr)
+							return false;
+				}
+
+			return true;
+		}
+
+
+		void Part::WriteMultipartBody(MsgWriter& writer, Seq boundary) const
+		{
+			EnsureThrow(m_parts.Any());
+
+			for (Part const& part : m_parts)
+			{
+				// Part boundary
+				{
+					MsgSectionScope section { writer };
+					writer.Add("--").Add(boundary).Add("\r\n");
+				}
+
+				part.WritePart(writer);
+			}
+
+			// End boundary
+			{
+				MsgSectionScope section { writer };
+				writer.Add("--").Add(boundary).Add("--\r\n");
+			}
+		}
+
+
 		bool Part::ReadPart(ParseNode const& partNode, PinStore& store, PartReadCx& prcx)
 		{
 			m_srcText = partNode.SrcText();
@@ -381,7 +460,7 @@ namespace At
 				if (prcx.m_curPartPath.Len() >= prcx.m_decodeDepth)
 					return prcx.AddDecodeDepthErr();
 
-				if (!m_multipartBody.Read(m_contentEncoded, store, prcx))
+				if (!ReadMultipartBody(m_contentEncoded, store, prcx))
 					return false;
 			}
 
@@ -401,7 +480,7 @@ namespace At
 				// If not set previously by caller, boundary is set in WriteMimeFields()
 				Seq boundary { m_contentType->m_params.Get("boundary") };
 				EnsureThrow(boundary.n);
-				m_multipartBody.Write(writer, boundary);
+				WriteMultipartBody(writer, boundary);
 			}
 		}
 
@@ -439,6 +518,35 @@ namespace At
 			Seq reader = m_contentEncoded;
 			Enc& enc = store.GetEnc(Base64::DecodeMaxLen(reader.n));
 			return Base64::MimeDecode(reader, enc);
+		}
+
+
+		void Part::EncodeContent_Base64(Seq content, PinStore& store)
+		{
+			m_contentEnc.ReInit().m_value = "base64";
+
+			if (!content.n)
+				m_contentEncoded = Seq();
+			else
+			{
+				Base64::NewLines nl = Base64::NewLines::Mime();
+				Enc& enc = store.GetEnc(Base64::EncodeMaxOutLen(content.n, nl));
+				m_contentEncoded = Base64::MimeEncode(content, enc, Base64::Padding::Yes, nl);
+			}
+		}
+
+
+		void Part::EncodeContent_QP(Seq content, PinStore& store)
+		{
+			m_contentEnc.ReInit().m_value = "quoted-printable";
+
+			if (!content.n)
+				m_contentEncoded = Seq();
+			else
+			{
+				Enc& enc = store.GetEnc(QuotedPrintableEncode_MaxLen(content.n));
+				m_contentEncoded = QuotedPrintableEncode(content, enc);
+			}
 		}
 
 

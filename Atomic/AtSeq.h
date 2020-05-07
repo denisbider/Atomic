@@ -102,6 +102,7 @@ namespace At
 		sizet ReadHexDecodeInto(Enc& enc, sizet maxBytesToDecode = SIZE_MAX, char const* skipInputBytes = Seq::HexDecodeSkipBytes);
 
 		uint   FirstByte                    () noexcept;	// Returns UINT_MAX if no bytes left
+		uint   LastByte                     () noexcept;	// Returns UINT_MAX if no bytes left
 		uint   ReadByte                     () noexcept;	// Returns UINT_MAX if no bytes left
 		uint   ReadHexEncodedByte           () noexcept;	// Returns UINT_MAX if not enough bytes left or the next 2 bytes aren't hexadecimal digits. No bytes are skipped unless read is successful
 		uint   ReadUtf8Char                 () noexcept;	// Returns UINT_MAX if not enough bytes left or invalid UTF-8. No bytes are consumed unless read is successful

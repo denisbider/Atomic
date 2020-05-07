@@ -29,7 +29,7 @@ namespace At
 	{
 	public:
 		bool		 WP_ValidateMethod (HttpRequest& req)                     const override final { return req.IsGetOrHead() || req.IsPost(); }
-		ReqResult    WP_Process        (EntityStore& store, HttpRequest& req)       override final;
+		ReqResult    WHP_Process       (EntityStore& store, HttpRequest& req)       override final;
 		HtmlBuilder& DAP_Title         (HtmlBuilder& html)                    const override final { return html.T("Browse"); }
 		HtmlBuilder& WHP_Body          (HtmlBuilder& html, HttpRequest& req)  const override final;
 

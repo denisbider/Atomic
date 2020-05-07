@@ -435,7 +435,7 @@ ORIGINATOR_FUNC OgnResult __cdecl Originator_SendMessage(OgnMsgToSend const& msg
 		smtpMsg->f_tlsRequirement     = (SmtpTlsAssurance::E) msg.m_tlsRequirement;
 		smtpMsg->f_fromAddress        =           Seq_FromOgn(msg.m_fromAddress);
 		smtpMsg->f_toDomain           =           Seq_FromOgn(msg.m_toDomain);
-		smtpMsg->f_content            =           Seq_FromOgn(msg.m_content);
+		smtpMsg->f_contentPart1       =           Seq_FromOgn(msg.m_content);
 		smtpMsg->f_deliveryContext    =           Seq_FromOgn(msg.m_deliveryContext);
 
 		if (msg.m_customTimeout)

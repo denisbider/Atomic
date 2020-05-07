@@ -73,6 +73,7 @@ namespace At
 		// The destination string is not cleared. Encoded data is appended to the string.
 
 		static sizet EncodeBaseLen(sizet n) { return ((n / 3) + 1) * 4; }
+		static sizet EncodeMaxOutLen(sizet n, NewLines const& nl) { return nl.MaxOutLen(EncodeBaseLen(n)); }
 		static byte* Encode(Seq plain, byte* pWrite, Padding padding, char const* last3, NewLines const& nl);
 		static Seq   Encode(Seq plain, Enc&  out,    Padding padding, char const* last3, NewLines const& nl);
 		static inline Seq MimeEncode       (Seq plain, Enc& out, Padding padding, NewLines const& nl) { return Encode(plain, out, padding, "+/=", nl         ); }

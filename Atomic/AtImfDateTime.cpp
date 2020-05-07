@@ -207,7 +207,7 @@ namespace At
 		void DateTime::Write(MsgWriter& writer) const
 		{
 			AuxStr auxStr { writer };
-			m_t.Enc_Email(auxStr);
+			m_t.EncObj(auxStr, TimeFmt::Email);
 			writer.Add(auxStr);
 		}		
 

@@ -314,7 +314,7 @@ namespace At
 		Range<It>      EqualRange(KeyOrRef key)       noexcept { return TEqualRange<It>     (key); }
 		Range<ConstIt> EqualRange(KeyOrRef key) const noexcept { return TEqualRange<ConstIt>(key); }
 
-		void Erase(It const& it)
+		It Erase(It const& it)
 		{
 			EnsureThrow(it.Valid() && it.Any() && it.m_map == this);
 			EnsureAbort(m_len > 0);
@@ -325,26 +325,68 @@ namespace At
 			leaf.m_entries.Erase(it.m_index, 1);
 			--m_len;
 
-			if (leaf.m_parent)						// If this is the root node, no maintenance to do
-			{
-				if (!leaf.m_entries.Any())			// Non-root leaf node that's now empty?
-					RemoveNode(it.m_node);			// Delete the node and remove it from its parent
-				else
-				{
-					if (it.m_index == 0)															// Removed this node's first entry?
-						PropagateFirstKeyAfterChange(*it.m_node, GetKey(leaf.m_entries.First()));	// Update key in parent nodes
+			Node* retNode {};
+			sizet retIndex {};
 
-					if (leaf.m_entries.Len() < LeafNodeJoinThreshold)
+			if (!leaf.m_parent)
+			{
+				// This is the root node - no maintenance to do
+				retNode = it.m_node;
+				retIndex = it.m_index;
+			}
+			else if (!leaf.m_entries.Any())
+			{
+				// Non-root leaf node that's now empty. Delete the node and remove it from its parent
+				retNode = it.m_node->NextSibling();		// If this is null, we removed the last entry and return a past-end iterator
+				RemoveNode(it.m_node);
+			}
+			else
+			{
+				// Non-root leaf node which remains non-empty
+				if (it.m_index == 0)
+				{
+					// We removed this node's first entry. Update key in parent nodes
+					PropagateFirstKeyAfterChange(*it.m_node, GetKey(leaf.m_entries.First()));
+				}
+
+				if (leaf.m_entries.Len() < LeafNodeJoinThreshold)
+				{
+					Node *joinNode1, *joinNode2;
+					if (FindBestSiblingForJoin(it.m_node, MaxLeafEntries, joinNode1, joinNode2))
 					{
-						Node *joinNode1, *joinNode2;
-						if (FindBestSiblingForJoin(it.m_node, MaxLeafEntries, joinNode1, joinNode2))
+						if (it.m_node == joinNode2)
 						{
-							joinNode1->Leaf().MergeFrom(joinNode2->Leaf());
-							RemoveNode(joinNode2);
+							// The node from which we removed the entry is being appended to its previous sibling
+							retNode = joinNode1;
+							retIndex = joinNode1->Leaf().m_entries.Len() + it.m_index;
 						}
+
+						joinNode1->Leaf().MergeFrom(joinNode2->Leaf());
+						RemoveNode(joinNode2);
 					}
 				}
+
+				if (!retNode)
+				{
+					// We did not join nodes. The node from which we removed the entry remains
+					retNode = it.m_node;
+					retIndex = it.m_index;
+				}
 			}
+
+			// Fix return iterator if it would point past the end of a node
+			if (retNode)
+			{
+				sizet const retNodeLen = retNode->Leaf().m_entries.Len();
+				if (retIndex >= retNodeLen)
+				{
+					EnsureThrow(retIndex == retNodeLen);
+					retNode = retNode->NextSibling();	// If this is null, we removed the last entry and return a past-end iterator
+					retIndex = 0;
+				}
+			}
+
+			return It(*this, retNode, retIndex);
 		}
 	
 	private:

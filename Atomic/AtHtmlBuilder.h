@@ -139,6 +139,7 @@ namespace At
 		HtmlBuilder& Disabled     ()          { AddAttr("disabled"           ); return *this; }
 		HtmlBuilder& Multiple     ()          { AddAttr("multiple"           ); return *this; }
 		HtmlBuilder& ReadOnly     ()          { AddAttr("readonly"           ); return *this; }
+		HtmlBuilder& Sandbox      ()          { AddAttr("sandbox"            ); return *this; }
 		HtmlBuilder& Selected     ()          { AddAttr("selected"           ); return *this; }
 								 									  
 		HtmlBuilder& AccessKey    (Seq value) { AddAttr("accesskey",    value); return *this; }
@@ -150,6 +151,7 @@ namespace At
 		HtmlBuilder& For          (Seq value) { AddAttr("for",          value); return *this; }
 		HtmlBuilder& Href         (Seq value) { AddAttr("href",         value); return *this; }
 		HtmlBuilder& Id           (Seq value) { AddAttr("id",           value); return *this; }
+		HtmlBuilder& InputMode    (Seq value) { AddAttr("inputmode",    value); return *this; }
 		HtmlBuilder& LabelAttr    (Seq value) { AddAttr("label",        value); return *this; }
 		HtmlBuilder& List         (Seq value) { AddAttr("list",         value); return *this; }
 		HtmlBuilder& MinAttr      (Seq value) { AddAttr("min",          value); return *this; }
@@ -161,8 +163,11 @@ namespace At
 		HtmlBuilder& Rel          (Seq value) { AddAttr("rel",          value); return *this; }
 		HtmlBuilder& Rows         (Seq value) { AddAttr("rows",         value); return *this; }
 		HtmlBuilder& RowSpan      (Seq value) { AddAttr("rowspan",      value); return *this; }
+		HtmlBuilder& Sandbox      (Seq value) { AddAttr("sandbox",      value); return *this; }
 		HtmlBuilder& Size         (Seq value) { AddAttr("size",         value); return *this; }
+		HtmlBuilder& SpellCheck   (Seq value) { AddAttr("spellcheck",   value); return *this; }
 		HtmlBuilder& Src          (Seq value) { AddAttr("src",          value); return *this; }
+		HtmlBuilder& SrcDoc       (Seq value) { AddAttr("srcdoc",       value); return *this; }
 		HtmlBuilder& Start        (Seq value) { AddAttr("start",        value); return *this; }
 		HtmlBuilder& Target       (Seq value) { AddAttr("target",       value); return *this; }
 		HtmlBuilder& TitleAttr    (Seq value) { AddAttr("title",        value); return *this; }
@@ -172,6 +177,7 @@ namespace At
 								 
 		HtmlBuilder& CheckedIf    (bool cond) { if (cond) Checked(); return *this; }
 		HtmlBuilder& DisabledIf   (bool cond) { if (cond) Disabled(); return *this; }
+		HtmlBuilder& ReadOnlyIf   (bool cond) { if (cond) ReadOnly(); return *this; }
 		HtmlBuilder& IdAndName    (Seq value) { AddAttr("id", value); AddAttr("name", value); return *this; }
 
 		HtmlBuilder& UniqueId(Str& id) { GenUniqueId(id); return Id(id); }
@@ -234,7 +240,7 @@ namespace At
 		HtmlBuilder& InputNameList    ()       { return InputText(fit_nameList    ); }
 		HtmlBuilder& InputLocalPath   ()       { return InputText(fit_localPath   ); }
 
-		HtmlBuilder& InputNumber() { return Input().Type("number").Size(fit_number.mc_zWidth).MaxLength(fit_number.mc_zMaxLen); }
+		HtmlBuilder& InputNumber() { return Input().Type("text").InputMode("numeric").Size(fit_number.mc_zWidth).MaxLength(fit_number.mc_zMaxLen); }
 
 		HtmlBuilder& InputIp4     () { return InputIp4     ("127.0.0.1"); }
 		HtmlBuilder& InputIp6     () { return InputIp6     ("::1"); }
@@ -247,7 +253,7 @@ namespace At
 
 		HtmlBuilder& InputDate() { return Input().Type("date").Size("10").MaxLength("10").Placeholder("yyyy-mm-dd"); }
 
-		HtmlBuilder& InputCheckbox() { return Input().Type("checkbox"); }
+		HtmlBuilder& InputCheckbox() { return Input().Type("checkbox").Value("1"); }
 
 		HtmlBuilder& InputFile() { return Input().Type("file"); }
 
@@ -276,6 +282,7 @@ namespace At
 		HtmlBuilder& H2()         { AddNonVoidElem("h2");          return *this; }
 		HtmlBuilder& H3()         { AddNonVoidElem("h3");          return *this; }
 		HtmlBuilder& H4()         { AddNonVoidElem("h4");          return *this; }
+		HtmlBuilder& Iframe()     { AddNonVoidElem("iframe");      return *this; }
 		HtmlBuilder& Label()      { AddNonVoidElem("label");       return *this; }
 		HtmlBuilder& Li()         { AddNonVoidElem("li");          return *this; }
 		HtmlBuilder& Ol()         { AddNonVoidElem("ol");          return *this; }
@@ -325,6 +332,7 @@ namespace At
 		HtmlBuilder& EndH4()           { EndNonVoidElem("h4");         return *this; }
 		HtmlBuilder& EndHtml()         { EndNonVoidElem("html");       return *this; }
 		HtmlBuilder& EndI()            { EndNonVoidElem("i");          return *this; }
+		HtmlBuilder& EndIframe()       { EndNonVoidElem("iframe");     return *this; }
 		HtmlBuilder& EndLabel()        { EndNonVoidElem("label");      return *this; }
 		HtmlBuilder& EndLi()           { EndNonVoidElem("li");         return *this; }
 		HtmlBuilder& EndOl()           { EndNonVoidElem("ol");         return *this; }
@@ -359,8 +367,10 @@ namespace At
 
 		HtmlBuilder& Span(Seq cls, Seq text) { return Span().Class(cls).T(text).EndSpan(); }
 
-		HtmlBuilder& Td(Seq text) { return Td().T(text).EndTd(); }
-		HtmlBuilder& Th(Seq text) { return Th().T(text).EndTh(); }
+		HtmlBuilder& Td   (Seq text) { return Td().T(text).EndTd(); }
+		HtmlBuilder& Td_T (Seq text) { return Td().T(text).EndTd(); }
+		HtmlBuilder& Th   (Seq text) { return Th().T(text).EndTh(); }
+		HtmlBuilder& Th_T (Seq text) { return Th().T(text).EndTh(); }
 
 		HtmlBuilder& DefaultHead();
 		HtmlBuilder& RawHead() { AddNonVoidElem("head"); }

@@ -73,7 +73,7 @@ namespace At
 		// Called by sender threads each time TLS is started
 		virtual void SmtpSender_AddSchannelCerts(Schannel& conn) = 0;
 
-		// Called before enqueueing message if msg.f_moreContentContext is non-empty
+		// Called before enqueueing the message if msg.f_moreContentContext is non-empty
 		virtual void SmtpSender_InTx_LoadMoreContent(SmtpMsgToSend const& msg, Enc& enc);
 
 		// - Called on a different thread than the corresponding call to Send. Even likely called in an entirely separate process instance than the original Send.
@@ -83,7 +83,11 @@ namespace At
 		// - Called with SmtpMsgToSend not yet modified: the fields f_status, f_pendingMailboxes, f_mailboxResults are not yet updated.
 		//   These fields are updated if the message is being retried, after the function returns. If the message is not being retried, it is removed.
 		// - Called in the same EntityStore transaction in which SmtpMsgToSend will be updated or removed. If the transaction is repeated, this function is also called again.
-		virtual SmtpDeliveryInstr::E SmtpSender_InTx_OnDeliveryResult(SmtpMsgToSend& msg, Vec<MailboxResult> const& newMailboxResults, SmtpTlsAssurance::E tlsAssuranceAchieved) = 0;
+		virtual SmtpDeliveryInstr::E SmtpSender_InTx_OnDeliveryResult(SmtpMsgToSend& msg, Seq msgContent,
+			Vec<MailboxResult> const& newMailboxResults, SmtpTlsAssurance::E tlsAssuranceAchieved) = 0;
+
+		// Called after removing a message. When called, the message is already removed and msg.f_status is set to one of SmtpMsgStatus indicating type of removal.
+		virtual void SmtpSender_InTx_OnMsgRemoved(SmtpMsgToSend const& msg) = 0;
 
 	private:
 		enum { AtMemUsageLimit_PumpDelayMs = 100 };

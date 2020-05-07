@@ -17,6 +17,7 @@ namespace At
 		bool EnsureReportHandler_EventLog   (char const* desc);
 
 
+		EnsureFailHandler   g_ensureFailHandler                       {};
 		EnsureReportHandler g_ensureReportHandler                     { EnsureReportHandler_Interactive };
 		wchar_t const*      g_ensureReportHandler_eventLog_sourceName {};
 		DWORD               g_ensureReportHandler_eventLog_eventId    {};
@@ -99,6 +100,12 @@ namespace At
 	} // anonymous namespace
 
 	
+	void SetEnsureFailHandler(EnsureFailHandler handler)
+	{
+		g_ensureFailHandler = handler;
+	}
+
+
 	void SetEnsureReportHandler_EventLog(wchar_t const* sourceName, DWORD eventId)
 	{
 		g_ensureReportHandler                     = EnsureReportHandler_EventLog;
@@ -109,6 +116,13 @@ namespace At
 
 	void EnsureFail(OnFail::E onFail, char const* locAndDesc)
 	{
+		if (g_ensureFailHandler)
+		{
+			// The application is using a custom EnsureFail handler
+			g_ensureFailHandler(onFail, locAndDesc);
+			return;
+		}
+
 		if (onFail == OnFail::Throw && std::uncaught_exception())
 			onFail = OnFail::Abort;
 
@@ -146,16 +160,16 @@ namespace At
 	__declspec(noinline) void EnsureFail_Abort  (char const* locAndDesc) { EnsureFail(OnFail::Abort,  locAndDesc); }
 
 
-	__declspec(noinline) void EnsureFailWithCode(OnFail::E onFail, char const* locAndDesc, int64 code)
+	__declspec(noinline) void EnsureFailWithNr(OnFail::E onFail, char const* locAndDesc, int64 nr)
 	{
-		char locDescAndCode[MaxDescChars];
-		StringCchPrintfA(locDescAndCode, MaxDescChars, "%s\r\nError code: %I64i", locAndDesc, code);
-		EnsureFail(onFail, locDescAndCode);
+		char locDescAndNr[MaxDescChars];
+		StringCchPrintfA(locDescAndNr, MaxDescChars, "%s\r\nValue: %I64i", locAndDesc, nr);
+		EnsureFail(onFail, locDescAndNr);
 	}
 
-	__declspec(noinline) void EnsureFailWithCode_Report (char const* locAndDesc, int64 code) { EnsureFailWithCode(OnFail::Report, locAndDesc, code); }
-	__declspec(noinline) void EnsureFailWithCode_Throw  (char const* locAndDesc, int64 code) { EnsureFailWithCode(OnFail::Throw,  locAndDesc, code); }
-	__declspec(noinline) void EnsureFailWithCode_Abort  (char const* locAndDesc, int64 code) { EnsureFailWithCode(OnFail::Abort,  locAndDesc, code); }
+	__declspec(noinline) void EnsureFailWithNr_Report (char const* locAndDesc, int64 nr) { EnsureFailWithNr(OnFail::Report, locAndDesc, nr); }
+	__declspec(noinline) void EnsureFailWithNr_Throw  (char const* locAndDesc, int64 nr) { EnsureFailWithNr(OnFail::Throw,  locAndDesc, nr); }
+	__declspec(noinline) void EnsureFailWithNr_Abort  (char const* locAndDesc, int64 nr) { EnsureFailWithNr(OnFail::Abort,  locAndDesc, nr); }
 
 
 	__declspec(noinline) void EnsureFailWithDesc(OnFail::E onFail, char const* desc, char const* funcOrFile, long line)

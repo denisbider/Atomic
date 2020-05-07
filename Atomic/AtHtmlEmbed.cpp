@@ -224,7 +224,15 @@ namespace At
 			}
 
 
-			Seq SanitizeAbsUrl_Direct(Seq url, EmbedCx&) { return url; }
+			Seq const c_urlRemoved_relUrlNotPermitted  { "javascript:void('URL removed: Relative URL not permitted')"                            };
+			Seq const c_urlRemoved_absUrlNoAuthority   { "javascript:void('URL removed: An absolute URL MUST include an authority')"             };
+			Seq const c_urlRemoved_absUrlNotPermitted  { "javascript:void('URL removed: Absolute URL not permitted')"                            };
+			Seq const c_urlRemoved_schemeNotPermitted  { "javascript:void('URL removed: The URL scheme is not permitted')"                       };
+			Seq const c_urlRemoved_parseError          { "javascript:void('URL removed: The URL could not be parsed')"                           };
+			Seq const c_urlRemoved_noValidUrls         { "javascript:void('URL removed: Multi-URL attribute value did not contain a valid URL')" };
+
+			Seq SanitizeAbsUrl_Remove   (Seq,     EmbedCx&) { return c_urlRemoved_absUrlNotPermitted; }
+			Seq SanitizeAbsUrl_Preserve (Seq url, EmbedCx&) { return url; }
 
 			Seq SanitizeAbsUrl_Preload(Seq url, EmbedCx& cx)
 			{
@@ -247,12 +255,6 @@ namespace At
 			}
 
 
-			Seq const c_urlRemoved_relUrlWithAuthority { "javascript:void('URL removed: A relative URL must NOT include an authority')" };
-			Seq const c_urlRemoved_absUrlNoAuthority   { "javascript:void('URL removed: An absolute URL MUST include an authority')" };
-			Seq const c_urlRemoved_schemeNotPermitted  { "javascript:void('URL removed: The URL scheme is not permitted')" };
-			Seq const c_urlRemoved_parseError          { "javascript:void('URL removed: The URL could not be parsed')" };
-			Seq const c_urlRemoved_noValidUrls         { "javascript:void('URL removed: Multi-URL attribute value did not contain a valid URL')" };
-
 			Seq SanitizeUrl(ParseNode const& uriNode, EmbedCx& cx, Seq (*sanitizeAbsUrl)(Seq url, EmbedCx&))
 			{
 				if (uriNode.FirstChild().IsType(Uri::id_fragment))
@@ -266,23 +268,31 @@ namespace At
 				if (schemeNode)
 					scheme = schemeNode->SrcText();
 
-				ParseNode const* authorityNode { uriNode.DeepFind(Uri::id_authority) };
 				if (!scheme.n)
-				{
-					if (authorityNode)
-						return c_urlRemoved_relUrlWithAuthority;
+					return c_urlRemoved_relUrlNotPermitted;
 
-					// No scheme, no authority: true relative URL
+				if (scheme.EqualInsensitive("data"))
+				{
 					cx.m_elemCx.m_hasNonFragmentUrl = true;
-					return cx.SanitizeRelUrl(uriNode.SrcText());
+					return uriNode.SrcText();
+				}
+
+				if (scheme.EqualInsensitive("cid"))
+				{
+					cx.m_elemCx.m_hasNonFragmentUrl = true;
+					Seq cid = schemeNode->Remaining();
+					cid.StripPrefixExact(":");
+					return cx.GetUrlForCid(cid);
 				}
 
 				if (scheme.EqualInsensitive("http") || scheme.EqualInsensitive("https"))
 				{
+					ParseNode const* authorityNode { uriNode.DeepFind(Uri::id_authority) };
 					if (!authorityNode)
 						return c_urlRemoved_absUrlNoAuthority;
 
 					// Have authority, and scheme is http or https: true absolute URL
+					++(cx.m_nrAbsContentUrls);
 					cx.m_elemCx.m_hasNonFragmentUrl = true;
 					return sanitizeAbsUrl(uriNode.SrcText(), cx);
 				}
@@ -305,8 +315,18 @@ namespace At
 			}
 
 
-			Seq LinkUrlSanitizer    (Seq value, EmbedCx& cx) { return SanitizeUrl(value, cx, SanitizeAbsUrl_Direct  ); }
-			Seq PreloadUrlSanitizer (Seq value, EmbedCx& cx) { return SanitizeUrl(value, cx, SanitizeAbsUrl_Preload ); }
+			Seq LinkUrlSanitizer(Seq value, EmbedCx& cx) { return SanitizeUrl(value, cx, SanitizeAbsUrl_Preserve  ); }
+
+			Seq ContentUrlSanitizer(Seq value, EmbedCx& cx)
+			{
+				switch (cx.m_absContentUrlBeh)
+				{
+				case AbsContentUrlBeh::Remove:   return SanitizeUrl(value, cx, SanitizeAbsUrl_Remove);
+				case AbsContentUrlBeh::Preload:  return SanitizeUrl(value, cx, SanitizeAbsUrl_Preload);
+				case AbsContentUrlBeh::Preserve: return SanitizeUrl(value, cx, SanitizeAbsUrl_Preserve);
+				default: EnsureThrow(!"Unrecognized AbsContentUrlBeh value"); return Seq();
+				}
+			}
 
 
 			Seq MultiUrlSanitizer(Seq value, EmbedCx& cx)
@@ -319,7 +339,7 @@ namespace At
 					for (ParseNode const& c : pt.Root())
 						if (c.IsType(Uri::id_URI_reference))
 						{
-							Seq url { SanitizeUrl(c, cx, SanitizeAbsUrl_Direct) };
+							Seq url { SanitizeUrl(c, cx, SanitizeAbsUrl_Preserve) };
 							if (url.n)
 							{
 								if (urls.Any())
@@ -420,7 +440,7 @@ namespace At
 					{ "loop",               EmbedAction::Allow, KeywordSanitizer                   },
 					{ "muted",              EmbedAction::Allow, KeywordSanitizer                   },
 					{ "preload",            EmbedAction::Allow, KeywordSanitizer                   },
-					{ "src",                EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "src",                EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "volume",             EmbedAction::Allow, NumValueSanitizer                  },
 					{ nullptr                                                                      },
 				};
@@ -550,7 +570,7 @@ namespace At
 					{ "hspace",             EmbedAction::Allow, ProportionSanitizer                },
 					{ "ismap",              EmbedAction::Allow, KeywordSanitizer                   },
 					{ "name",               EmbedAction::Allow, IdSanitizer                        },
-					{ "src",                EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "src",                EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "usemap",             EmbedAction::Allow, HashIdSanitizer                    },
 					{ "vspace",             EmbedAction::Allow, ProportionSanitizer                },
 					{ "width",              EmbedAction::Allow, ProportionSanitizer                },
@@ -592,7 +612,7 @@ namespace At
 					{ "selectiondirection", EmbedAction::Allow, KeywordSanitizer                   },
 					{ "size",               EmbedAction::Allow, NumValueSanitizer                  },
 					{ "spellcheck",         EmbedAction::Allow, KeywordSanitizer                   },
-					{ "src",                EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "src",                EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "step",               EmbedAction::Allow, NumOrKeywordSanitizer              },
 					{ "type",               EmbedAction::Allow, InputTypeSanitizer                 },
 					{ "usemap",             EmbedAction::Allow, HashIdSanitizer                    },
@@ -713,7 +733,7 @@ namespace At
 
 			AttrInfo const c_source_attrInfo[]
 				{
-					{ "src",                EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "src",                EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "type",               EmbedAction::Allow, MimeTypeSanitizer                  },
 					{ "media",              EmbedAction::Allow, TextValueSanitizer                 },
 					{ nullptr                                                                      },
@@ -793,7 +813,7 @@ namespace At
 					{ "default",            EmbedAction::Allow, KeywordSanitizer                   },
 					{ "kind",               EmbedAction::Allow, KeywordSanitizer                   },
 					{ "label",              EmbedAction::Allow, TextValueSanitizer                 },
-					{ "src",                EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "src",                EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "srclang",            EmbedAction::Allow, KeywordSanitizer                   },
 					{ nullptr                                                                      },
 				};
@@ -814,9 +834,9 @@ namespace At
 					{ "height",             EmbedAction::Allow, NumValueSanitizer                  },
 					{ "loop",               EmbedAction::Allow, KeywordSanitizer                   },
 					{ "muted",              EmbedAction::Allow, KeywordSanitizer                   },
-					{ "poster",             EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "poster",             EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "preload",            EmbedAction::Allow, KeywordSanitizer                   },
-					{ "src",                EmbedAction::Allow, PreloadUrlSanitizer                },
+					{ "src",                EmbedAction::Allow, ContentUrlSanitizer                },
 					{ "width",              EmbedAction::Allow, NumValueSanitizer                  },
 					{ nullptr                                                                      },
 				};

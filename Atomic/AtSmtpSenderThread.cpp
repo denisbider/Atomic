@@ -147,16 +147,18 @@ namespace At
 		m_workPool->GetStore().RunTx(GetStopCtl(), typeid(*this), [&] ()
 			{
 				Rp<SmtpMsgToSend> txMsg { new SmtpMsgToSend(msg.Ref()) };
-				SmtpDeliveryInstr::E instr = m_workPool->SmtpSender_InTx_OnDeliveryResult(txMsg.Ref(), mailboxResults, tlsAssuranceAchieved);
+				SmtpDeliveryInstr::E instr = m_workPool->SmtpSender_InTx_OnDeliveryResult(txMsg.Ref(), content, mailboxResults, tlsAssuranceAchieved);
 
 				txMsg->f_pendingMailboxes.Clear();
 				for (MailboxResult const& result : mailboxResults)
 					txMsg->f_mailboxResults.Add() = result;
 
-				     if (!anyTempFailures && anySuccess)          { txMsg->Remove(); txMsg->f_status = SmtpMsgStatus::Final_Sent;    }
-				else if (!anyTempFailures)                        { txMsg->Remove(); txMsg->f_status = SmtpMsgStatus::Final_Failed;  }
-				else if (instr == SmtpDeliveryInstr::Abort)       { txMsg->Remove(); txMsg->f_status = SmtpMsgStatus::Final_Aborted; }
-				else if (!txMsg->f_futureRetryDelayMinutes.Any()) { txMsg->Remove(); txMsg->f_status = SmtpMsgStatus::Final_GivenUp; }
+				SmtpMsgStatus::E removeMsgStatus = SmtpMsgStatus::NonFinal_Idle;	// If unchanged, indicates the message is NOT being removed
+
+				     if (!anyTempFailures && anySuccess)          removeMsgStatus = SmtpMsgStatus::Final_Sent;
+				else if (!anyTempFailures)                        removeMsgStatus = SmtpMsgStatus::Final_Failed;
+				else if (instr == SmtpDeliveryInstr::Abort)       removeMsgStatus = SmtpMsgStatus::Final_Aborted;
+				else if (!txMsg->f_futureRetryDelayMinutes.Any()) removeMsgStatus = SmtpMsgStatus::Final_GivenUp;
 				else
 				{
 					for (MailboxResult const& result : mailboxResults)
@@ -169,6 +171,14 @@ namespace At
 					txMsg->Update();
 
 					txMsg->GetStore().AddPostCommitAction( [this] () { m_workPool->m_pumpTrigger.Signal(); } );
+				}
+
+				if (SmtpMsgStatus::NonFinal_Idle != removeMsgStatus)
+				{
+					txMsg->Remove();
+					txMsg->f_status = removeMsgStatus;
+
+					m_workPool->SmtpSender_InTx_OnMsgRemoved(txMsg.Ref());
 				}
 
 				txMsg->GetStore().AddPostCommitAction( [this, &msg, txMsg] () { msg = txMsg; } );
@@ -590,7 +600,7 @@ namespace At
 			if (!ehloReply.m_code.IsPositiveCompletion())
 				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Ehlo, SmtpSendErr::Ehlo_UnexpectedReply, ehloReply, Seq()));
 
-			for (Str const& line : ehloReply.m_lines.Slice(1))
+			for (Str const& line : ehloReply.m_lines.GetSlice(1))
 			{
 				Seq lineReader = line;
 				SeqLower const token { lineReader.ReadToFirstByteOfType(Ascii::IsWhitespace) };
@@ -811,7 +821,7 @@ namespace At
 			Time now = Time::NonStrictNow();
 			if (rcptReply.m_code.IsPositiveCompletion())
 			{
-				MailboxResult_SetSuccess(mailboxResults.Add(), now, mailbox, Str().Obj(mxa));
+				MailboxResult_SetSuccess(mailboxResults.Add(), now, mailbox, Str::From(mxa));
 				anyRcptAccepted = true;
 			}
 			else if (rcptReply.m_code.IsNegativeTransient()) MailboxResult_SetTempFailure(mailboxResults.Add(), now, mailbox, SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendErr::RcptTo_Rejected, rcptReply, Seq()));

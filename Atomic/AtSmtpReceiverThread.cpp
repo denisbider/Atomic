@@ -258,7 +258,7 @@ namespace At
 												case EmailServerAuthResult::InvalidCredentials:  SendReply(conn, 535, "5.7.8 AUTH command failed, credentials invalid"); break;
 												case EmailServerAuthResult::AttemptsTooFrequent: SendReply(conn, 454, "4.7.0 AUTH command failed, attempts too frequent"); break;
 												case EmailServerAuthResult::TransactionFailed:   SendReply(conn, 454, "4.7.0 AUTH command failed, could not complete transaction"); break;
-												default: EnsureThrowWithCode(!"Unexpected EmailServerAuthResult", (int64) result);
+												default: EnsureThrowWithNr(!"Unexpected EmailServerAuthResult", (int64) result);
 												}
 											}
 										}

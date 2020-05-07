@@ -28,10 +28,10 @@ namespace At
 	}
 
 
-	Seq PinStore::AddStrFromParts(Seq const* first, Seq const* beyondLast)
+	Seq PinStore::AddStrFromParts(Slice<Seq> parts)
 	{
 		sizet n {};
-		for (Seq const* s=first; s!=beyondLast; ++s)
+		for (Seq const* s=parts.begin(); s!=parts.end(); ++s)
 			n += s->n;
 
 		Enc&       enc    = GetEnc(n);
@@ -39,7 +39,7 @@ namespace At
 		byte*      pStart = write.Ptr();
 		byte*      pWrite = pStart;
 
-		for (Seq const* s=first; s!=beyondLast; ++s)
+		for (Seq const* s=parts.begin(); s!=parts.end(); ++s)
 		{
 			memcpy(pWrite, s->p, s->n);
 			pWrite += s->n;

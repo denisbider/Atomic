@@ -3,24 +3,11 @@
 #include "AtVecBaseFixed.h"
 #include "AtVecBaseHeap.h"
 
+#include "AtSlice.h"
+
 
 namespace At
 {
-
-	template <class T>
-	class VecSliceConst
-	{
-	public:
-		VecSliceConst(T const* beg, T const* end) : m_beg(beg), m_end(end) {}
-
-		T const* begin() const { return m_beg; }
-		T const* end() const { return m_end; }
-
-	private:
-		T const* m_beg;
-		T const* m_end;
-	};
-
 
 	// A vector that:
 	// - Provides a strong exception safety guarantee: if any method throws, logical container state will be as before method call.
@@ -36,20 +23,8 @@ namespace At
 
 		VecCore() = default;
 		VecCore(VecCore<B>&& x) noexcept : B(std::move(x)) {}
-		
-		VecCore(VecCore<B> const& x)
-		{
-			ReserveExact(x.m_len);
-			try
-			{
-				while (m_len != x.m_len)
-				{
-					new (Ptr() + m_len) Val(x.Ptr()[m_len]);
-					++m_len;
-				}
-			}
-			catch (...) { Clear(); throw; }
-		}
+		VecCore(VecCore<B> const& x) { AddSlice(x); }
+		VecCore(Slice<Val> x) { AddSlice(x); }
 
 		~VecCore() { Clear(); }
 
@@ -66,11 +41,11 @@ namespace At
 		Val const* end() const   noexcept { return Ptr() + m_len; }
 		Val*       end()         noexcept { return Ptr() + m_len; }
 
-		VecSliceConst<Val> Slice(sizet i, sizet n = SIZE_MAX) const noexcept
-			{ if (i > m_len) i = m_len; if (n > m_len - i) n = m_len - i; return VecSliceConst<Val>(Ptr()+i, Ptr()+i+n); }
+		Slice<Val> GetSlice(sizet i, sizet n = SIZE_MAX) const noexcept
+			{ if (i > m_len) i = m_len; if (n > m_len - i) n = m_len - i; return Slice<Val>(Ptr()+i, Ptr()+i+n); }
 		
-		Val&       operator[] (sizet i)       { EnsureThrow(i < m_len); return Ptr()[i]; }
-		Val const& operator[] (sizet i) const { EnsureThrow(i < m_len); return Ptr()[i]; }
+		Val&       operator[] (sizet i)       { EnsureThrowWithNr(i < m_len, (int64) i); return Ptr()[i]; }
+		Val const& operator[] (sizet i) const { EnsureThrowWithNr(i < m_len, (int64) i); return Ptr()[i]; }
 
 		Val&       First()       { EnsureThrow(m_len >= 1); return Ptr()[0]; }
 		Val const& First() const { EnsureThrow(m_len >= 1); return Ptr()[0]; }
@@ -163,8 +138,8 @@ namespace At
 
 		VecCore<B>& SwapAt(sizet i, sizet k)
 		{
-			EnsureThrow(i < m_len);
-			EnsureThrow(k < m_len);
+			EnsureThrowWithNr(i < m_len, (int64) i);
+			EnsureThrowWithNr(k < m_len, (int64) k);
 
 			static_assert(std::is_nothrow_move_constructible<Val>::value, "Cannot provide basic exception safety if move constructor can throw");
 			static_assert(std::is_nothrow_destructible<Val>::value, "Cannot provide basic exception safety if destructor can throw");
@@ -289,14 +264,64 @@ namespace At
 			{
 				EnsureThrow(n < SIZE_MAX - m_len);
 				ReserveAtLeast(m_len + n);
-				for (sizet i=0; i!=n; ++i)
+				
+				sizet i = 0;
+				try
 				{
-					static_assert(std::is_nothrow_copy_constructible<Val>::value,
-						"Requires a more complex implementation with try/catch to provide strong exception safety if copy constructor can throw");
-					new (Ptr() + m_len + i) Val(x);
+					do
+					{
+						new (Ptr() + m_len + i) Val(x);
+						++i;
+					}
+					while (i != n);
 				}
+				catch (...)
+				{
+					while (i)
+					{
+						--i;
+						Ptr()[m_len + i].~Val();
+					}
+					throw;
+				}
+				
 				m_len += n;
 			}
+
+			return *this;
+		}
+
+		VecCore<B>& AddSlice(Slice<Val> x)
+		{
+			sizet n = x.Len();
+			if (n != 0)
+			{
+				EnsureThrow(n < SIZE_MAX - m_len);
+				ReserveAtLeast(m_len + n);
+
+				sizet i = 0;
+				try
+				{
+					do
+					{
+						new (Ptr() + m_len + i) Val(x[i]);
+						++i;
+					}
+					while (i != n);
+				}
+				catch (...)
+				{
+					while (i)
+					{
+						--i;
+						Ptr()[m_len + i].~Val();
+					}
+					throw;
+				}
+
+				m_len += n;
+			}
+
 			return *this;
 		}
 
@@ -321,7 +346,7 @@ namespace At
 
 		Val& Insert(sizet i, Val&& x)
 		{
-			EnsureThrow(i <= m_len);
+			EnsureThrowWithNr(i <= m_len, (int64) i);
 			ReserveAtLeast(m_len + 1);
 
 			static_assert(std::is_nothrow_move_constructible<Val>::value, "Basic exception safety cannot be provided if move constructor throws.");
@@ -341,7 +366,7 @@ namespace At
 
 		VecCore<B>& InsertN(sizet i, sizet n)
 		{
-			EnsureThrow(i <= m_len);
+			EnsureThrowWithNr(i <= m_len, (int64) i);
 			if (n != 0)
 			{
 				EnsureThrow(n < SIZE_MAX - m_len);
@@ -364,8 +389,8 @@ namespace At
 
 		VecCore<B>& Erase(sizet i, sizet n)
 		{
-			EnsureThrow(i <= m_len);
-			EnsureThrow(n <= m_len - i);
+			EnsureThrowWithNr(i <= m_len, (int64) i);
+			EnsureThrowWithNr(n <= m_len - i, (int64) n);
 			if (n)
 			{
 				static_assert(std::is_nothrow_move_constructible<Val>::value, "Basic exception safety cannot be provided if move constructor throws.");

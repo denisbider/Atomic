@@ -21,15 +21,13 @@ namespace At
 		Str(byte const* ptr, sizet count) { Add(ptr, count); }
 		Str(sizet nrNullBytes)            { Bytes(nrNullBytes, 0); }
 
-		enum ENullTerminate { NullTerminate };
-		Str(ENullTerminate, Seq x) { ReserveExact(x.n+1); Add(x); Byte(0); }
+		static Str NullTerminate(Seq x) { Str s; s.ReserveExact(x.n+1).Add(x).Byte(0); return s; }
 
-		enum EFrom { From };
 		template <class T, typename... Args>
-		Str(EFrom, T const& x, Args&&... args) { x.EncObj(*this, std::forward<Args>(args)...); }
+		static Str From(T const& x, Args&&... args) { Str s; x.EncObj(s, std::forward<Args>(args)...); return s; }
 
 		template <typename... Args>
-		static Str Join(Args&&... args) { Str x; x.SetAdd(std::forward<Args>(args)...); return x; }
+		static Str Join(Args&&... args) { Str s; s.SetAdd(std::forward<Args>(args)...); return s; }
 
 		// SWAP
 		Str& Swap(Str& x) noexcept { NoExcept(Vec<byte>::Swap(x)); return *this; }
@@ -76,6 +74,12 @@ namespace At
 		Str& SetEnd            (Seq x, CaseMatch cm) { if (!Seq(*this).EndsWith           (x, cm)) Add(x); return *this; }
 		Str& SetEndExact       (Seq x)               { if (!Seq(*this).EndsWithExact      (x    )) Add(x); return *this; }
 		Str& SetEndInsensitive (Seq x)               { if (!Seq(*this).EndsWithInsensitive(x    )) Add(x); return *this; }
+
+		Str& TruncUtf8_MaxBytes (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) Resize(t.n).Add(ellipsis); return *this; }
+		Str& TruncUtf8_MaxChars (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Resize(t.n).Add(ellipsis); return *this; }
+
+		Str& Set_TruncUtf8_MaxBytes (Seq x, sizet n, Seq ellipsis = "...") { Seq r=x; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
+		Str& Set_TruncUtf8_MaxChars (Seq x, sizet n, Seq ellipsis = "...") { Seq r=x; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
 
 		// CLEAR
 		Str& Clear() { Vec<byte>::Clear(); return *this; }
@@ -230,6 +234,8 @@ namespace At
 	inline bool operator >= (Str const& l, char const*  r) { return Seq(l).Compare(r, CaseMatch::Exact) >= 0; }
 	inline bool operator >= (Seq          l, Str const& r) { return     l .Compare(r, CaseMatch::Exact) >= 0; }
 	inline bool operator >= (char const*  l, Str const& r) { return Seq(l).Compare(r, CaseMatch::Exact) >= 0; }
+
+	bool StrSlice_Equal(Slice<Str> l, Slice<Str> r, CaseMatch cm);
 
 
 

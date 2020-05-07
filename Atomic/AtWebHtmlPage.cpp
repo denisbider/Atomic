@@ -5,6 +5,15 @@
 namespace At
 {
 
+	ReqResult WebHtmlPage::WP_Process(EntityStore& store, HttpRequest& req)
+	{
+		if (Confirmation())
+			m_cfmMsg = req.CfmNvp("msg");
+
+		return WHP_Process(store, req);
+	}
+
+
 	void WebHtmlPage::WP_GenResponse(HttpRequest& req)
 	{
 		if (m_response.StatusCode == 0)
@@ -34,6 +43,13 @@ namespace At
 					html.Pre().Class("submitErr").T(err).EndPre();		// Preserve formatting for multiline error messages. Can contain significant indentation
 			}
 			html.EndDiv();
+		}
+
+		if (m_cfmMsg.Any())
+		{
+			html.Div().Id("WHP_Cfm")
+					.P().Class("cfm").T(m_cfmMsg).EndP()
+				.EndDiv();
 		}
 
 		html	.Div().Id("WHP_Body")

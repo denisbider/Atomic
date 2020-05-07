@@ -119,46 +119,46 @@ void CoreTests()
 	TEST_STR_EQ(Seq(Str().Dbl(-123.56, 3)), "-123.560");
 
 	Time t1 = Time::FromIsoStyleTimeStr("2019-03-06 22:16:23.012034");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::EngDateAbbr ), "Mar 6, 2019");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::EngDateFull ), "March 6, 2019");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::YyyyMmDd    ), "2019-03-06");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::Http        ), "Wed, 06 Mar 2019 22:16:23 GMT");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::Email       ), "Wed, 6 Mar 2019 22:16:23 +0000");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::IsoSec      ), "2019-03-06 22:16:23");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::IsoSecZ     ), "2019-03-06 22:16:23Z");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::IsoMilli    ), "2019-03-06 22:16:23.012");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::IsoMilliZ   ), "2019-03-06 22:16:23.012Z");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::IsoMicro    ), "2019-03-06 22:16:23.012034");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::IsoMicroZ   ), "2019-03-06 22:16:23.012034Z");
-	TEST_STR_EQ(Str().Obj(t1, TimeFmt::Dense       ), "20190306-221623");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::EngDateAbbr ), "Mar 6, 2019");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::EngDateFull ), "March 6, 2019");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::YyyyMmDd    ), "2019-03-06");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::Http        ), "Wed, 06 Mar 2019 22:16:23 GMT");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::Email       ), "Wed, 6 Mar 2019 22:16:23 +0000");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::IsoSec      ), "2019-03-06 22:16:23");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::IsoSecZ     ), "2019-03-06 22:16:23Z");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::IsoMilli    ), "2019-03-06 22:16:23.012");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::IsoMilliZ   ), "2019-03-06 22:16:23.012Z");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::IsoMicro    ), "2019-03-06 22:16:23.012034");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::IsoMicroZ   ), "2019-03-06 22:16:23.012034Z");
+	TEST_STR_EQ(Str::From(t1, TimeFmt::Dense       ), "20190306-221623");
 
 	Time t2 = Time::FromIsoStyleTimeStr("2020-02-29 22:16:23.012034");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::EngDateAbbr ), "Feb 29, 2020");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::EngDateFull ), "February 29, 2020");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::YyyyMmDd    ), "2020-02-29");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::Http        ), "Sat, 29 Feb 2020 22:16:23 GMT");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::Email       ), "Sat, 29 Feb 2020 22:16:23 +0000");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::IsoSec      ), "2020-02-29 22:16:23");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::IsoSecZ     ), "2020-02-29 22:16:23Z");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::IsoMilli    ), "2020-02-29 22:16:23.012");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::IsoMilliZ   ), "2020-02-29 22:16:23.012Z");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::IsoMicro    ), "2020-02-29 22:16:23.012034");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::IsoMicroZ   ), "2020-02-29 22:16:23.012034Z");
-	TEST_STR_EQ(Str().Obj(t2, TimeFmt::Dense       ), "20200229-221623");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::EngDateAbbr ), "Feb 29, 2020");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::EngDateFull ), "February 29, 2020");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::YyyyMmDd    ), "2020-02-29");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::Http        ), "Sat, 29 Feb 2020 22:16:23 GMT");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::Email       ), "Sat, 29 Feb 2020 22:16:23 +0000");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::IsoSec      ), "2020-02-29 22:16:23");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::IsoSecZ     ), "2020-02-29 22:16:23Z");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::IsoMilli    ), "2020-02-29 22:16:23.012");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::IsoMilliZ   ), "2020-02-29 22:16:23.012Z");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::IsoMicro    ), "2020-02-29 22:16:23.012034");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::IsoMicroZ   ), "2020-02-29 22:16:23.012034Z");
+	TEST_STR_EQ(Str::From(t2, TimeFmt::Dense       ), "20200229-221623");
 
 	Time t3 = Time::MaxDisplayable();
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::EngDateAbbr ), "Sep 14, 30828");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::EngDateFull ), "September 14, 30828");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::YyyyMmDd    ), "30828-09-14");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::Http        ), "Thu, 14 Sep 30828 02:48:05 GMT");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::Email       ), "Thu, 14 Sep 30828 02:48:05 +0000");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::IsoSec      ), "30828-09-14 02:48:05");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::IsoSecZ     ), "30828-09-14 02:48:05Z");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::IsoMilli    ), "30828-09-14 02:48:05.477");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::IsoMilliZ   ), "30828-09-14 02:48:05.477Z");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::IsoMicro    ), "30828-09-14 02:48:05.477580");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::IsoMicroZ   ), "30828-09-14 02:48:05.477580Z");
-	TEST_STR_EQ(Str().Obj(t3, TimeFmt::Dense       ), "308280914-024805");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::EngDateAbbr ), "Sep 14, 30828");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::EngDateFull ), "September 14, 30828");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::YyyyMmDd    ), "30828-09-14");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::Http        ), "Thu, 14 Sep 30828 02:48:05 GMT");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::Email       ), "Thu, 14 Sep 30828 02:48:05 +0000");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoSec      ), "30828-09-14 02:48:05");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoSecZ     ), "30828-09-14 02:48:05Z");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoMilli    ), "30828-09-14 02:48:05.477");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoMilliZ   ), "30828-09-14 02:48:05.477Z");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoMicro    ), "30828-09-14 02:48:05.477580");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoMicroZ   ), "30828-09-14 02:48:05.477580Z");
+	TEST_STR_EQ(Str::From(t3, TimeFmt::Dense       ), "308280914-024805");
 
 	TEST_EXCEPTION_TYPE(Str().Resize(SIZE_MAX), At::InternalInconsistency);
 	TEST_EXCEPTION_TYPE(Str().Resize(SIZE_MAX-1), std::bad_alloc);
@@ -175,8 +175,8 @@ void CoreTests()
 	try { EnsureThrow(!"EnsureThrow test"); }
 	catch (std::exception const& e) { Console::Out(Str("EnsureThrow test - verify manually:\r\n").Add(e.what())); }
 			
-	try { EnsureThrowWithCode(!"EnsureThrowWithCode test", 42); }
-	catch (std::exception const& e) { Console::Out(Str("EnsureThrowWithCode test - verify manually:\r\n").Add(e.what())); }
+	try { EnsureThrowWithNr(!"EnsureThrowWithNr test", 42); }
+	catch (std::exception const& e) { Console::Out(Str("EnsureThrowWithNr test - verify manually:\r\n").Add(e.what())); }
 
 	DataWithIntKey dwik;
 	DataWithStrKey dwsk;

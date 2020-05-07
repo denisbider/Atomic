@@ -13,7 +13,7 @@ void TestEmailAddress(Seq addr)
 		ParseTree ptList { addr };
 		ptList.RecordBestToStack();
 		if (!ptList.Parse(Imf::C_casual_addr_list))
-			Console::Out(Str().Obj(ptAddr, ParseTree::BestAttempt).Add("\r\n"));
+			Console::Out(Str::From(ptAddr, ParseTree::BestAttempt).Add("\r\n"));
 		else
 		{
 			Str dump;
