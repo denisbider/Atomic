@@ -35,13 +35,13 @@ namespace At
 		m_recordBestToStack = false;
 	}
 
-	ParseTree::~ParseTree()
+	ParseTree::~ParseTree() noexcept
 	{
 		for (Bucket* b=m_lastBucket; b!=0; )
 		{
 			Bucket* d = b;
 			b = b->m_prevBucket;
-			delete d;
+			NoExcept(delete d);
 		}
 
 		m_firstBucket = 0;

@@ -525,7 +525,7 @@ namespace At
 	}
 
 
-	Socket::~Socket()
+	Socket::~Socket() noexcept
 	{
 		if (m_s != INVALID_SOCKET)
 			EnsureReportWithNr(closesocket(m_s) == 0, WSAGetLastError());

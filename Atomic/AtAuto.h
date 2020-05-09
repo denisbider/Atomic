@@ -44,7 +44,7 @@ namespace At
 	public:
 		AutoAction(T* p = nullptr) noexcept : PtrHolder<T>(p) {}
 		AutoAction(AutoAction<T,F>&& x) noexcept : PtrHolder<T>(std::move(x)) {}
-		~AutoAction() { if (m_p) F::Action(m_p); }
+		~AutoAction() noexcept { if (m_p) NoExcept(F::Action(m_p)); }
 
 		void Set(T* p)
 		{
@@ -56,8 +56,8 @@ namespace At
 	};
 
 
-	template <class T> struct AutoAction_Free    { static void Action(T* p) { delete p; } };
-	template <class T> struct AutoAction_SetZero { static void Action(T* p) { *p = 0; } };
+	template <class T> struct AutoAction_Free    { static void Action(T* p) noexcept { NoExcept(delete p); } };
+	template <class T> struct AutoAction_SetZero { static void Action(T* p) noexcept { *p = 0; } };
 
 	template <class T> using AutoFree    = AutoAction<T, AutoAction_Free   <T>>;
 	template <class T> using AutoSetZero = AutoAction<T, AutoAction_SetZero<T>>;

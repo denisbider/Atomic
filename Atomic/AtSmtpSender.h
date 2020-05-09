@@ -36,7 +36,7 @@ namespace At
 
 		Rp<SmtpSenderMemUsage> m_memUsage;
 
-		~SmtpSenderWorkItem();
+		~SmtpSenderWorkItem() noexcept;
 
 		// Returns total mem usage bytes after registering the current work item
 		LONG64 RegisterMemUsage(Rp<SmtpMsgToSend> const& memUsage);

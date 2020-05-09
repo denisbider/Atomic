@@ -176,14 +176,18 @@ namespace At
 		}
 		
 
-		Key& Key::Destroy()
+		Key& Key::Destroy(CanThrow canThrow)
 		{
 			if (m_hKey)
 			{
 				NTSTATUS st = Call_BCryptDestroyKey(m_hKey);
+				if (st != STATUS_SUCCESS)
+					if (canThrow == CanThrow::No || std::uncaught_exception())
+						EnsureReportWithNr(!"Error in BCryptDestroyKey", st);
+					else
+						throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDestroyKey");
+
 				m_hKey = nullptr;
-				if (st != STATUS_SUCCESS && !std::uncaught_exception())
-					throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDestroyKey");
 			}
 
 			return *this;

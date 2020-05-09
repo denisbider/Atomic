@@ -114,7 +114,7 @@ namespace At
 		class Key
 		{
 		public:
-			~Key() { Destroy(); }
+			~Key() noexcept { Destroy(CanThrow::No); }
 
 			Key& GenerateKeyPair(Provider const& provider, ULONG length, ULONG flags);
 			Key& FinalizeKeyPair();
@@ -122,7 +122,7 @@ namespace At
 			Key& Import(Provider const& provider, Seq blob, LPCWSTR blobType);
 			Key& Sign(void* padInfo, Seq hash, Str& sig, ULONG flags);
 			bool Verify(void* padInfo, Seq hash, Seq sig, ULONG flags);
-			Key& Destroy();
+			Key& Destroy(CanThrow canThrow = CanThrow::Yes);
 
 			BCRYPT_KEY_HANDLE Handle() { return m_hKey; }
 

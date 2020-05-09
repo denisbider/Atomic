@@ -105,7 +105,7 @@ namespace At
 		Socket() {}
 		Socket(Socket&& x) noexcept;
 
-		~Socket();
+		~Socket() noexcept;
 
 		void Create(int af, int type, int protocol);
 		void SetSocket(SOCKET s);

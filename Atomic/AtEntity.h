@@ -233,7 +233,7 @@ namespace At
 
 		Entity(EntityStore* store, uint32 kind, char const* kindName, uint32 nrFields, EntityFieldInfo const* fields, EntityFieldInfo const* key, ObjId parentId);
 	
-		virtual ~Entity() {}
+		virtual ~Entity() noexcept {}
 	
 		EntityStore&           GetStore       () const { EnsureThrow(m_store != nullptr); return *m_store; }
 		uint32                 GetKind        () const { return m_kind; }
@@ -573,6 +573,15 @@ namespace At
 	{
 	public:
 		static_assert(std::is_nothrow_destructible<T>::value, "Throwing destructor not supported by Opt<T> at time of this implementation");
+		static_assert(std::is_nothrow_move_constructible<T>::value, "Throwing move constructor not supported by Opt<T> at time of this implementation");
+
+		EntOpt() noexcept {}
+		EntOpt(EntOpt<T> const& x) noexcept(std::is_nothrow_copy_constructible<T>::value) : Opt<T>((Opt<T> const&) x) {}
+		EntOpt(EntOpt<T>&&      x) noexcept                                               : Opt<T>((Opt<T>&&)      x) {}
+		~EntOpt() noexcept {}
+
+		EntOpt<T>& operator= (EntOpt<T> const& x) noexcept(std::is_nothrow_copy_assignable<T>::value) { Opt<T>::operator=((Opt<T> const&) x); return *this; }
+		EntOpt<T>& operator= (EntOpt<T>&&      x) noexcept(std::is_nothrow_move_assignable<T>::value) { Opt<T>::operator=((Opt<T>&&)      x); return *this; }
 
 		EntOptBase const* ToEntOptBase() const noexcept { return (EntOptBase const*) this; }
 
@@ -599,6 +608,14 @@ namespace At
 	class EntVec : public Vec<T>, private EntVecBase
 	{
 	public:
+		EntVec() noexcept {}
+		EntVec(EntVec<T> const& x)          : Vec<T>((Vec<T> const&) x) {}
+		EntVec(EntVec<T>&&      x) noexcept : Vec<T>((Vec<T>&&)      x) {}
+		~EntVec() noexcept {}
+
+		EntVec<T>& operator= (EntVec<T> const& x)          { Vec<T>::operator=((Vec<T> const&) x); return *this; }
+		EntVec<T>& operator= (EntVec<T>&&      x) noexcept { Vec<T>::operator=((Vec<T>&&)      x); return *this; }
+
 		EntVecBase const* ToEntVecBase() const noexcept { return (EntVecBase const*) this; }
 
 		EntVec<T>&    ReserveExact(sizet i)                    { Vec<T>::ReserveExact(i); return *this; }

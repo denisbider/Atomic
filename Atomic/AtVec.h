@@ -26,7 +26,7 @@ namespace At
 		VecCore(VecCore<B> const& x) { AddSlice(x); }
 		VecCore(Slice<Val> x) { AddSlice(x); }
 
-		~VecCore() { Clear(); }
+		~VecCore() noexcept { Clear(); }
 
 		VecCore<B>& operator= (VecCore<B> const& x) { VecCore<B> temp(x); return operator=(std::move(temp)); }	// Copy into temp and swap required for strong exception safety
 		VecCore<B>& operator= (VecCore<B>&& x) noexcept { return NoExcept(Free().Swap(x)); }

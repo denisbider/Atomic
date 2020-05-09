@@ -20,8 +20,8 @@ namespace At
 		Event(ECreateManual) { Create(CreateManual); }
 		Event(LPSECURITY_ATTRIBUTES sa, BOOL manual, BOOL initState, LPCTSTR name) { Create(sa, manual, initState, name); }
 
-		~Event() { Close(); }
-		void Close();
+		~Event() noexcept { Close(); }
+		void Close() noexcept;
 
 		Event& operator= (Event&& x) noexcept { Close(); m_h = x.m_h; x.m_h = 0; return *this; }
 

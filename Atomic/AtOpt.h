@@ -13,32 +13,44 @@ namespace At
 	class Opt
 	{
 	public:
-		// Due to a VS 2015 bug, a static_assert or SFINAE is necessary instead of the following more general solution:
+		// Due to VS 2015 bugs, a static_assert requiring nothrow destruction and move construction is preferable over the following more general solution:
 		//
-		//   ~Opt() noexcept(std::is_nothrow_destructible<T>::value) { Clear(); }
+		//   ~Opt() noexcept(std::is_nothrow_destructible<T>::value) { ... }
+		//   Opt(T&& o) noexcept(std::is_nothrow_move_constructible<T>::value) { ... }
 		//
-		// The bug is that, in VS 2015, the following will static assert:
+		// Bug #1 - in VS 2015, the following would static assert:
 		//
 		//   template <class T> struct A { ~A() noexcept(std::is_nothrow_destructible<T>::value) {} };
+		//   // A<int> a;
 		//   static_assert(std::is_nothrow_destructible<A<int>>::value, "");
 		//
-		// Creating an instance of A<int> before the static assert fixes the assertion.
+		// Uncommenting the commented line would fix the assertion. This bug might have been fixed: as of 2020-05-08, using the above snippet, I could not reproduce it.
+		//
+		// Bug #2 - in VS 2015, the following will static assert:
+		//
+		//   template <class T> struct B { B(B&&) noexcept(std::is_nothrow_move_constructible<T>::value) {} };
+		//   // static_assert(std::is_nothrow_move_constructible<B<int>>::value, "");
+		//   struct C { B<int> b; };
+		//   static_assert(std::is_nothrow_move_constructible<C>::value, "");
+		//
+		// Uncommenting the commented line fixes the assertion. As of 2020-05-08, this remains reproducible.
 
 		static_assert(std::is_nothrow_destructible<T>::value, "Throwing destructor not supported. See comment above");
+		static_assert(std::is_nothrow_move_constructible<T>::value, "Throwing move constructor not supported. See comment above");
 
 		enum ECreate { Create };
 
 		Opt()                noexcept                                                  : m_any(false)   { }
 		Opt(ECreate)         noexcept(std::is_nothrow_default_constructible<T>::value) : m_any(true)    {              new (&m_u.x) T();                                }
 		Opt(T const& o)      noexcept(std::is_nothrow_copy_constructible<T>::value)    : m_any(true)    {              new (&m_u.x) T(o);                               }
-		Opt(T&&      o)      noexcept(std::is_nothrow_move_constructible<T>::value)    : m_any(true)    {              new (&m_u.x) T(std::move(o));                    }
+		Opt(T&&      o)      noexcept                                                  : m_any(true)    {              new (&m_u.x) T(std::move(o));                    }
 		Opt(Opt<T> const& o) noexcept(std::is_nothrow_copy_constructible<T>::value)    : m_any(o.m_any) { if (m_any)   new (&m_u.x) T(o.m_u.x);                         }
-		Opt(Opt<T>&&      o) noexcept(std::is_nothrow_move_constructible<T>::value)    : m_any(o.m_any) { if (m_any) { new (&m_u.x) T(std::move(o.m_u.x)); o.Clear(); } }
+		Opt(Opt<T>&&      o) noexcept                                                  : m_any(o.m_any) { if (m_any) { new (&m_u.x) T(std::move(o.m_u.x)); o.Clear(); } }
 
 		template <typename... Args>
 		Opt(Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value) : m_any(true) { new (&m_u.x) T(args...); }
 
-		~Opt() { Clear(); }
+		~Opt() noexcept { Clear(); }
 
 		Opt<T>& operator= (T const&      o) noexcept(std::is_nothrow_copy_assignable<T>::value) { Clear();                             new (&m_u.x) T(o);                               return *this; }
 		Opt<T>& operator= (T&&           o) noexcept(std::is_nothrow_move_assignable<T>::value) { Clear();                             new (&m_u.x) T(std::move(o));                    return *this; }

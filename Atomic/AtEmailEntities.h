@@ -347,7 +347,7 @@ namespace At
 	ENTITY_DECL_FIELD(EntVec<EmailSrvBinding>, bindings)			// Interfaces and ports on which to accept SMTP connections
 	ENTITY_DECL_FIELD(Str,                     computerName)		// A fully-qualified receiver computer name to send as part of the SMTP greeting. Can override in a binding
 	ENTITY_DECL_FIELD(uint64,                  maxInMsgKb)			// The absolute maximum message size permitted. Can restrict further in SmtpReceiver_OnMailFrom, SmtpReceiver_OnRcptTo
-	ENTITY_DECL_CLOSE()
+	ENTITY_DECL_CLOSE();
 
 	void SmtpReceiverCfg_SetDefaultBindings(SmtpReceiverCfg& cfg);
 

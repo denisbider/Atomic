@@ -112,9 +112,9 @@ namespace At
 			KeyHandle() noexcept = default;
 			KeyHandle(KeyHandle&&) noexcept = default;
 
-			~KeyHandle() { DestroyKey(); }
+			~KeyHandle() noexcept { DestroyKey(CanThrow::No); }
 
-			void DestroyKey();
+			void DestroyKey(CanThrow canThrow = CanThrow::Yes);
 
 			BCRYPT_KEY_HANDLE m_kh {};
 		};

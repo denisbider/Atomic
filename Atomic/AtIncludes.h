@@ -166,6 +166,7 @@
 
 namespace At
 {
+	enum class CanThrow  { No, Yes };
 	enum class CaseMatch { Exact, Insensitive };
 	enum class CharCase  { Upper, Lower };
 	enum class EnumDir   { Forward, Reverse };

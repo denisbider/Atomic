@@ -9,7 +9,8 @@ namespace At
 	{
 	public:
 		ParseTree(Seq srcText);
-		~ParseTree();
+		ParseTree(ParseTree&&) noexcept = default;
+		~ParseTree() noexcept;
 
 		ParseTree& RecordBestToStack ()                 { m_recordBestToStack = true; return *this; }
 		ParseTree& SetTabStop        (uint tabStop)     { EnsureThrow(tabStop >= 1); m_tabStop = tabStop; return *this; }

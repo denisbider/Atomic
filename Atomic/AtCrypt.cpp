@@ -39,13 +39,13 @@ namespace At
 			if (!g_initedCount)
 			{
 				if (!CryptAcquireContextW(&g_cryptProv, 0, 0, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
-					{ LastWinErr e; throw e.Make<>("Crypt: Error in CryptAcquireContext"); }
+					{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptAcquireContext"); }
 
 				OnExit releaseContext = [&] { CryptReleaseContext(g_cryptProv, 0); };
 
 				NTSTATUS st = Call_BCryptOpenAlgorithmProvider(&g_phRsa, BCRYPT_RSA_ALGORITHM, NULL, 0);
 				if (st != STATUS_SUCCESS)
-					throw NtStatusErr<>(st, "Crypt: Error in BCryptOpenAlgorithmProvider(BCRYPT_RSA_ALGORITHM)");
+					throw NtStatusErr<>(st, __FUNCTION__ ": BCryptOpenAlgorithmProvider(BCRYPT_RSA_ALGORITHM)");
 
 				releaseContext.Dismiss();
 			}
@@ -82,7 +82,7 @@ namespace At
 			EnsureThrow(g_initedCount != 0);
 			if (len != 0)
 				if (!CryptGenRandom(g_cryptProv, len, (BYTE*) buffer))
-					{ LastWinErr e; throw e.Make<>("Crypt: Error in CryptGenRandom"); }
+					{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptGenRandom"); }
 		}
 		
 
@@ -166,7 +166,7 @@ namespace At
 			m_hashSize = 0;
 		
 			if (!CryptDestroyHash(m_hash))
-				{ LastWinErr e; throw e.Make<>("Hash: Error in call to CryptDestroyHash"); }
+				{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptDestroyHash"); }
 		}
 	
 		return *this;
@@ -178,7 +178,7 @@ namespace At
 		Close();
 	
 		if (!CryptCreateHash(g_cryptProv, algId, 0, 0, &m_hash))
-			{ LastWinErr e; throw e.Make<>("Hash: CreateHash: Error in CryptCreateHash"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptCreateHash"); }
 		m_haveHash = true;
 	
 		InitHashSize();
@@ -192,13 +192,13 @@ namespace At
 		Close();
 	
 		if (!CryptCreateHash(g_cryptProv, CALG_HMAC, macKey, 0, &m_hash))
-			{ LastWinErr e; throw e.Make<>("Hash: CreateHmac: Error in CryptCreateHash(CALG_HMAC)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptCreateHash(CALG_HMAC)"); }
 		m_haveHash = true;
 	
 		HMAC_INFO hmacInfo {};
 		hmacInfo.HashAlgid = algId;
 		if (!CryptSetHashParam(m_hash, HP_HMAC_INFO, (BYTE*) &hmacInfo, 0))
-			{ LastWinErr e; throw e.Make<>("Hash: CreateHmac: Error in CryptSetHashParam(HP_HMAC_INFO)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptSetHashParam(HP_HMAC_INFO)"); }
 	
 		InitHashSize();
 	
@@ -212,7 +212,7 @@ namespace At
 	
 		DWORD dataLen = sizeof(m_hashSize);
 		if (!CryptGetHashParam(m_hash, HP_HASHSIZE, (BYTE*) &m_hashSize, &dataLen, 0))
-			{ LastWinErr e; throw e.Make<>("Hash: InitHashSize: Error in CryptGetHashParam(HP_HASHSIZE)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptGetHashParam(HP_HASHSIZE)"); }
 		EnsureAbort(dataLen == sizeof(m_hashSize));
 	}
 
@@ -222,7 +222,7 @@ namespace At
 		EnsureThrow(m_haveHash);
 	
 		if (!CryptHashData(m_hash, (byte*) data.p, NumCast<DWORD>(data.n), 0))
-			{ LastWinErr e; throw e.Make<>("Hash: Process: Error in CryptHashData"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptHashData"); }
 	
 		return *this;
 	}
@@ -234,7 +234,7 @@ namespace At
 
 		DWORD dataLen = m_hashSize;
 		if (!CryptGetHashParam(m_hash, HP_HASHVAL, pHash, &dataLen, 0))
-			{ LastWinErr e; throw e.Make<>("Hash: Final: Error in CryptGetHashParam(HP_HASHVAL)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptGetHashParam(HP_HASHVAL)"); }
 		EnsureAbort(dataLen == m_hashSize);
 	
 		return *this;
@@ -289,7 +289,7 @@ namespace At
 		}
 
 		if (err)
-			throw WinErr<>(err, "SymCrypt: ~SymCrypt: Error in one or more calls to CryptDestroyKey");
+			throw WinErr<>(err, __FUNCTION__ ": Error in one or more calls to CryptDestroyKey");
 	}
 
 
@@ -301,14 +301,14 @@ namespace At
 	
 		DWORD encKeyFlags = (256 << 16);	// key size
 		if (!CryptGenKey(g_cryptProv, CALG_AES_256, encKeyFlags, &m_encKey))
-			{ LastWinErr e; throw e.Make<>("SymCrypt: Generate: Error in CryptGenKey(CALG_AES_256)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptGenKey(CALG_AES_256)"); }
 		m_haveEncKey = true;
 	
 		try
 		{		
 			DWORD dataLen = sizeof(m_blockLen);
 			if (!CryptGetKeyParam(m_encKey, KP_BLOCKLEN, (BYTE*) &m_blockLen, &dataLen, 0))
-				{ LastWinErr e; throw e.Make<>("SymCrypt:Generate: Error in CryptGetKeyParam(KP_BLOCKLEN)"); }
+				{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptGetKeyParam(KP_BLOCKLEN)"); }
 			EnsureAbort(dataLen == sizeof(m_blockLen));
 			EnsureThrow(m_blockLen != 0);
 			EnsureThrow((m_blockLen % 64) == 0);
@@ -316,11 +316,11 @@ namespace At
 		
 			DWORD mode = CRYPT_MODE_CBC;
 			if (!CryptSetKeyParam(m_encKey, KP_MODE, (BYTE*) &mode, 0))
-				{ LastWinErr e; throw e.Make<>("SymCrypt: Generate: Error in CryptSetKeyParam(KP_MODE)"); }
+				{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptSetKeyParam(KP_MODE)"); }
 
 			DWORD macKeyFlags = (256 << 16);	// key size
 			if (!CryptGenKey(g_cryptProv, CALG_AES_256, macKeyFlags, &m_macKey))
-				{ LastWinErr e; throw e.Make<>("SymCrypt: Generate: Error in CryptGenKey(CALG_AES_256)"); }
+				{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptGenKey(CALG_AES_256)"); }
 			m_haveMacKey = true;
 		}
 		catch (...)
@@ -350,14 +350,14 @@ namespace At
 		// Set IV		
 		GenRandom(pbCiphertext, m_blockLen);
 		if (!CryptSetKeyParam(m_encKey, KP_IV, (BYTE*) pbCiphertext, 0))
-			{ LastWinErr e; throw e.Make<>("SymCrypt: Encrypt: Error in CryptSetKeyParam(KP_IV)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptSetKeyParam(KP_IV)"); }
 	
 		// Encrypt
 		DWORD encryptSize = NumCast<DWORD>(plaintext.n);
 		BYTE* pbEncrypt = pbCiphertext + m_blockLen;
 		memcpy(pbEncrypt, plaintext.p, plaintext.n);
 		if (!CryptEncrypt(m_encKey, hh.m_hash, true, 0, pbEncrypt, &encryptSize, maxEncryptSize))
-			{ LastWinErr e; throw e.Make<>("SymCrypt: Encrypt: Error in CryptEncrypt"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptEncrypt"); }
 		EnsureThrow(encryptSize >= plaintext.n);
 		EnsureAbort(encryptSize <= maxEncryptSize);
 	
@@ -384,7 +384,7 @@ namespace At
 	
 		// Set IV		
 		if (!CryptSetKeyParam(m_encKey, KP_IV, ciphertext.p, 0))
-			{ LastWinErr e; throw e.Make<>("SymCrypt: Decrypt: Error in CryptSetKeyParam(KP_IV)"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptSetKeyParam(KP_IV)"); }
 	
 		// Decrypt
 		DWORD      writeSize      { NumCast<DWORD>(ciphertext.n) - m_blockLen };
@@ -395,7 +395,7 @@ namespace At
 
 		memcpy(pbPlaintext, ciphertext.p + m_blockLen, decryptSize);
 		if (!CryptDecrypt(m_encKey, hh.m_hash, true, 0, pbPlaintext, &decryptSize))
-			{ LastWinErr e; throw e.Make<>("SymCrypt: Decrypt: Error in CryptDecrypt"); }
+			{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": CryptDecrypt"); }
 		EnsureAbort(decryptSize <= writeSize - hh.HashSize());
 	
 		// Check hash
@@ -412,13 +412,18 @@ namespace At
 
 	namespace Cng
 	{
-		void KeyHandle::DestroyKey()
+		void KeyHandle::DestroyKey(CanThrow canThrow)
 		{
 			if (m_kh != nullptr)
 			{
 				NTSTATUS st = Call_BCryptDestroyKey(m_kh);
 				if (st != STATUS_SUCCESS)
-					throw NtStatusErr<>(st, "Cng: KeyHandle: DestroyKey: Error in BCryptDestroyKey");
+				{
+					if (canThrow == CanThrow::No || std::uncaught_exception())
+						EnsureReportWithNr(!"BCryptDestroyKey", st);
+					else 
+						throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDestroyKey");
+				}
 
 				m_kh = nullptr;
 			}
@@ -429,8 +434,8 @@ namespace At
 			DWORD value    {};
 			ULONG cbResult {};
 			NTSTATUS st = Call_BCryptGetProperty(obj, propId, (PUCHAR) &value, sizeof(value), &cbResult, 0);
-			if (st != STATUS_SUCCESS)      throw NtStatusErr<>(st, "Cng: GetDwordProperty: Error in BCryptGetProperty");
-			if (cbResult != sizeof(value)) throw ZLitErr("Cng: GetDwordProperty: BCryptGetProperty returned an unexpected number of bytes");
+			if (st != STATUS_SUCCESS)      throw NtStatusErr<>(st, __FUNCTION__ ": BCryptGetProperty");
+			if (cbResult != sizeof(value)) throw ZLitErr(__FUNCTION__ ": BCryptGetProperty returned an unexpected number of bytes");
 			return value;
 		}
 
@@ -442,13 +447,13 @@ namespace At
 			ULONG exportSize;
 			NTSTATUS st = Call_BCryptExportKey(kh, nullptr, blobType, nullptr, 0, &exportSize, 0);
 			if (st != STATUS_SUCCESS)
-				throw NtStatusErr<>(st, "Cng: ExportKey: Error in first call to BCryptExportKey");
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptExportKey (first)");
 
 			Enc::Write write = blob.IncWrite(exportSize);
 			ULONG sizeWritten;
 			st = Call_BCryptExportKey(kh, nullptr, blobType, write.Ptr(), exportSize, &sizeWritten, 0);
 			if (st != STATUS_SUCCESS)
-				throw NtStatusErr<>(st, "Cng: ExportKey: Error in second call to BCryptExportKey");
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptExportKey (second)");
 
 			write.Add(sizeWritten);
 		}
@@ -458,7 +463,7 @@ namespace At
 		{
 			NTSTATUS st = Call_BCryptImportKeyPair(ph, nullptr, blobType, &kh, (PUCHAR) blob.p, SatCast<ULONG>(blob.n), 0);
 			if (st != STATUS_SUCCESS)
-				throw NtStatusErr<>(st, "Cng: ImportKey: Error in BCryptImportKeyPair");
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptImportKeyPair");
 		}
 
 	}	// Cng
@@ -473,13 +478,13 @@ namespace At
 
 		NTSTATUS st = Call_BCryptGenerateKeyPair(g_phRsa, &m_kh, nrBits, 0);
 		if (st != STATUS_SUCCESS)
-			throw NtStatusErr<>(st, "RsaSigner: Generate: Error in BCryptGenerateKeyPair");
+			throw NtStatusErr<>(st, __FUNCTION__ ": BCryptGenerateKeyPair");
 
 		OnExit destroyKey = [&] { DestroyKey(); };
 
 		st = Call_BCryptFinalizeKeyPair(m_kh, 0);
 		if (st != STATUS_SUCCESS)
-			throw NtStatusErr<>(st, "RsaSigner: Generate: Error in BCryptFinalizeKeyPair");
+			throw NtStatusErr<>(st, __FUNCTION__ ": BCryptFinalizeKeyPair");
 
 		destroyKey.Dismiss();
 		return *this;
@@ -560,7 +565,7 @@ namespace At
 		ULONG bytesWritten {};
 		NTSTATUS st = Call_BCryptSignHash(m_kh, &padInfo, digest.Ptr(), (ULONG) digest.Len(), pbWrite, nWriteMax, &bytesWritten, BCRYPT_PAD_PKCS1);
 		if (st != STATUS_SUCCESS)
-			throw NtStatusErr<>(st, "RsaSigner: SignPkcs1: Error in BCryptSignHash");
+			throw NtStatusErr<>(st, __FUNCTION__ ": BCryptSignHash");
 		EnsureAbort(bytesWritten <= nWriteMax);
 
 		write.Add(bytesWritten);
@@ -667,7 +672,7 @@ namespace At
 		NTSTATUS st = Call_BCryptVerifySignature(m_kh, &padInfo, digest.Ptr(), (ULONG) digest.Len(), (PUCHAR) sig.p, NumCast<ULONG>(sig.n), BCRYPT_PAD_PKCS1);
 		if (st == STATUS_SUCCESS)           return true;
 		if (st == STATUS_INVALID_SIGNATURE) return false;
-		throw NtStatusErr<>(st, "RsaVerifier: VerifyPkcs1: Error in BCryptVerifySignature");
+		throw NtStatusErr<>(st, __FUNCTION__ ": BCryptVerifySignature");
 	}
 
 }

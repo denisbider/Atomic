@@ -195,7 +195,7 @@ namespace At
 	
 		MapCore() = default;
 		MapCore(MapCore&& x) noexcept : m_len(x.m_len), m_root(x.m_root) { x.m_version = SIZE_MAX; x.m_len = 0; x.m_root = nullptr; }
-		~MapCore() { m_version = SIZE_MAX; delete m_root; m_root = nullptr; }
+		~MapCore() noexcept { m_version = SIZE_MAX; NoExcept(delete m_root); m_root = nullptr; }
 
 		void Clear()
 		{

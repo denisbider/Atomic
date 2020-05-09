@@ -13,7 +13,7 @@ namespace At
 
 	// SmtpSenderWorkItem
 
-	SmtpSenderWorkItem::~SmtpSenderWorkItem()
+	SmtpSenderWorkItem::~SmtpSenderWorkItem() noexcept
 	{
 		if (m_memUsage.Any())
 			InterlockedExchangeAdd64(&m_memUsage->m_nrBytes, -((LONG64) m_content.n));

@@ -5,7 +5,7 @@
 namespace At
 {
 
-	void Event::Close()
+	void Event::Close() noexcept
 	{
 		if (m_h != 0)
 		{

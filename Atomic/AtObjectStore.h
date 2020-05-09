@@ -258,7 +258,7 @@ namespace At
 	public:
 		enum { DefaultOpenOversizeFilesTarget = 1000, DefaultCachedPagesTarget = 250000 };
 
-		~ObjectStore();
+		~ObjectStore() noexcept;
 
 		void SetDirectory               (Seq path                          ) override final;
 		void SetOpenOversizeFilesTarget (sizet target                      ) override final;
@@ -467,7 +467,7 @@ namespace At
 		{
 			TouchedObjectEntry(TouchedObject* tob) : m_touchedObject(tob) {}
 			TouchedObjectEntry(TouchedObjectEntry&& x) noexcept : m_touchedObject(x.m_touchedObject) { x.m_touchedObject = nullptr; }
-			~TouchedObjectEntry() { delete m_touchedObject; }
+			~TouchedObjectEntry() noexcept { delete m_touchedObject; }
 
 			static uint64 HashOfKey(ObjId k) { return k.m_index; }
 			ObjId Key() const { return m_touchedObject->m_objId; }
