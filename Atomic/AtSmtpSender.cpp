@@ -16,16 +16,16 @@ namespace At
 	SmtpSenderWorkItem::~SmtpSenderWorkItem() noexcept
 	{
 		if (m_memUsage.Any())
-			InterlockedExchangeAdd64(&m_memUsage->m_nrBytes, -((LONG64) m_content.n));
+			InterlockedExchangeAdd_PtrDiff(&m_memUsage->m_nrBytes, -(NumCast<ptrdiff>(m_content.n)));
 	}
 
 
-	LONG64 SmtpSenderWorkItem::RegisterMemUsage(Rp<SmtpMsgToSend> const& memUsage)
+	ptrdiff SmtpSenderWorkItem::RegisterMemUsage(Rp<SmtpSenderMemUsage> const& memUsage)
 	{
 		EnsureThrow(!m_memUsage.Any());
 		m_memUsage = memUsage;
-		LONG64 const contentLen = NumCast<LONG64>(m_content.n);
-		LONG64 const v = InterlockedExchangeAdd64(&m_memUsage->m_nrBytes, contentLen);
+		ptrdiff const contentLen = NumCast<ptrdiff>(m_content.n);
+		ptrdiff const v = InterlockedExchangeAdd_PtrDiff(&m_memUsage->m_nrBytes, contentLen);
 		EnsureThrow(v >= 0);
 		return v + contentLen;
 	}
@@ -108,8 +108,8 @@ namespace At
 
 			if (0 != cfg.f_memUsageLimitBytes)
 			{
-				LONG64 const curUsageBytes = InterlockedExchangeAdd64(&m_memUsage->m_nrBytes, 0);
-				if (curUsageBytes >= SatCast<LONG64>(cfg.f_memUsageLimitBytes))
+				ptrdiff const curUsageBytes = InterlockedExchangeAdd_PtrDiff(&m_memUsage->m_nrBytes, 0);
+				if (curUsageBytes >= SatCast<ptrdiff>(cfg.f_memUsageLimitBytes))
 					atMemUsageLimit = true;
 			}
 
@@ -130,8 +130,9 @@ namespace At
 							{
 								if (m->f_status == SmtpMsgStatus::NonFinal_Idle)
 								{
-									AutoFree<SmtpSenderWorkItem> wi { new SmtpSenderWorkItem };
-									workItems.Add(wi);
+									SmtpSenderWorkItem* wi = new SmtpSenderWorkItem;
+									AutoFree<SmtpSenderWorkItem> autoFreeWorkItem { wi };
+									workItems.Add(autoFreeWorkItem);
 
 									wi->m_msg = m;
 									wi->m_msg->f_status = SmtpMsgStatus::NonFinal_Sending;

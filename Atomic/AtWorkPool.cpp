@@ -17,7 +17,7 @@ namespace At
 
 		while (true)
 		{
-			if (InterlockedExchangeAdd64(&m_nrThreads, 0) == 0)
+			if (InterlockedExchangeAdd_PtrDiff(&m_nrThreads, 0) == 0)
 				break;
 		
 			Sleep(100);

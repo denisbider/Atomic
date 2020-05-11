@@ -16,13 +16,13 @@ namespace At
 		if (!m_workPoolBase)
 			throw ZLitErr("AtWorkPoolThreadBase: WorkPool not set");
 
-		InterlockedIncrement64(&(m_workPoolBase->m_nrThreads));
+		InterlockedIncrement_PtrDiff(&(m_workPoolBase->m_nrThreads));
 	}
 
 
 	void WorkPoolThreadBase::OnThreadExit(ExitType::E)
 	{
-		InterlockedDecrement64(&(m_workPoolBase->m_nrThreads));
+		InterlockedDecrement_PtrDiff(&(m_workPoolBase->m_nrThreads));
 	}
 
 
@@ -55,8 +55,8 @@ namespace At
 					DWORD waitResult {};
 
 					{
-						InterlockedIncrement64(&(m_workPoolBase->m_nrThreadsReady));
-						OnExit autoDecrement( [&] () { InterlockedDecrement64(&(m_workPoolBase->m_nrThreadsReady)); } );
+						InterlockedIncrement_PtrDiff(&(m_workPoolBase->m_nrThreadsReady));
+						OnExit autoDecrement( [&] () { InterlockedDecrement_PtrDiff(&(m_workPoolBase->m_nrThreadsReady)); } );
 
 						waitResult = Wait2(StopEvent().Handle(), m_workPoolBase->m_workAvailableEvent.Handle(), ReadyStateWaitMs);
 					}

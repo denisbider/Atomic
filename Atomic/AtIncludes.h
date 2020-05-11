@@ -222,4 +222,24 @@ namespace At
 
 	static_assert(sizeof(TypeIndex) == sizeof(std::size_t), "TypeIndex is being used under the assumption it's lightweight");
 
+
+
+#ifdef _M_X64
+
+	static_assert(sizeof(ptrdiff_t) == sizeof(LONG64), "");
+
+	__forceinline ptrdiff_t InterlockedIncrement_PtrDiff   (ptrdiff_t volatile* x)              { return InterlockedIncrement64   (x);                     }
+	__forceinline ptrdiff_t InterlockedDecrement_PtrDiff   (ptrdiff_t volatile* x)              { return InterlockedDecrement64   (x);                     }
+	__forceinline ptrdiff_t InterlockedExchangeAdd_PtrDiff (ptrdiff_t volatile* x, ptrdiff_t v) { return InterlockedExchangeAdd64 (x, v);                  }
+		
+#else
+
+	static_assert(sizeof(ptrdiff_t) == sizeof(LONG), "");
+
+	__forceinline ptrdiff_t InterlockedIncrement_PtrDiff   (ptrdiff_t volatile* x)              { return InterlockedIncrement     ((LONG volatile*) x);    }
+	__forceinline ptrdiff_t InterlockedDecrement_PtrDiff   (ptrdiff_t volatile* x)              { return InterlockedDecrement     ((LONG volatile*) x);    }
+	__forceinline ptrdiff_t InterlockedExchangeAdd_PtrDiff (ptrdiff_t volatile* x, ptrdiff_t v) { return InterlockedExchangeAdd   ((LONG volatile*) x, v); }
+
+#endif
+
 }

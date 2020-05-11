@@ -25,8 +25,8 @@ namespace At
 		Event             m_workItemTakenEvent { Event::CreateAuto };
 		uint              m_maxNrThreads       { 100 };
 
-		LONG64 volatile   m_nrThreads          {};
-		LONG64 volatile   m_nrThreadsReady     {};
+		ptrdiff volatile  m_nrThreads          {};
+		ptrdiff volatile  m_nrThreadsReady     {};
 
 		Mutex             m_mxWorkQueue;
 		std::deque<void*> m_workQueue;		// Destroyed in WorkPool<> derived template
@@ -70,8 +70,8 @@ namespace At
 					throw ExecutionAborted();
 			}
 
-			if (InterlockedExchangeAdd64(&m_nrThreadsReady, 0) < 1 &&
-				InterlockedExchangeAdd64(&m_nrThreads,      0) < m_maxNrThreads)
+			if (InterlockedExchangeAdd_PtrDiff(&m_nrThreadsReady, 0) < 1 &&
+				InterlockedExchangeAdd_PtrDiff(&m_nrThreads,      0) < SatCast<ptrdiff>(m_maxNrThreads))
 			{
 				ThreadPtr<ThreadType> thread { Thread::Create };
 				thread->SetWorkPool(this);

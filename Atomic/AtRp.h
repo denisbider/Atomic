@@ -10,10 +10,10 @@ namespace At
 	class RefCountable
 	{
 	protected:
-		static sizet const INIT_REFCOUNT	= (SIZE_MAX/8)*3;		// Must not equal DESTROY_REFCOUNT
-		static sizet const DESTROY_REFCOUNT	= (SIZE_MAX/8)*2;		// Must be less than INIT_REFCOUNT, with room to spare
+		static ptrdiff const INIT_REFCOUNT		= (PTRDIFF_MAX/4)*3;		// Must not equal DESTROY_REFCOUNT
+		static ptrdiff const DESTROY_REFCOUNT	= (PTRDIFF_MAX/4)*2;		// Must be less than INIT_REFCOUNT, with room to spare
 
-		LONG64 volatile m_refCount { INIT_REFCOUNT };
+		ptrdiff volatile m_refCount { INIT_REFCOUNT };
 
 	public:
 		RefCountable() noexcept {}
@@ -25,8 +25,8 @@ namespace At
 		RefCountable& operator= (RefCountable const&) noexcept { return *this; }
 		RefCountable& operator= (RefCountable const&&) noexcept { return *this; }
 
-		void AddRef() noexcept { if (m_refCount == INIT_REFCOUNT) m_refCount = 1; else InterlockedIncrement64(&m_refCount); }
-		void Release() noexcept { EnsureAbort(m_refCount > 0 && m_refCount < INIT_REFCOUNT); if (!InterlockedDecrement64(&m_refCount)) { m_refCount = DESTROY_REFCOUNT; delete this; } }
+		void AddRef() noexcept { if (m_refCount == INIT_REFCOUNT) m_refCount = 1; else InterlockedIncrement_PtrDiff(&m_refCount); }
+		void Release() noexcept { EnsureAbort(m_refCount > 0 && m_refCount < INIT_REFCOUNT); if (!InterlockedDecrement_PtrDiff(&m_refCount)) { m_refCount = DESTROY_REFCOUNT; delete this; } }
 	};
 
 

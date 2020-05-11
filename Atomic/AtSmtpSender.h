@@ -25,7 +25,7 @@ namespace At
 
 	struct SmtpSenderMemUsage : RefCountable
 	{
-		LONG64 volatile m_nrBytes {};
+		ptrdiff volatile m_nrBytes {};
 	};
 
 	struct SmtpSenderWorkItem
@@ -39,7 +39,7 @@ namespace At
 		~SmtpSenderWorkItem() noexcept;
 
 		// Returns total mem usage bytes after registering the current work item
-		LONG64 RegisterMemUsage(Rp<SmtpMsgToSend> const& memUsage);
+		ptrdiff RegisterMemUsage(Rp<SmtpSenderMemUsage> const& memUsage);
 	};
 
 	class SmtpSender : public WorkPool<SmtpSenderThread, SmtpSenderWorkItem>
