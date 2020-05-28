@@ -2,55 +2,14 @@
 
 #include "AtAuto.h"
 #include "AtCspBuilder.h"
+#include "AtFormInputType.h"
 #include "AtJsonBuilder.h"
 #include "AtPostFormSecurity.h"
 #include "AtTagStack.h"
-#include "AtVec.h"
 
 
 namespace At
 {
-
-	// FormInputType
-
-	struct FormInputType
-	{
-		FormInputType(char const* zWidth, char const* zMaxLen, uint nMaxLen)
-			: mc_zWidth(zWidth), mc_zMaxLen(zMaxLen), mc_nMaxLen(nMaxLen) {}
-
-		char const* const mc_zWidth  {};
-		char const* const mc_zMaxLen {};
-		uint const        mc_nMaxLen {};
-	};
-
-	struct FormInputTypeWithMin : FormInputType
-	{
-		FormInputTypeWithMin(char const* zWidth, char const* zMaxLen, uint nMaxLen, char const* zMinLen, uint nMinLen)
-			: FormInputType(zWidth, zMaxLen, nMaxLen), mc_zMinLen(zMinLen), mc_nMinLen(nMinLen) {}
-
-		char const* const mc_zMinLen {};
-		uint const        mc_nMinLen {};
-	};
-
-	extern FormInputType const fit_pw_noMinLen;
-	extern FormInputType const fit_ip4;
-	extern FormInputType const fit_ip6;
-	extern FormInputType const fit_dnsName;
-	extern FormInputType const fit_email;
-	extern FormInputType const fit_url;
-	extern FormInputType const fit_number;
-	extern FormInputType const fit_postalCode;
-	extern FormInputType const fit_salutation;
-	extern FormInputType const fit_name;
-	extern FormInputType const fit_nameOrEmail;
-	extern FormInputType const fit_street;
-	extern FormInputType const fit_desc;
-	extern FormInputType const fit_keywords;
-	extern FormInputType const fit_origin;
-	extern FormInputType const fit_nameList;
-	extern FormInputType const fit_localPath;
-
-
 
 	// TextAreaDims
 
@@ -385,6 +344,9 @@ namespace At
 		HtmlBuilder& ToggleShowDiv(Seq prefix, Seq showText, Seq hideText);			// Starts a div which must be closed by the user. Id of main div is [prefix + "Main"]
 		HtmlBuilder& ToggleShowDiv_UniqueId(Seq showText, Seq hideText);
 	
+		void Advanced_AddNonVoidElem(Seq tag) { return AddNonVoidElem(tag); }
+		void Advanced_EndNonVoidElem(Seq tag) { return EndNonVoidElem(tag); }
+
 	protected:
 		Str             m_s;
 		HtmlState::E    m_state             { HtmlState::Attrs };

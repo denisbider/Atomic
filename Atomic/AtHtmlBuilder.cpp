@@ -7,28 +7,6 @@
 namespace At
 {
 
-	// FormInputType
-
-	FormInputType const fit_pw_noMinLen (  "25",   "99",   99 );
-	FormInputType const fit_ip4         (  "20",   "20",   20 );
-	FormInputType const fit_ip6         (  "50",   "50",   50 );
-	FormInputType const fit_dnsName     (  "40",  "255",  255 );
-	FormInputType const fit_email       (  "40",  "255",  255 );
-	FormInputType const fit_url         ( "100",  "999",  999 );
-	FormInputType const fit_number      (  "20",   "20",   20 );
-	FormInputType const fit_postalCode  (  "20",   "20",   20 );
-	FormInputType const fit_salutation  (  "20",   "20",   20 );
-	FormInputType const fit_name        (  "40",  "100",  100 );
-	FormInputType const fit_nameOrEmail (  "40",  "255",  255 );
-	FormInputType const fit_street      (  "80",  "100",  100 );
-	FormInputType const fit_desc        ( "100",  "999",  999 );
-	FormInputType const fit_keywords    ( "100",  "999",  999 );
-	FormInputType const fit_origin      ( "100",  "999",  999 );
-	FormInputType const fit_nameList    ( "100", "9999", 9999 );
-	FormInputType const fit_localPath   ( "100",  "255",  255 );
-
-
-
 	// TextAreaDims
 
 	TextAreaDims const tad_policy      {  "5", "100" };

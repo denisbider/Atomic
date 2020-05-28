@@ -193,6 +193,8 @@
     <ClCompile Include="AtEllipticCurve.cpp" />
     <ClCompile Include="AtEmailServer.cpp" />
     <ClCompile Include="AtEnc.cpp" />
+    <ClCompile Include="AtFormInputType.cpp" />
+    <ClCompile Include="AtHtmlField.cpp" />
     <ClCompile Include="AtImfDateTime.cpp" />
     <ClCompile Include="AtJsonBuilder.cpp" />
     <ClCompile Include="AtJsPack.cpp" />
@@ -346,6 +348,8 @@
     <ClInclude Include="AtAsn1.h" />
     <ClInclude Include="AtBCrypt.h" />
     <ClInclude Include="AtBgTask.h" />
+    <ClInclude Include="AtFormInputType.h" />
+    <ClInclude Include="AtHeap.h" />
     <ClInclude Include="AtCspBuilder.h" />
     <ClInclude Include="AtCssPack.h" />
     <ClInclude Include="AtDiff.h" />
@@ -358,6 +362,7 @@
     <ClInclude Include="AtEllipticCurve.h" />
     <ClInclude Include="AtEmailServer.h" />
     <ClInclude Include="AtEnc.h" />
+    <ClInclude Include="AtHtmlField.h" />
     <ClInclude Include="AtImfDateTime.h" />
     <ClInclude Include="AtJsonBuilder.h" />
     <ClInclude Include="AtJsPack.h" />

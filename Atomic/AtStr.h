@@ -174,6 +174,7 @@ namespace At
 	// This works better with IntelliSense than defining Str::operator Seq().
 	// With the conversion operator, IntelliSense shows a bogus error when initializing Seq from Str using initializer syntax, e.g.: Str s; Seq x { s };
 	inline Seq::Seq(Str const& x) noexcept : p(x.Ptr()), n(x.Len()) {}
+	inline Seq& Seq::operator= (Str const& x) noexcept { p = x.Ptr(); n = x.Len(); return *this; }
 
 
 	using RcStr = Rc<Str>;

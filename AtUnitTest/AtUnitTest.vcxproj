@@ -205,6 +205,7 @@
     </ClCompile>
     <ClCompile Include="AutLargeEntities.cpp" />
     <ClCompile Include="AutMain.cpp" />
+    <ClCompile Include="AutMap.cpp" />
     <ClCompile Include="AutMarkdown.cpp" />
     <ClCompile Include="AutMpUInt.cpp" />
     <ClCompile Include="AutMultipart.cpp" />

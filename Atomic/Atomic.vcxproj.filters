@@ -484,6 +484,12 @@
     <ClCompile Include="AtStr.cpp">
       <Filter>Foundation</Filter>
     </ClCompile>
+    <ClCompile Include="AtFormInputType.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlField.cpp">
+      <Filter>HTML</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1043,6 +1049,15 @@
     </ClInclude>
     <ClInclude Include="AtBitFlagDescriber.h">
       <Filter>Algorithms and Services</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHeap.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtFormInputType.h">
+      <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlField.h">
+      <Filter>HTML</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -172,6 +172,18 @@ namespace At
 	__declspec(noinline) void EnsureFailWithNr_Abort  (char const* locAndDesc, int64 nr) { EnsureFailWithNr(OnFail::Abort,  locAndDesc, nr); }
 
 
+	__declspec(noinline) void EnsureFailWithNr2(OnFail::E onFail, char const* locAndDesc, int64 n1, int64 n2)
+	{
+		char locDescAndNrs[MaxDescChars];
+		StringCchPrintfA(locDescAndNrs, MaxDescChars, "%s\r\nValue 1: %I64i\r\nValue 2: %I64i", locAndDesc, n1, n2);
+		EnsureFail(onFail, locDescAndNrs);
+	}
+
+	__declspec(noinline) void EnsureFailWithNr2_Report (char const* locAndDesc, int64 n1, int64 n2) { EnsureFailWithNr2(OnFail::Report, locAndDesc, n1, n2); }
+	__declspec(noinline) void EnsureFailWithNr2_Throw  (char const* locAndDesc, int64 n1, int64 n2) { EnsureFailWithNr2(OnFail::Throw,  locAndDesc, n1, n2); }
+	__declspec(noinline) void EnsureFailWithNr2_Abort  (char const* locAndDesc, int64 n1, int64 n2) { EnsureFailWithNr2(OnFail::Abort,  locAndDesc, n1, n2); }
+
+
 	__declspec(noinline) void EnsureFailWithDesc(OnFail::E onFail, char const* desc, char const* funcOrFile, long line)
 	{
 		char locAndDesc[MaxDescChars];

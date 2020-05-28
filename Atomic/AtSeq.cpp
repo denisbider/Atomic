@@ -264,12 +264,15 @@ namespace At
 	}
 
 
-	Seq Seq::ReadToFirstUtf8CharOfType(CharCriterion criterion) noexcept
+	Seq Seq::ReadToFirstUtf8CharOfType(CharCriterion criterion, sizet m) noexcept
 	{
 		Seq orig { p, n };
 		Seq reader = *this;
 		while (n)
 		{
+			if (m != SIZE_MAX && !m--)
+				goto Done;
+
 			uint c;
 			Utf8::ReadResult::E readResult = Utf8::ReadCodePoint(reader, c);
 			if (readResult != Utf8::ReadResult::OK)
@@ -285,12 +288,15 @@ namespace At
 	}
 	
 	
-	Seq Seq::ReadToFirstUtf8CharNotOfType(CharCriterion criterion) noexcept
+	Seq Seq::ReadToFirstUtf8CharNotOfType(CharCriterion criterion, sizet m) noexcept
 	{
 		Seq orig { p, n };
 		Seq reader = *this;
 		while (n)
 		{
+			if (m != SIZE_MAX && !m--)
+				goto Done;
+
 			uint c;
 			Utf8::ReadResult::E readResult = Utf8::ReadCodePoint(reader, c);
 			if (readResult != Utf8::ReadResult::OK)

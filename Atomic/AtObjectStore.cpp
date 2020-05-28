@@ -1836,7 +1836,7 @@ namespace At
 
 	void ObjectStore::InsertTouchedObject(AutoFree<TouchedObject>& tob)
 	{
-		m_touchedObjects.Add(tob->m_objId, tob.Ptr());
+		m_touchedObjects.Add(tob.Ptr());
 		tob.Dismiss();
 	}
 

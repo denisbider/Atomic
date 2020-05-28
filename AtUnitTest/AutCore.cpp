@@ -30,48 +30,7 @@ void TestStr(Seq desc, Str const& left, Str const& right, bool expected)
 #define TEST_STR_NE(LEFT, RIGHT) TestStr(#LEFT " != " #RIGHT, (LEFT), (RIGHT), false)
 
 
-template <typename ExpectedExceptionType>
-void TestExceptionType(Seq desc, std::function<void()> test)
-{
-	TestDesc(desc);
-
-	try
-	{
-		test();
-	}
-	catch (ExpectedExceptionType const&)
-	{
-		Console::Out("ok\r\n");
-	}
-	catch (...)
-	{
-		Console::Out("FAIL\r\n");
-		throw;
-	}
-}
-
-#define TEST_EXCEPTION_TYPE(TEST, TYPE) TestExceptionType<TYPE>(#TEST ": " #TYPE, []() { TEST; })
-
-
-struct DataWithStrKey : RefCountable
-{
-	Str m_k;
-	int m_i {};
-
-	Str const& Key() const { return m_k; }
-};
-
-
-struct DataWithIntKey : RefCountable
-{
-	int m_k {};
-	Str m_s;
-
-	int Key() const { return m_k; }
-};
-
-
-void CoreTests()
+void CoreTests_Str()
 {
 	Console::Out(Str("sizeof(Str): ").UInt(sizeof(Str)).Add("\r\n"));
 
@@ -159,7 +118,174 @@ void CoreTests()
 	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoMicro    ), "30828-09-14 02:48:05.477580");
 	TEST_STR_EQ(Str::From(t3, TimeFmt::IsoMicroZ   ), "30828-09-14 02:48:05.477580Z");
 	TEST_STR_EQ(Str::From(t3, TimeFmt::Dense       ), "308280914-024805");
+}
 
+
+void CoreTests_Heap()
+{
+	struct Tracker
+	{
+		int& m_counter;
+		int m_value {};
+
+		Tracker(int& counter) : m_counter(counter) { ++m_counter; }
+		~Tracker() noexcept { --m_counter; }
+	};
+
+	using H = Heap<Tracker>;
+	using E = H::Entry;
+
+	H h;
+
+	enum { N = 8 };
+	E* entries[N] = {};
+	int nrEntries {};
+	int counter {};
+
+	auto addEntry = [&] ()
+		{
+			EnsureThrow(nrEntries < N);
+			EnsureThrow(entries[nrEntries] == nullptr);
+			E& e = h.Add();
+			EnsureThrow(!e.m_next);
+			EnsureThrow(!e.m_x.Any());
+			e.m_next = (E*) (sizet) nrEntries;
+			e.m_x.Init(counter).m_value = nrEntries;
+			entries[nrEntries++] = &e;
+		};
+
+	auto eraseEntry = [&] (int i)
+		{
+			EnsureThrow(i < N);
+			EnsureThrow(entries[i] != nullptr);
+			E& e = *entries[i];
+			EnsureThrow(e.m_next == (E*) (sizet) i);
+			EnsureThrow(e.m_x.Ref().m_value == i);
+			h.Erase(e);
+			entries[i] = nullptr;
+		};
+
+	auto verify = [&] (int presentMap[N])
+		{
+			Str msg = "Verified: ";
+			int expectedCounter {};
+			for (int i=0; i!=N; ++i)
+				if (!presentMap[i])
+				{
+					EnsureThrow(entries[i] == nullptr);
+					msg.Ch('0');
+				}
+				else
+				{
+					++expectedCounter;
+					EnsureThrow(entries[i] != nullptr);
+					E& e = *entries[i];
+					EnsureThrow(e.m_next == (E*) (sizet) i);
+					EnsureThrow(e.m_x.Ref().m_value == i);
+					msg.Ch('1');
+				}
+
+			EnsureThrow(expectedCounter == counter);
+			msg.Add(", counter ").SInt(counter).Add("\r\n");
+			Console::Out(msg);
+		};
+
+	addEntry();                         {int p[N]={1};               verify(p);} eraseEntry(0);                               {int p[N]={};                verify(p);}
+	addEntry(); addEntry();             {int p[N]={0,1,1};           verify(p);} eraseEntry(1); eraseEntry(2);                {int p[N]={};                verify(p);}
+	addEntry(); addEntry(); addEntry(); {int p[N]={0,0,0,1,1,1};     verify(p);} eraseEntry(4);                               {int p[N]={0,0,0,1,0,1};     verify(p);}
+	addEntry(); addEntry();             {int p[N]={0,0,0,1,0,1,1,1}; verify(p);} eraseEntry(3); eraseEntry(6); eraseEntry(7); {int p[N]={0,0,0,0,0,1,0,0}; verify(p);}
+		                                                                         eraseEntry(5);                               {int p[N]={0,0,0,0,0,0,0,0}; verify(p);}
+}
+
+
+void CoreTests_HashMap()
+{
+	struct KeyVal
+	{
+		sizet m_k {};
+		sizet m_v {};
+
+		KeyVal(sizet k, sizet v) : m_k(k), m_v(v) {}
+
+		sizet Key() const { return m_k; }
+		static sizet HashOfKey(sizet k) { return k; }
+	};
+
+	HashMap<KeyVal> m;
+	m.SetNrBuckets(7);
+
+	sizet nrAdded {}, nrErased {};
+	OrderedSet<sizet> erasedSet;
+	for (sizet j=0; j!=10; ++j)
+		for (sizet i=0; i!=1000; ++i)
+			if ((i%3) != (j%3))
+				m.Add(i, nrAdded++);
+			else
+			{
+				KeyVal* kv = m.Find(i);
+				if (!kv)
+					EnsureThrow(!m.Erase(i));
+				else
+				{
+					EnsureThrow(kv->m_k == i);
+					EnsureThrow(!erasedSet.Contains(kv->m_v));
+					erasedSet.Add(kv->m_v);
+					EnsureThrow(m.Erase(i));
+					++nrErased;
+				}
+			}
+
+	Console::Out(Str("HashMap: ").UInt(nrAdded).Add(" added, ").UInt(nrErased).Add(" erased, erasedSet: [")
+		.UInt(erasedSet.First()).Add(", ..., ").UInt(erasedSet.Last()).Add("]\r\n"));
+
+	for (sizet i=0; i!=1000; ++i)
+		while (true)
+		{
+			KeyVal* kv = m.Find(i);
+			if (!kv)
+				break;
+
+			EnsureThrow(kv->m_k == i);
+			EnsureThrow(!erasedSet.Contains(kv->m_v));
+			erasedSet.Add(kv->m_v);
+			EnsureThrow(m.Erase(i));
+			++nrErased;
+		}
+		
+	EnsureThrow(nrErased == nrAdded);
+	EnsureThrow(erasedSet.Len() == nrAdded);
+	EnsureThrow(erasedSet.First() == 0);
+	EnsureThrow(erasedSet.Last() == nrAdded-1);
+	Console::Out(Str("HashMap: ").UInt(nrAdded).Add(" added, ").UInt(nrErased).Add(" erased, erasedSet: [")
+		.UInt(erasedSet.First()).Add(", ..., ").UInt(erasedSet.Last()).Add("]\r\n"));
+}
+
+
+template <typename ExpectedExceptionType>
+void TestExceptionType(Seq desc, std::function<void()> test)
+{
+	TestDesc(desc);
+
+	try
+	{
+		test();
+	}
+	catch (ExpectedExceptionType const&)
+	{
+		Console::Out("ok\r\n");
+	}
+	catch (...)
+	{
+		Console::Out("FAIL\r\n");
+		throw;
+	}
+}
+
+#define TEST_EXCEPTION_TYPE(TEST, TYPE) TestExceptionType<TYPE>(#TEST ": " #TYPE, []() { TEST; })
+
+
+void CoreTests_Exceptions()
+{
 	TEST_EXCEPTION_TYPE(Str().Resize(SIZE_MAX), At::InternalInconsistency);
 	TEST_EXCEPTION_TYPE(Str().Resize(SIZE_MAX-1), std::bad_alloc);
 	TEST_EXCEPTION_TYPE(Str().Chars(1000, 'a').ReserveInc(SIZE_MAX), At::InternalInconsistency);
@@ -177,22 +303,13 @@ void CoreTests()
 			
 	try { EnsureThrowWithNr(!"EnsureThrowWithNr test", 42); }
 	catch (std::exception const& e) { Console::Out(Str("EnsureThrowWithNr test - verify manually:\r\n").Add(e.what())); }
+}
 
-	DataWithIntKey dwik;
-	DataWithStrKey dwsk;
-	Rp<DataWithIntKey> spDwik { new DataWithIntKey };
-	Rp<DataWithStrKey> spDwsk { new DataWithStrKey };
 
-	{ Map<    DataWithIntKey>  m; m.Add(dwik);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ Map<    DataWithStrKey>  m; m.Add(dwsk);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ Map< Rp<DataWithIntKey>> m; m.Add(spDwik); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ Map< Rp<DataWithStrKey>> m; m.Add(spDwsk); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<   DataWithIntKey>  m; m.Add(dwik);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<   DataWithStrKey>  m; m.Add(dwsk);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<Rp<DataWithIntKey>> m; m.Add(spDwik); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<Rp<DataWithStrKey>> m; m.Add(spDwsk); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSet<int>  m; int x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSet<Str>  m; Str x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSetR<int> m; int x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSetR<Str> m; Str x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
+void CoreTests()
+{
+	CoreTests_Str();
+	CoreTests_Heap();
+	CoreTests_HashMap();
+	CoreTests_Exceptions();
 }

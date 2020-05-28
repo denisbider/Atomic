@@ -60,6 +60,17 @@ namespace At
 	#define EnsureAbortWithNr(TEST, NR)    ((TEST) ? 0 : (At::EnsureFailWithNr_Abort  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, NR), 0))
 
 
+	__declspec(noinline) void EnsureFailWithNr2(OnFail::E onFail, char const* locAndDesc, int64 n1, int64 n2);
+
+	__declspec(noinline) void EnsureFailWithNr2_Report (char const* locAndDesc, int64 n1, int64 n2);
+	__declspec(noinline) void EnsureFailWithNr2_Throw  (char const* locAndDesc, int64 n1, int64 n2);
+	__declspec(noinline) void EnsureFailWithNr2_Abort  (char const* locAndDesc, int64 n1, int64 n2);
+
+	#define EnsureReportWithNr2(TEST, N1, N2)   ((TEST) ? 0 : (At::EnsureFailWithNr2_Report ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, N1, N2), 0))
+	#define EnsureThrowWithNr2(TEST, N1, N2)    ((TEST) ? 0 : (At::EnsureFailWithNr2_Throw  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, N1, N2), 0))
+	#define EnsureAbortWithNr2(TEST, N1, N2)    ((TEST) ? 0 : (At::EnsureFailWithNr2_Abort  ("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n" #TEST, N1, N2), 0))
+
+
 	__declspec(noinline) void EnsureFailWithDesc(OnFail::E onFail, char const* desc, char const* funcOrFile, long line);
 
 }

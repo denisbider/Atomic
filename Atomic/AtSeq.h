@@ -67,6 +67,11 @@ namespace At
 		Seq(void const* pp, sizet nn) noexcept : p((byte const*) pp), n(nn) {}
 		Seq(Vec<wchar_t> const& v)    noexcept : p((byte const*) v.Ptr()), n(v.Len()*sizeof(wchar_t)) {}
 
+		Seq& operator= (Seq const& x) noexcept = default;
+		Seq& operator= (Enc const& x) noexcept;		// Defined inline in AtEnc.h
+		Seq& operator= (Str const& x) noexcept;		// Defined inline in AtStr.h
+		Seq& operator= (char const* z) noexcept { p = (byte const*) z; n = ZLen(z); return *this; }
+
 		byte const* begin () const noexcept { return p; }
 		byte const* end   () const noexcept { return p + n; }
 		byte const* data  () const noexcept { return p; }
@@ -115,8 +120,8 @@ namespace At
 		Seq    ReadToFirstByteNotOf         (char const*   bytes,     sizet m = SIZE_MAX) noexcept;
 		Seq    ReadToFirstByteOfType        (CharCriterion criterion, sizet m = SIZE_MAX) noexcept;
 		Seq    ReadToFirstByteNotOfType     (CharCriterion criterion, sizet m = SIZE_MAX) noexcept;
-		Seq    ReadToFirstUtf8CharOfType    (CharCriterion criterion) noexcept;
-		Seq    ReadToFirstUtf8CharNotOfType (CharCriterion criterion) noexcept;
+		Seq    ReadToFirstUtf8CharOfType    (CharCriterion criterion, sizet m = SIZE_MAX) noexcept;
+		Seq    ReadToFirstUtf8CharNotOfType (CharCriterion criterion, sizet m = SIZE_MAX) noexcept;
 		Seq    ReadToString                 (Seq str, CaseMatch cm = CaseMatch::Exact) noexcept;
 		Seq    ReadLeadingNewLine           () noexcept;
 		uint64 ReadNrUInt64                 (byte   base = 10, uint64 max = UINT64_MAX) noexcept;	// If value exceeds max, returns max. Supports bases 2-36.
@@ -136,13 +141,15 @@ namespace At
 
 		Seq& DropByte                     ()                                         noexcept { if (n) { ++p; --n; } return *this; }
 		Seq& DropBytes                    (sizet         m)                          noexcept { ReadBytes(m); return *this; }
+		Seq& DropUtf8_MaxBytes            (sizet         m)                          noexcept { ReadUtf8_MaxBytes(m); return *this; }
+		Seq& DropUtf8_MaxChars            (sizet         m)                          noexcept { ReadUtf8_MaxChars(m); return *this; }
 		Seq& DropToByte                   (uint          b,     sizet m = SIZE_MAX)  noexcept { ReadToByte(b, m); return *this; }
 		Seq& DropToFirstByteOf            (char const*   bytes, sizet m = SIZE_MAX)  noexcept { ReadToFirstByteOf(bytes, m); return *this; }
 		Seq& DropToFirstByteNotOf         (char const*   bytes, sizet m = SIZE_MAX)  noexcept { ReadToFirstByteNotOf(bytes, m); return *this; }
 		Seq& DropToFirstByteOfType        (CharCriterion crit,  sizet m = SIZE_MAX)  noexcept { ReadToFirstByteOfType(crit, m); return *this; }
 		Seq& DropToFirstByteNotOfType     (CharCriterion crit,  sizet m = SIZE_MAX)  noexcept { ReadToFirstByteNotOfType(crit, m); return *this; }
-		Seq& DropToFirstUtf8CharOfType    (CharCriterion crit)                       noexcept { ReadToFirstUtf8CharOfType(crit); return *this; }
-		Seq& DropToFirstUtf8CharNotOfType (CharCriterion crit)                       noexcept { ReadToFirstUtf8CharNotOfType(crit); return *this; }
+		Seq& DropToFirstUtf8CharOfType    (CharCriterion crit,  sizet m = SIZE_MAX)  noexcept { ReadToFirstUtf8CharOfType(crit, m); return *this; }
+		Seq& DropToFirstUtf8CharNotOfType (CharCriterion crit,  sizet m = SIZE_MAX)  noexcept { ReadToFirstUtf8CharNotOfType(crit, m); return *this; }
 		Seq& DropToString                 (Seq str, CaseMatch cm = CaseMatch::Exact) noexcept { ReadToString(str, cm); return *this; }
 		Seq& DropLeadingNewLine           ()                                         noexcept { ReadLeadingNewLine(); return *this; }
 
@@ -156,8 +163,8 @@ namespace At
 		bool ContainsAnyByteNotOf         (char const*   bytes,     sizet m = SIZE_MAX) const { return Seq(*this).DropToFirstByteNotOf(bytes, m).Any(); }
 		bool ContainsAnyByteOfType        (CharCriterion criterion, sizet m = SIZE_MAX) const { return Seq(*this).DropToFirstByteOfType(criterion, m).Any(); }
 		bool ContainsAnyByteNotOfType     (CharCriterion criterion, sizet m = SIZE_MAX) const { return Seq(*this).DropToFirstByteNotOfType(criterion, m).Any(); }
-		bool ContainsAnyUtf8CharOfType    (CharCriterion criterion)                     const { return Seq(*this).DropToFirstUtf8CharOfType(criterion).Any(); }
-		bool ContainsAnyUtf8CharNotOfType (CharCriterion criterion)                     const { return Seq(*this).DropToFirstUtf8CharNotOfType(criterion).Any(); }
+		bool ContainsAnyUtf8CharOfType    (CharCriterion criterion, sizet m = SIZE_MAX) const { return Seq(*this).DropToFirstUtf8CharOfType(criterion, m).Any(); }
+		bool ContainsAnyUtf8CharNotOfType (CharCriterion criterion, sizet m = SIZE_MAX) const { return Seq(*this).DropToFirstUtf8CharNotOfType(criterion, m).Any(); }
 		bool ContainsString               (Seq str, CaseMatch cm = CaseMatch::Exact)    const { return Seq(*this).DropToString(str, cm).Any(); }
 
 		bool Equal            (Seq x, CaseMatch cm) const noexcept { return (cm == CaseMatch::Exact) ? EqualExact(x) : EqualInsensitive(x); }
@@ -171,8 +178,6 @@ namespace At
 		Seq CommonPrefix(Seq x, CaseMatch cm) const noexcept { return (cm == CaseMatch::Exact) ? CommonPrefixExact(x) : CommonPrefixInsensitive(x); }
 		Seq CommonPrefixExact(Seq x) const noexcept;
 		Seq CommonPrefixInsensitive(Seq x) const noexcept;
-
-		Seq& operator= (Seq x) noexcept { p = x.p; n = x.n; return *this; }
 
 		bool operator== (char const* z) const noexcept { return operator==(Seq(z)); }
 		bool operator!= (char const* z) const noexcept { return operator!=(Seq(z)); }

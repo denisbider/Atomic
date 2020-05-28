@@ -6,11 +6,10 @@ namespace At
 	namespace Html
 	{
 
-		Seq ReadQuotedString(ParseNode const& /*qsNode*/, PinStore& /*store*/)
+	/*
+		Seq ReadQuotedString(ParseNode const& qsNode, PinStore& store)
 		{
 			// ...
-
-			throw NotImplemented();
 		}
 
 
@@ -30,6 +29,7 @@ namespace At
 			value = Seq();
 			return false;
 		}
+	*/
 
 	}
 }

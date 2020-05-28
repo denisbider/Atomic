@@ -338,7 +338,7 @@ namespace At
 			{
 				// Non-root leaf node that's now empty. Delete the node and remove it from its parent
 				retNode = it.m_node->NextSibling();		// If this is null, we removed the last entry and return a past-end iterator
-				RemoveNode(it.m_node);
+				RemoveNode(it.m_node, retNode);
 			}
 			else
 			{
@@ -354,15 +354,14 @@ namespace At
 					Node *joinNode1, *joinNode2;
 					if (FindBestSiblingForJoin(it.m_node, MaxLeafEntries, joinNode1, joinNode2))
 					{
+						retNode = joinNode1;
+						retIndex = it.m_index;
+
 						if (it.m_node == joinNode2)
-						{
-							// The node from which we removed the entry is being appended to its previous sibling
-							retNode = joinNode1;
-							retIndex = joinNode1->Leaf().m_entries.Len() + it.m_index;
-						}
+							retIndex += joinNode1->Leaf().m_entries.Len();	// The node from which we removed the entry is being appended to its previous sibling
 
 						joinNode1->Leaf().MergeFrom(joinNode2->Leaf());
-						RemoveNode(joinNode2);
+						RemoveNode(joinNode2, retNode);
 					}
 				}
 
@@ -380,7 +379,7 @@ namespace At
 				sizet const retNodeLen = retNode->Leaf().m_entries.Len();
 				if (retIndex >= retNodeLen)
 				{
-					EnsureThrow(retIndex == retNodeLen);
+					EnsureThrowWithNr2(retIndex == retNodeLen, (int64) retIndex, (int64) retNodeLen);
 					retNode = retNode->NextSibling();	// If this is null, we removed the last entry and return a past-end iterator
 					retIndex = 0;
 				}
@@ -927,18 +926,31 @@ namespace At
 			return false;
 		}
 
-		void RemoveNode(Node* removeNode) noexcept
+		void RemoveNode(Node* removeNode, Node*& preserveNodePtr) noexcept
 		{
 			do
 			{
 				sizet indexInParent { removeNode->IndexInParent() };
 				Node* parent { removeNode->Parent() };
 				NonLeafNode& parentNonLeaf { parent->NonLeaf() };
-
 				EnsureAbort(&parentNonLeaf.m_entries[indexInParent].m_node == removeNode);
+
+				sizet preserveNodeIndex = SIZE_MAX;
+				if (preserveNodePtr && preserveNodePtr->Parent() == parent)
+				{
+					preserveNodeIndex = preserveNodePtr->IndexInParent();
+					EnsureAbort(preserveNodeIndex != indexInParent);
+				}
+
 				parentNonLeaf.m_entries.Erase(indexInParent, 1);
 				parentNonLeaf.UpdateChildParentInfo(indexInParent);
 				removeNode = nullptr;
+
+				if ((SIZE_MAX != preserveNodeIndex) && (preserveNodeIndex > indexInParent))
+				{
+					--preserveNodeIndex;
+					preserveNodePtr = &(parentNonLeaf.m_entries[preserveNodeIndex].m_node);
+				}
 
 				if (!parentNonLeaf.m_entries.Any())					// Node now empty?
 				{
@@ -950,9 +962,15 @@ namespace At
 					if (parentNonLeaf.m_entries.Len() == 1)			// Root node with only one child node remaining?
 					{
 						// Move child node into root
-						Node tempRoot(std::move(parentNonLeaf.m_entries.First().m_node), UpdateChildren::No);
+						Node tempRoot { std::move(parentNonLeaf.m_entries.First().m_node), UpdateChildren::No };
 						m_root->MoveFrom(std::move(tempRoot), UpdateChildren::Yes);
 						m_root->SetParent(nullptr, 0);
+
+						if (SIZE_MAX != preserveNodeIndex)
+						{
+							EnsureAbort(!preserveNodeIndex);
+							preserveNodePtr = m_root;
+						}
 					}
 				}
 				else
@@ -965,8 +983,20 @@ namespace At
 						Node *joinNode1, *joinNode2;
 						if (FindBestSiblingForJoin(parent, MaxNonLeafEntries, joinNode1, joinNode2))
 						{
+							preserveNodeIndex = SIZE_MAX;
+							if (preserveNodePtr)
+								if ((preserveNodePtr->Parent() == joinNode1) || (preserveNodePtr->Parent() == joinNode2))
+								{
+									preserveNodeIndex = preserveNodePtr->IndexInParent();
+									if (preserveNodePtr->Parent() == joinNode2)
+										preserveNodeIndex += joinNode1->NonLeaf().m_entries.Len();
+								}
+
 							joinNode1->NonLeaf().MergeFrom(joinNode2->NonLeaf());
 							removeNode = joinNode2;
+
+							if (SIZE_MAX != preserveNodeIndex)
+								preserveNodePtr = &(joinNode1->NonLeaf().m_entries[preserveNodeIndex].m_node);
 						}
 					}
 				}

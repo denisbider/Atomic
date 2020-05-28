@@ -165,5 +165,6 @@ namespace At
 
 	// Must use Seq constructor instead of Enc conversion operator to avoid user-defined conversion operator ambiguity on Str
 	inline Seq::Seq(Enc const& x) noexcept : p(x.Ptr()), n(x.Len()) {}
+	inline Seq& Seq::operator= (Enc const& x) noexcept { p = x.Ptr(); n = x.Len(); return *this; }
 
 }

@@ -67,7 +67,7 @@ namespace At
 			byte u_dummy;
 
 			Storage() noexcept {}	// Avoid calling constructors
-			~Storage() {}			// or destructors
+			~Storage() noexcept {}	// or destructors
 		};
 
 		Storage m_storage;

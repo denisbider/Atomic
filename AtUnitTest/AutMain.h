@@ -7,6 +7,7 @@ void TextBuilderTests   ();
 void MultipartTests     ();
 void SchannelClientTest (int argc, char** argv);
 void SmtpReceiverTest   ();
+void MapTests           ();
 void WinErrTest         (int argc, char** argv);
 void EmailAddressTest   (int argc, char** argv);
 void DkimTest           (int argc, char** argv);

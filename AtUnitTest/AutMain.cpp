@@ -19,6 +19,7 @@ int main(int argc, char** argv)
 				"  mltp - Multipart\r\n"
 				"  schc - SchannelClient\r\n"
 				"  smtr - SmtpReceiver\r\n"
+				"  mapc - Map\r\n"
 				"  werr - WinErr\r\n"
 				"  addr - EmailAddress\r\n"
 				"  dkim - Dkim\r\n"
@@ -44,6 +45,7 @@ int main(int argc, char** argv)
 			else if (cmd.EqualInsensitive("mltp")) { MultipartTests     ();           }
 			else if (cmd.EqualInsensitive("schc")) { SchannelClientTest (argc, argv); }
 			else if (cmd.EqualInsensitive("smtr")) { SmtpReceiverTest   ();           }
+			else if (cmd.EqualInsensitive("mapc")) { MapTests           ();           }
 			else if (cmd.EqualInsensitive("werr")) { WinErrTest         (argc, argv); }
 			else if (cmd.EqualInsensitive("addr")) { EmailAddressTest   (argc, argv); }
 			else if (cmd.EqualInsensitive("dkim")) { DkimTest           (argc, argv); }

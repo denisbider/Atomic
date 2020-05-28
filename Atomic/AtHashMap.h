@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AtVec.h"
+#include "AtHeap.h"
 
 
 namespace At
@@ -25,40 +25,43 @@ namespace At
 		T& Add(T&&      x) {         return Add(x.Key(), std::move(x)); }
 
 		template <typename... Args>
-		T& Add(KeyOrRef k, Args&&... args)
+		T& Add(Args&&... args)
 		{
-			sizet nrBuckets { NrBuckets() };
-			EnsureThrow(nrBuckets);
-
-			sizet bucketIndex { NumCast<sizet>(T::HashOfKey(k) % nrBuckets) };
-			return m_v[bucketIndex].Add(std::forward<Args>(args)...);
+			Entry& e = m_heap.Add();
+			e.m_x.Init(std::forward<Args>(args)...);
+			Entry*& bucketEntryPtr = GetBucketEntryPtr(e.m_x->Key());
+			e.m_next = bucketEntryPtr;
+			bucketEntryPtr = &e;
+			return e.m_x.Ref();
 		}
 
 		T* Find(KeyOrRef k)
 		{
-			sizet nrBuckets { NrBuckets() };
-			EnsureThrow(nrBuckets);
-
-			sizet bucketIndex { NumCast<sizet>(T::HashOfKey(k) % nrBuckets) };
-			Vec<T>& v2 { m_v[bucketIndex] };
-			for (T& x : v2)
-				if (x.Key() == k)
-					return &x;
-
+			Entry* e = GetBucketEntryPtr(k);
+			while (e)
+				if (e->m_x->Key() != k)
+					e = e->m_next;
+				else
+					return e->m_x.Ptr();
+			
 			return nullptr;
 		}
 
 		bool Erase(KeyOrRef k)
 		{
-			sizet nrBuckets { NrBuckets() };
-			EnsureThrow(nrBuckets);
+			Entry** pPrev = &GetBucketEntryPtr(k);
+			Entry* e = *pPrev;
 
-			sizet bucketIndex { NumCast<sizet>(T::HashOfKey(k) % nrBuckets) };
-			Vec<T>& v2 { m_v[bucketIndex] };
-			for (sizet i=0; i!=v2.Len(); ++i)
-				if (v2[i].Key() == k)
+			while (e)
+				if (e->m_x->Key() != k)
 				{
-					v2.Erase(i, 1);
+					pPrev = &(e->m_next);
+					e = e->m_next;
+				}
+				else
+				{
+					*pPrev = e->m_next;
+					m_heap.Erase(*e);
 					return true;
 				}
 			
@@ -66,7 +69,19 @@ namespace At
 		}
 
 	private:
-		Vec<Vec<T>> m_v;
+		using Entry = typename Heap<T>::Entry;
+
+		Heap<T>     m_heap;
+		Vec<Entry*> m_v;
+
+		Entry*& GetBucketEntryPtr(KeyOrRef k)
+		{
+			sizet nrBuckets = NrBuckets();
+			EnsureThrow(nrBuckets);
+
+			sizet bucketIndex = (sizet) (T::HashOfKey(k) % nrBuckets);
+			return m_v[bucketIndex];
+		}
 	};
 
 }
