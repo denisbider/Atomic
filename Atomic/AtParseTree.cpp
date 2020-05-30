@@ -1,8 +1,10 @@
 #include "AtIncludes.h"
 #include "AtParse.h"
 
+
 namespace At
 {
+
 	// ParseTree::Bucket
 
 	ParseNode* ParseTree::Bucket::AddUnconstructedNode()
@@ -21,11 +23,28 @@ namespace At
 
 
 
+	// ParseTree::Storage
+
+	ParseTree::Storage::~Storage() noexcept
+	{
+		for (Bucket* b=m_lastBucket; b!=0; )
+		{
+			Bucket* d = b;
+			b = b->m_prevBucket;
+			NoExcept(delete d);
+		}
+
+		m_lastBucket = 0;
+	}
+
+
+
 	// ParseTree
 
-	ParseTree::ParseTree(Seq srcText)
+	ParseTree::ParseTree(Seq srcText, Storage* storage)
+		: m_storage(storage)
 	{
-		m_firstBucket = m_lastBucket = new Bucket;
+		m_firstBucket = m_lastBucket = GetNewBucket();
 		new (m_firstBucket->AddUnconstructedNode()) ParseNode(*this, srcText);
 
 		m_bestRemaining = srcText;
@@ -35,13 +54,14 @@ namespace At
 		m_recordBestToStack = false;
 	}
 
+
 	ParseTree::~ParseTree() noexcept
 	{
 		for (Bucket* b=m_lastBucket; b!=0; )
 		{
 			Bucket* d = b;
 			b = b->m_prevBucket;
-			NoExcept(delete d);
+			FreeBucket(d);
 		}
 
 		m_firstBucket = 0;
@@ -87,7 +107,7 @@ namespace At
 	{
 		if (m_lastBucket->m_nodesUsed == Bucket::NrNodesMax)
 		{
-			Bucket* newBucket = new Bucket;
+			Bucket* newBucket = GetNewBucket();
 			newBucket->m_prevBucket = m_lastBucket;
 			m_lastBucket = newBucket;
 		}
@@ -125,6 +145,7 @@ namespace At
 		DiscardNode(p);
 	}
 
+
 	void ParseTree::DiscardNode(ParseNode* p)
 	{
 		for (Bucket* b=m_lastBucket; ; b=b->m_prevBucket)
@@ -139,4 +160,27 @@ namespace At
 			b->m_nodesUsed = 0;
 		}
 	}
+
+
+	ParseTree::Bucket* ParseTree::GetNewBucket()
+	{
+		if (m_storage)
+		{
+			Bucket* b = m_storage->Pop();
+			if (b)
+				return b;
+		}
+
+		return new Bucket;
+	}
+
+
+	void ParseTree::FreeBucket(Bucket* b) noexcept
+	{
+		if (m_storage)
+			m_storage->Push(b);
+		else
+			NoExcept(delete b);
+	}
+
 }

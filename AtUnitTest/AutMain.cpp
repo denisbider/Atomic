@@ -57,6 +57,7 @@ int main(int argc, char** argv)
 			else if (cmd.EqualInsensitive("mpui")) { MpUIntTests        (argc, argv); }
 			else if (cmd.EqualInsensitive("base")) { BaseXYTests        (argc, argv); }
 			else if (cmd.EqualInsensitive("actv")) { ActvTests          (argc, argv); }
+			else if (cmd.EqualInsensitive("uris")) { UriTests           ();           }
 			else
 			{
 				Console::Out("Unrecognized command\r\n");

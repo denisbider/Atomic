@@ -515,6 +515,14 @@ namespace At
 		}
 
 	
+		bool V_Remaining(ParseNode& p)
+		{
+			while (p.Remaining().n)
+				p.ConsumeByte();
+			return true;
+		}
+
+
 		bool V_SeqMatch(ParseNode& p, CaseMatch cm, Seq s)
 		{
 			Seq reader { p.Remaining() };
@@ -598,6 +606,7 @@ namespace At
 		DEF_RUID_B(QuestnMark)
 		DEF_RUID_B(SqOpenBr)
 		DEF_RUID_B(SqCloseBr)
+		DEF_RUID_B(Remaining);
 
 
 		bool C_UntilIncl(ParseNode& p, Ruid const& type, ParseFunc pfRepeat, Ruid const& untilType, sizet minCount, sizet maxCount)

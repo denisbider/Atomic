@@ -161,6 +161,8 @@ namespace At
 		inline bool V_SqCloseBr  (ParseNode& p) { return V_ByteIs(p, ']' ); }
 		inline bool V_Underscore (ParseNode& p) { return V_ByteIs(p, '_' ); }
 
+		bool V_Remaining(ParseNode& p);
+
 		bool V_SeqMatch(ParseNode& p, CaseMatch cm, Seq s);		
 		inline bool V_SeqMatchExact (ParseNode& p, Seq s) { return V_SeqMatch(p, CaseMatch::Exact,       s); }
 		inline bool V_SeqMatchInsens(ParseNode& p, Seq s) { return V_SeqMatch(p, CaseMatch::Insensitive, s); }
@@ -216,6 +218,7 @@ namespace At
 		DECL_RUID(QuestnMark)
 		DECL_RUID(SqOpenBr)
 		DECL_RUID(SqCloseBr)
+		DECL_RUID(Remaining)
 	
 		inline bool C_Ws         (ParseNode& p) { return G_Repeat (p, id_Ws,             V_AsciiWhitespace      ); }
 		inline bool C_At         (ParseNode& p) { return G_Req    (p, id_At,             V_At                   ); }
@@ -247,6 +250,7 @@ namespace At
 		inline bool C_QuestnMark (ParseNode& p) { return G_Req    (p, id_QuestnMark,     V_QuestnMark           ); }
 		inline bool C_SqOpenBr   (ParseNode& p) { return G_Req    (p, id_SqOpenBr,       V_SqOpenBr             ); }
 		inline bool C_SqCloseBr  (ParseNode& p) { return G_Req    (p, id_SqCloseBr,      V_SqCloseBr            ); }
+		inline bool C_Remaining  (ParseNode& p) { return G_Req    (p, id_Remaining,      V_Remaining            ); }
 
 		bool C_UntilIncl(ParseNode& p, Ruid const& type, ParseFunc pfRepeat, Ruid const& untilType, sizet minCount = 1, sizet maxCount = SIZE_MAX);
 		template <bool (*FR)(ParseNode&), Ruid const& U> inline bool C_UntilIncl(ParseNode& p) { return C_UntilIncl(p, id_Append, FR, U); }

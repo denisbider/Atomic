@@ -1,5 +1,7 @@
 #pragma once
 
+enum class Display { No, Yes };
+
 void CoreTests          ();
 void DiffTests          (int argc, char** argv);
 void MarkdownTests      (int argc, char** argv);
@@ -19,3 +21,4 @@ void RsaSignerTests     (int argc, char** argv);
 void MpUIntTests        (int argc, char** argv);
 void BaseXYTests        (int argc, char** argv);
 void ActvTests          (int argc, char** argv);
+void UriTests           ();

@@ -2,13 +2,45 @@
 
 #include "AtParseNode.h"
 
+
 namespace At
 {
 
 	class ParseTree : NoCopy
 	{
 	public:
-		ParseTree(Seq srcText);
+		struct Bucket
+		{
+			enum { ElemsPerNode = (sizeof(ParseNode) + sizeof(sizet) - 1) / sizeof(sizet),
+				   NodeStorageBytesMax = 4000,
+				   NrNodesMax = NodeStorageBytesMax / (ElemsPerNode * sizeof(sizet)),
+				   NodeStorageElems = NrNodesMax * ElemsPerNode };
+
+			bool ContainsNode(ParseNode const* p) { sizet* ps = (sizet*) p; return (ps >= m_nodeStorage) && (ps < (m_nodeStorage + NodeStorageElems)); }
+
+			ParseNode*       NodePtrAt(sizet i)       { return (ParseNode*) (m_nodeStorage + (i * ElemsPerNode)); }
+			ParseNode const* NodePtrAt(sizet i) const { return (ParseNode*) (m_nodeStorage + (i * ElemsPerNode)); }
+
+			ParseNode* AddUnconstructedNode();
+			void DiscardNodesFrom(ParseNode* p);
+
+			sizet m_nodesUsed {};
+			sizet m_nodeStorage[NodeStorageElems];
+			Bucket* m_prevBucket {};
+		};
+
+		struct Storage
+		{
+			Bucket* m_lastBucket {};
+
+			void Push(Bucket* b) noexcept { b->m_nodesUsed = 0; b->m_prevBucket = m_lastBucket; m_lastBucket = b; }
+			Bucket* Pop() noexcept { Bucket* b = m_lastBucket; if (b) { m_lastBucket = b->m_prevBucket; b->m_prevBucket = nullptr; } return b; }
+
+			~Storage() noexcept;
+		};
+
+	public:
+		ParseTree(Seq srcText, Storage* storage = nullptr);
 		ParseTree(ParseTree&&) noexcept = default;
 		~ParseTree() noexcept;
 
@@ -35,30 +67,11 @@ namespace At
 		ParseNode const& Root() const { EnsureThrow(HaveRoot()); return *(m_firstBucket->NodePtrAt(0)); }
 
 	private:
-		struct Bucket
-		{
-			enum { ElemsPerNode = (sizeof(ParseNode) + sizeof(sizet) - 1) / sizeof(sizet),
-				   NodeStorageBytesMax = 4000,
-				   NrNodesMax = NodeStorageBytesMax / (ElemsPerNode * sizeof(sizet)),
-				   NodeStorageElems = NrNodesMax * ElemsPerNode };
-
-			bool ContainsNode(ParseNode const* p) { sizet* ps = (sizet*) p; return (ps >= m_nodeStorage) && (ps < (m_nodeStorage + NodeStorageElems)); }
-
-			ParseNode*       NodePtrAt(sizet i)       { return (ParseNode*) (m_nodeStorage + (i * ElemsPerNode)); }
-			ParseNode const* NodePtrAt(sizet i) const { return (ParseNode*) (m_nodeStorage + (i * ElemsPerNode)); }
-
-			ParseNode* AddUnconstructedNode();
-			void DiscardNodesFrom(ParseNode* p);
-
-			sizet m_nodesUsed {};
-			sizet m_nodeStorage[NodeStorageElems];
-			Bucket* m_prevBucket {};
-		};
-
 		uint             m_tabStop { 4 };
 		Vec<Ruid const*> m_flags;
 
-		Bucket*		m_firstBucket;
+		Storage*    m_storage;
+		Bucket*     m_firstBucket;
 		Bucket*     m_lastBucket;
 
 		Seq			m_bestRemaining;
@@ -78,6 +91,9 @@ namespace At
 		ParseNode* NewNode(ParseNode& parent, Ruid const& type);
 		void FailNode(ParseNode* p);
 		void DiscardNode(ParseNode* p);
+
+		Bucket* GetNewBucket();
+		void FreeBucket(Bucket* b) noexcept;
 
 		friend class ParseNode;
 	};

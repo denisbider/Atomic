@@ -28,6 +28,7 @@
 #include "AtStr.h"
 #include "AtTextBuilder.h"
 #include "AtTime.h"
+#include "AtUriGrammar.h"
 #include "AtUtfWin.h"
 #include "AtWaitEsc.h"
 

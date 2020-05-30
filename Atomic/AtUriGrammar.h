@@ -35,6 +35,7 @@ namespace At
 		DECL_RUID(fragment)
 		DECL_RUID(absoluteURI)
 		DECL_RUID(relativeURI)
+		DECL_RUID(absURI_optFragment)
 		DECL_RUID(URI_reference)
 
 		bool C_domainlabel         (ParseNode& p);
@@ -49,5 +50,14 @@ namespace At
 		bool IsValidAbsoluteUri(Seq uri);
 		bool IsValidRelativeUri(Seq uri);
 		bool IsValidUri(Seq uri);
+
+		// Returns empty Seq if input does not start with a valid URI. The URI must be absolute and may include a hash-fragment.
+		Seq FindLeadingUri(Seq s, ParseTree::Storage* storage = nullptr);
+
+		// Finds URIs in provided input. Attempts to correctly delineate URIs within parentheses and single quotes, which are normally valid in URIs.
+		// If there's an open parenthesis before the URI, reads over balanced parantheses within the URI, then stops at first unbalanced closing parenthesis.
+		// If there's a single quote before the URI, reads until the first single quote within the URI.
+		// The 'uris' result vector is NOT cleared before adding to it.
+		void FindUrisInText(Seq text, Vec<Seq>& uris, ParseTree::Storage* storage = nullptr);
 	}
 }

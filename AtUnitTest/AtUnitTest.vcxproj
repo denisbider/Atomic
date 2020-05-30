@@ -213,6 +213,7 @@
     <ClCompile Include="AutSchannelClient.cpp" />
     <ClCompile Include="AutSmtpReceiver.cpp" />
     <ClCompile Include="AutTextBuilder.cpp" />
+    <ClCompile Include="AutUri.cpp" />
     <ClCompile Include="AutWinErr.cpp" />
   </ItemGroup>
   <ItemGroup>

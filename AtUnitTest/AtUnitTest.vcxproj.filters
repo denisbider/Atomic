@@ -22,6 +22,7 @@
     <ClCompile Include="AutCore.cpp" />
     <ClCompile Include="AutDiff.cpp" />
     <ClCompile Include="AutMap.cpp" />
+    <ClCompile Include="AutUri.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutIncludes.h" />

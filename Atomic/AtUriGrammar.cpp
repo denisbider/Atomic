@@ -88,6 +88,7 @@ namespace At
 		DEF_RUID_B(fragment)
 		DEF_RUID_B(absoluteURI)
 		DEF_RUID_B(relativeURI)
+		DEF_RUID_B(absURI_optFragment)
 		DEF_RUID_B(URI_reference)
 
 		bool C_scheme              (ParseNode& p) { return G_Req<1,0>     (p, id_scheme,              V_AsciiAlpha, V_r_scheme_char                                     ); }
@@ -129,8 +130,9 @@ namespace At
 		bool C_absoluteURI         (ParseNode& p) { return G_Req<1,1,1>   (p, id_absoluteURI,         C_scheme, C_Colon, C_hier_or_opaque_part                          ); }
 		bool C_relativeURI         (ParseNode& p) { return G_Req<1,0>     (p, id_relativeURI,         C_net_abs_or_rel_path, C_QM_query                                 ); }
 		bool C_abs_or_rel_uri      (ParseNode& p) { return G_Choice       (p, id_Append,              C_absoluteURI, C_relativeURI                                      ); }
+		bool C_absURI_optFragment  (ParseNode& p) { return G_Req<1,0>     (p, id_absURI_optFragment,  C_absoluteURI, C_Hash_fragment                                    ); }
 		bool C_URI_reference       (ParseNode& p) { return G_OneOrMoreOf  (p, id_URI_reference,       C_abs_or_rel_uri, C_Hash_fragment                                 ); } 
-		bool C_URI_references      (ParseNode& p) { return G_Req<1,0>     (p, id_Append,              C_URI_reference, G_Repeat<G_Req<Html::C_HtmlWs, C_URI_reference>> ); };
+		bool C_URI_references      (ParseNode& p) { return G_Req<1,0>     (p, id_Append,              C_URI_reference, G_Repeat<G_Req<Html::C_HtmlWs, C_URI_reference>> ); }
 
 		bool IsValidAbsoluteUri(Seq uri)
 		{
@@ -146,5 +148,113 @@ namespace At
 		{
 			return ParseTree(uri).Parse(C_URI_reference);
 		}
+
+
+		Seq FindLeadingUri(Seq s, ParseTree::Storage* storage)
+		{
+			auto parseFunc = [] (ParseNode& p) -> bool
+				{ return G_Req<1,0>(p, id_Append, C_absURI_optFragment, C_Remaining); };
+
+			ParseTree pt { s, storage };
+			if (!pt.Parse(parseFunc))
+				return Seq();
+
+			return pt.Root().FrontFindRef(id_absURI_optFragment).SrcText();
+		}
+
+
+		void FindUrisInText(Seq text, Vec<Seq>& uris, ParseTree::Storage* storage)
+		{
+			ParseTree::Storage localStorage;
+			if (!storage)
+				storage = &localStorage;
+
+			Seq reader { text };
+			while (reader.n)
+			{
+				// Every absolute URI contains a scheme followed by a colon. Find a possible scheme
+				reader.DropToFirstByteOfType(Is_scheme_char);
+				if (!reader.n)
+					break;
+
+				Seq beforeUri = reader.ReadToByte(':');
+				if (!reader.n)
+					break;
+
+				Seq afterColon = reader;
+				afterColon.DropByte();
+
+				if (!Is_scheme_char(beforeUri.LastByte()))
+					reader = afterColon;
+				else
+				{
+					// Read backwards over bytes that could be part of the scheme
+					bool inSingleQuotes {}, inParentheses {};
+					while (true)
+					{
+						--(beforeUri.n);
+						--(reader.p);
+						++(reader.n);
+
+						uint b = beforeUri.LastByte();
+						if (!Is_scheme_char(b))
+						{
+							     if (b == '('  ) inParentheses  = true;
+							else if (b == '\'' ) inSingleQuotes = true;
+							break;
+						}
+					}
+
+					// We are at the start of a possible scheme and colon. See if it's a valid URI
+					Seq uri = FindLeadingUri(reader, storage);
+					if (!uri.n)
+						reader = afterColon;
+					else
+					{
+						if (inSingleQuotes)
+							uri = uri.ReadToByte('\'');
+						else if (inParentheses)
+						{
+							// Read over balanced parentheses in the URI. Stop at first unbalanced closing parenthesis.
+							Seq uriReader = uri;
+							sizet nrOpenParens {};
+
+							while (true)
+							{
+								uriReader.DropToFirstByteOf("()");
+								uint b = uriReader.FirstByte();
+								if (b == UINT_MAX)
+									break;
+
+								if (b == '(')
+									++nrOpenParens;
+								else
+								{
+									EnsureThrow(b == ')');
+									if (!nrOpenParens)
+										break;
+
+									--nrOpenParens;
+								}
+
+								uriReader.DropByte();
+							}
+
+							if (uri.n != uriReader.n)
+							{
+								EnsureThrow(uri.n > uriReader.n);
+								uri.n -= uriReader.n;
+								EnsureThrow(uri.p[uri.n] == ')');
+							}
+						}
+
+						// We have found the URI
+						uris.Add(uri);
+						reader.DropBytes(uri.n);
+					}
+				}
+			}
+		}
+
 	}
 }
