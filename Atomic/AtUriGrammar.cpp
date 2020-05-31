@@ -163,7 +163,7 @@ namespace At
 		}
 
 
-		void FindUrisInText(Seq text, Vec<Seq>& uris, ParseTree::Storage* storage)
+		void FindUrisInText(Seq text, Seq prefixes, Vec<Seq>& uris, ParseTree::Storage* storage)
 		{
 			ParseTree::Storage localStorage;
 			if (!storage)
@@ -172,8 +172,10 @@ namespace At
 			Seq reader { text };
 			while (reader.n)
 			{
-				// Every absolute URI contains a scheme followed by a colon. Find a possible scheme
-				reader.DropToFirstByteOfType(Is_scheme_char);
+				// Every absolute URI contains a scheme followed by a colon. Find a possible scheme.
+				// Include any delimiters before the URI, we need them for proper identification of the end of URI.
+				auto scheme_char_or_delim = [] (uint c) -> bool { return Is_scheme_char(c) || !!ZChr("'\"()[]<>{}", c); };
+				reader.DropToFirstByteOfType(scheme_char_or_delim);
 				if (!reader.n)
 					break;
 
@@ -189,7 +191,9 @@ namespace At
 				else
 				{
 					// Read backwards over bytes that could be part of the scheme
+					uint expectDelim = UINT_MAX;
 					bool inSingleQuotes {}, inParentheses {};
+
 					while (true)
 					{
 						--(beforeUri.n);
@@ -199,20 +203,40 @@ namespace At
 						uint b = beforeUri.LastByte();
 						if (!Is_scheme_char(b))
 						{
-							     if (b == '('  ) inParentheses  = true;
-							else if (b == '\'' ) inSingleQuotes = true;
+							     if (b == '\'' ) { expectDelim = '\''; inSingleQuotes = true; }
+							else if (b == '"'  ) { expectDelim = '"';                         }
+							else if (b == '('  ) { expectDelim = ')';  inParentheses  = true; }
+							else if (b == '['  ) { expectDelim = ']';                         }
+							else if (b == '<'  ) { expectDelim = '>';                         }
+							else if (b == '{'  ) { expectDelim = '}';                         }
 							break;
 						}
 					}
 
-					// We are at the start of a possible scheme and colon. See if it's a valid URI
-					Seq uri = FindLeadingUri(reader, storage);
+					// We are at the start of a possible scheme and colon
+					// If prefixes are specified, see if the possible URI starts with any of them
+					bool prefixOk = true;
+					if (prefixes.n)
+						prefixOk = !prefixes.ForEachNonEmptyToken(Seq::AsciiWsBytes, [reader] (Seq prefix) -> bool
+							{ return !reader.StartsWithInsensitive(prefix); } );
+
+					// Are we at a valid URI?
+					Seq uri;
+					if (prefixOk)
+						uri = FindLeadingUri(reader, storage);
+
 					if (!uri.n)
 						reader = afterColon;
 					else
 					{
+						bool dropTrailingSep = true;
 						if (inSingleQuotes)
-							uri = uri.ReadToByte('\'');
+						{
+							Seq uriReader = uri;
+							uri = uriReader.ReadToByte('\'');
+							if (uriReader.n)
+								dropTrailingSep = false;
+						}
 						else if (inParentheses)
 						{
 							// Read over balanced parentheses in the URI. Stop at first unbalanced closing parenthesis.
@@ -245,12 +269,27 @@ namespace At
 								EnsureThrow(uri.n > uriReader.n);
 								uri.n -= uriReader.n;
 								EnsureThrow(uri.p[uri.n] == ')');
+
+								dropTrailingSep = false;
 							}
 						}
 
 						// We have found the URI
-						uris.Add(uri);
 						reader.DropBytes(uri.n);
+
+						if (dropTrailingSep)
+						{
+							if (expectDelim == UINT_MAX || reader.FirstByte() != expectDelim)
+							{
+								if ((uri.EndsWithExact(",") && !uri.EndsWithExact(",,")) ||
+									(uri.EndsWithExact(";") && !uri.EndsWithExact(";;")))
+								{
+									uri.DropLastByte();
+								}
+							}
+						}
+
+						uris.Add(uri);
 					}
 				}
 			}

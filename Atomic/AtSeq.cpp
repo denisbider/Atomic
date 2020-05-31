@@ -463,7 +463,7 @@ namespace At
 	}
 
 
-	void Seq::ForEachNonEmptyToken(char const* separatorBytes, std::function<bool(Seq)> onToken) const
+	bool Seq::ForEachNonEmptyToken(char const* separatorBytes, std::function<bool(Seq)> onToken) const
 	{
 		Seq reader = *this;
 		while (reader.n)
@@ -472,8 +472,10 @@ namespace At
 			Seq token = reader.ReadToFirstByteOf(separatorBytes);
 			if (token.n)
 				if (!onToken(token))
-					break;
+					return false;
 		}
+
+		return true;
 	}
 
 

@@ -137,7 +137,8 @@ namespace At
 		double ReadDouble                   () noexcept;
 		Time   ReadIsoStyleTimeStr          () noexcept;
 
-		void ForEachNonEmptyToken(char const* separatorBytes, std::function<bool(Seq)> onToken) const;
+		// If onToken returns false, stops enumeration and returns false. Returns true if onToken is never called, or if it always returned true.
+		bool ForEachNonEmptyToken(char const* separatorBytes, std::function<bool(Seq)> onToken) const;
 
 		Seq& DropByte                     ()                                         noexcept { if (n) { ++p; --n; } return *this; }
 		Seq& DropBytes                    (sizet         m)                          noexcept { ReadBytes(m); return *this; }

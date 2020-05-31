@@ -57,7 +57,10 @@ namespace At
 		// Finds URIs in provided input. Attempts to correctly delineate URIs within parentheses and single quotes, which are normally valid in URIs.
 		// If there's an open parenthesis before the URI, reads over balanced parentheses within the URI, then stops at first unbalanced closing parenthesis.
 		// If there's a single quote before the URI, reads until the first single quote within the URI.
+		// Discards trailing commas and semicolons if there is exactly one, but NOT if the URI is delimited within quotes or parentheses.
+		// The 'prefixes' parameter may contain a space-separated list of required prefixes, for example: "http:// https:// mailto: ftp://"
+		// If 'prefixes' is non-empty, then only URIs matching those prefixes will be found. If 'prefixes' is empty, URIs of all schemes will be found.
 		// The 'uris' result vector is NOT cleared before adding to it.
-		void FindUrisInText(Seq text, Vec<Seq>& uris, ParseTree::Storage* storage = nullptr);
+		void FindUrisInText(Seq text, Seq prefixes, Vec<Seq>& uris, ParseTree::Storage* storage = nullptr);
 	}
 }
