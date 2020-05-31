@@ -55,7 +55,7 @@ namespace At
 		Seq FindLeadingUri(Seq s, ParseTree::Storage* storage = nullptr);
 
 		// Finds URIs in provided input. Attempts to correctly delineate URIs within parentheses and single quotes, which are normally valid in URIs.
-		// If there's an open parenthesis before the URI, reads over balanced parantheses within the URI, then stops at first unbalanced closing parenthesis.
+		// If there's an open parenthesis before the URI, reads over balanced parentheses within the URI, then stops at first unbalanced closing parenthesis.
 		// If there's a single quote before the URI, reads until the first single quote within the URI.
 		// The 'uris' result vector is NOT cleared before adding to it.
 		void FindUrisInText(Seq text, Vec<Seq>& uris, ParseTree::Storage* storage = nullptr);

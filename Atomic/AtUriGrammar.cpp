@@ -240,7 +240,7 @@ namespace At
 								uriReader.DropByte();
 							}
 
-							if (uri.n != uriReader.n)
+							if (uriReader.n)
 							{
 								EnsureThrow(uri.n > uriReader.n);
 								uri.n -= uriReader.n;
