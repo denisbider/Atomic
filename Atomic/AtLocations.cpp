@@ -323,14 +323,14 @@ namespace At
 		if (maxNrLocations > SIZE_MAX)
 			throw InputErr(Str("Input file ").Add(reader.Path()).Add(" is too large"));
 
-		state.locations.Resize(NumCast<sizet>(maxNrLocations));
+		state.locations.ResizeExact(NumCast<sizet>(maxNrLocations));
 
 		sizet recordNr = 0;
 		Vec<wchar_t> convertBuf;
 		CsvLocation loc;
 		Vec<Str> record;
 		sizet nrFields;
-		record.Resize(7);
+		record.ResizeExact(7);
 		while (reader.ReadRecord(record, nrFields))
 		{
 			++recordNr;
@@ -546,7 +546,7 @@ namespace At
 		sizet recordNr = 0;
 		Vec<Str> record;
 		sizet nrFields;
-		record.Resize(3);
+		record.ResizeExact(3);
 		while (reader.ReadRecord(record, nrFields))
 		{
 			IpBlock& ipBlock = state.pView[recordNr++];

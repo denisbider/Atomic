@@ -128,7 +128,7 @@ namespace At
 		e.EncodeKey(key);
 		key.Byte(0);
 
-		Seq keyFirst = Seq(key).DropLastByte();
+		Seq keyFirst = Seq(key).RevDropByte();
 		Seq keyBeyondLast = key;
 
 		ObjId foundId;

@@ -50,6 +50,8 @@ namespace At
 
 	DESCENUM_DEF_BEGIN(SmtpSendStage)
 	DESCENUM_DEF_VALUE(None)
+	DESCENUM_DEF_VALUE(Unknown)
+	DESCENUM_DEF_VALUE(RelayLookup)
 	DESCENUM_DEF_VALUE(FindMx)
 	DESCENUM_DEF_VALUE(Connect)
 	DESCENUM_DEF_VALUE(Greeting)
@@ -66,21 +68,23 @@ namespace At
 
 
 
-	DESCENUM_DEF_BEGIN(SmtpSendErr)
+	DESCENUM_DEF_BEGIN(SmtpSendDetail)
 	DESCENUM_DEF_VALUE(None)
 	DESCENUM_DEF_VALUE(Unknown)
+	DESCENUM_DEF_VAL_X(RelayLookup_LookupTimedOut,            "Timed out while looking up relay")
+	DESCENUM_DEF_VAL_X(RelayLookup_CouldNotLookup,            "Could not look up relay")
 	DESCENUM_DEF_VAL_X(FindMx_LookupTimedOut,                 "Timed out while looking up destination domain MX records")
-	DESCENUM_DEF_VAL_X(FindMx_LookupError,                    "Error looking up destination domain MX records")
+	DESCENUM_DEF_VAL_X(FindMx_CouldNotLookup,                 "Could not look up destination domain MX records")
 	DESCENUM_DEF_VAL_X(FindMx_LookupNoResults,                "An attempt to look up destination domain MX records did not return any results")
 	DESCENUM_DEF_VAL_X(FindMx_DomainMatchRequired,            "The message requires TLS with domain match, but DNS lookup returned no domain-matching destination mail exchangers")
-	DESCENUM_DEF_VAL_X(Connect_Error,                         "Error connecting to the destination mail exchanger")
-	DESCENUM_DEF_VAL_X(Send_Error,                            "Error sending bytes to the destination mail exchanger")
+	DESCENUM_DEF_VAL_X(Connect,                               "Could not connect to the destination mail exchanger")
+	DESCENUM_DEF_VAL_X(Send,                                  "Could not send bytes to the destination mail exchanger")
 	DESCENUM_DEF_VAL_X(Reply_PrematureEndOfLine,              "The destination mail exchanger sent a reply line that ended prematurely")
 	DESCENUM_DEF_VAL_X(Reply_UnrecognizedCodeFormat,          "The destination mail exchanger sent a reply line with an unrecognized code format")
 	DESCENUM_DEF_VAL_X(Reply_UnrecognizedLineSeparator,       "The destination mail exchanger sent reply lines with an unrecognized line separator")
 	DESCENUM_DEF_VAL_X(Reply_InconsistentCode,                "The destination mail exchanger sent reply lines with inconsistent reply codes")
 	DESCENUM_DEF_VAL_X(Reply_MaximumLengthExceeded,           "The destination mail exchanger sent a reply that exceeds maximum length")
-	DESCENUM_DEF_VAL_X(Reply_ReceiveError,                    "Error receiving reply from the destination mail exchanger")
+	DESCENUM_DEF_VAL_X(Reply_CouldNotReceive,                 "Could not receive reply from the destination mail exchanger")
 	DESCENUM_DEF_VAL_X(Greeting_SessionRefused,               "The destination mail exchanger refused the session in its SMTP greeting")
 	DESCENUM_DEF_VAL_X(Greeting_Unexpected,                   "The destination mail exchanger sent an unexpected greeting")
 	DESCENUM_DEF_VAL_X(Ehlo_UnexpectedReply,                  "The destination mail exchanger sent an unexpected EHLO reply code")
@@ -88,11 +92,11 @@ namespace At
 	DESCENUM_DEF_VAL_X(Capabilities_Size,                     "The message exceeds the destination mail exchanger's size limit")
 	DESCENUM_DEF_VAL_X(Tls_NotAvailable,                      "The message requires TLS, but the destination mail exchanger does not appear to support it")
 	DESCENUM_DEF_VAL_X(Tls_StartTlsRejected,                  "The message requires TLS, but the destination mail exchanger rejected the STARTTLS command")
-	DESCENUM_DEF_VAL_X(Tls_SspiErr_LikelyDh_TooManyRestarts,  "The message requires TLS, but TLS could not be started after connecting multiple times due to a likely DH error")
-	DESCENUM_DEF_VAL_X(Tls_SspiErr_InvalidToken_IllegalMsg,   "The message requires TLS, but TLS could not be started due to SEC_E_INVALID_TOKEN or SEC_E_ILLEGAL_MESSAGE")
-	DESCENUM_DEF_VAL_X(Tls_SspiErr_ServerAuthRequired,        "The message requires TLS server authentication, but the destination mail exchanger's identity could not be verified")
-	DESCENUM_DEF_VAL_X(Tls_SspiErr_Other,                     "The message requires TLS, but TLS could not be started due to an SSPI error")
-	DESCENUM_DEF_VAL_X(Tls_CommunicationErr,                  "The message requires TLS, but TLS could not be started due to a communication error")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_LikelyDh_TooManyRestarts,     "The message requires TLS, but TLS could not be started after connecting multiple times due to a likely DH issue")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_InvalidToken_IllegalMsg,      "The message requires TLS, but TLS could not be started due to SEC_E_INVALID_TOKEN or SEC_E_ILLEGAL_MESSAGE")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_ServerAuthRequired,           "The message requires TLS server authentication, but the destination mail exchanger's identity could not be verified")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_Other,                        "The message requires TLS, but TLS could not be started due to an SSPI condition")
+	DESCENUM_DEF_VAL_X(Tls_Communication,                     "The message requires TLS, but TLS could not be started due to a communication condition")
 	DESCENUM_DEF_VAL_X(Tls_RequiredAssuranceNotAchieved,      "The TLS assurance level required to send message was not achieved")
 	DESCENUM_DEF_VAL_X(Auth_AuthCommandNotSupported,          "Authentication is configured but the mail exchanger does not support the AUTH command")
 	DESCENUM_DEF_VAL_X(Auth_CfgAuthMechNotSupported,          "Authentication is configured but the mail exchanger does not support the configured authentication mechanism")
@@ -114,7 +118,7 @@ namespace At
 
 
 	ENTITY_DEF_BEGIN(SmtpSenderCfg)
-	ENTITY_DEF_FLD_V(SmtpSenderCfg, memUsageLimitBytes, 2)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, memUsageLimitKb,    2)
 	ENTITY_DEF_F_E_V(SmtpSenderCfg, ipVerPreference,    1)
 	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp4, 1)
 	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp6, 1)
@@ -134,9 +138,9 @@ namespace At
 	HtmlBuilder& SmtpSenderCfg_RenderRows(HtmlBuilder& html, SmtpSenderCfg const& cfg)
 	{
 		html.Tr()
-				.Td().P().Label("smtpSender_memUsageLimitBytes", "SMTP sender memory usage limit bytes").EndP().EndTd()
+				.Td().P().Label("smtpSender_memUsageLimitKb", "SMTP sender memory usage limit (kB)").EndP().EndTd()
 				.Td()
-					.P().InputNumber().IdAndName("smtpSender_memUsageLimitBytes").Value(Str().UInt(cfg.f_memUsageLimitBytes)).EndP()
+					.P().InputNumber().IdAndName("smtpSender_memUsageLimitKb").Value(Str().UInt(cfg.f_memUsageLimitKb)).EndP()
 					.P().Class("help").T("Message content is kept in memory when sending. If non-zero, the SMTP sender will avoid enqueueing messages "
 						"when in-memory content is above this size.").EndP()
 				.EndTd()
@@ -150,7 +154,7 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_localInterfacesIp4", "Local interfaces - IPv4").EndP().EndTd()
+				.Td().Class("alignWithTextArea").P().Label("smtpSender_localInterfacesIp4", "Local interfaces - IPv4").EndP().EndTd()
 				.Td()
 					.TextArea().IdAndName("smtpSender_localInterfacesIp4").Rows("5").Cols("25")
 						.T(Str().AddN(cfg.f_localInterfacesIp4, "\r\n"))
@@ -161,7 +165,7 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_localInterfacesIp6", "Local interfaces - IPv6").EndP().EndTd()
+				.Td().Class("alignWithTextArea").P().Label("smtpSender_localInterfacesIp6", "Local interfaces - IPv6").EndP().EndTd()
 				.Td()
 					.TextArea().IdAndName("smtpSender_localInterfacesIp6").Rows("5").Cols("50")
 						.T(Str().AddN(cfg.f_localInterfacesIp6, "\r\n"))
@@ -172,9 +176,9 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().InputCheckbox().IdAndName("smtpSender_useRelay").CheckedIf(cfg.f_useRelay).EndP().EndTd()
+				.Td().P().Label("smtpSenderCfg_useRelay", "Use SMTP relay").EndP().EndTd()
 				.Td()
-					.P().Label("smtpSenderCfg_useRelay", "Use SMTP relay").EndP()
+					.P().InputCheckbox().IdAndName("smtpSender_useRelay").CheckedIf(cfg.f_useRelay).EndP()
 					.P().Class("help").T("If enabled, outgoing messages will be sent through the specified SMTP server. "
 						"If disabled, messages will be delivered to individual mail exchangers for each destination address.").EndP()
 				.EndTd()
@@ -194,9 +198,9 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().InputCheckbox().IdAndName("smtpSender_relayImplicitTls").CheckedIf(cfg.f_relayImplicitTls).EndP().EndTd()
+				.Td().P().Label("smtpSender_relayImplicitTls", "Implicit TLS").EndP().EndTd()
 				.Td()
-					.P().Label("smtpSender_relayImplicitTls", "Implicit TLS").EndP()
+					.P().InputCheckbox().IdAndName("smtpSender_relayImplicitTls").CheckedIf(cfg.f_relayImplicitTls).EndP()
 					.P().Class("help").T("If enabled, assume TLS from the start of the connection. Otherwise, start plaintext SMTP and use STARTTLS later.").EndP()
 				.EndTd()
 			.EndTr()
@@ -218,7 +222,8 @@ namespace At
 			.EndTr()
 			.Tr()
 				.Td().P().Label("smtpSender_relayPassword", "SMTP relay password").EndP().EndTd()
-				.Td().P().InputPassword(fit_pw_noMinLen).Value(cfg.f_relayPassword.Any() ? c_zSmtpRelayPwValueNoChange : "").EndP().EndTd()
+				.Td().P().InputPassword(fit_pw_noMinLen).IdAndName("smtpSender_relayPassword")
+					.Value(cfg.f_relayPassword.Any() ? c_zSmtpRelayPwValueNoChange : "").EndP().EndTd()
 			.EndTr();
 
 		html.AddJs(c_js_AtSmtpEntities_SenderCfg);
@@ -229,7 +234,7 @@ namespace At
 
 	void SmtpSenderCfg_ReadFromPostRequest(SmtpSenderCfg& cfg, HttpRequest const& req, Vec<Str>& errs)
 	{
-		cfg.f_memUsageLimitBytes   =  req.PostNvp("smtpSender_memUsageLimitBytes" ).Trim().ReadNrUInt64Dec();
+		cfg.f_memUsageLimitKb      =  req.PostNvp("smtpSender_memUsageLimitKb"    ).Trim().ReadNrUInt64Dec();
 		Seq ipVerPreferenceStr     =  req.PostNvp("smtpSender_ipVerPreference"    );
 		Seq localInterfacesIp4Str  =  req.PostNvp("smtpSender_localInterfacesIp4" );
 		Seq localInterfacesIp6Str  =  req.PostNvp("smtpSender_localInterfacesIp6" );
@@ -251,24 +256,33 @@ namespace At
 		cfg.f_localInterfacesIp4 = localInterfacesIp4Str.SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
 		cfg.f_localInterfacesIp6 = localInterfacesIp6Str.SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
 
-		if (relayPort < 1 || relayPort > 65535)
-			errs.Add("Invalid relay port number");
-		else
-			cfg.f_relayPort = relayPort;
+		if (cfg.f_useRelay)
+		{
+			if (relayPort < 1 || relayPort > 65535)
+				errs.Add("Invalid relay port number");
+			else
+				cfg.f_relayPort = relayPort;
 
-		SmtpTlsAssurance::E relayTlsRequirement;
-		if (!SmtpTlsAssurance::ReadNrAndVerify(relayTlsRequirementStr, relayTlsRequirement))
-			errs.Add("Invalid relay TLS requirement");
-		else
-			cfg.f_relayTlsRequirement = relayTlsRequirement;
+			SmtpTlsAssurance::E relayTlsRequirement;
+			if (!SmtpTlsAssurance::ReadNrAndVerify(relayTlsRequirementStr, relayTlsRequirement))
+				errs.Add("Invalid relay TLS requirement");
+			else
+				cfg.f_relayTlsRequirement = relayTlsRequirement;
 
-		MailAuthType::E relayAuthType;
-		if (!MailAuthType::ReadNrAndVerify(relayAuthTypeStr, relayAuthType))
-			errs.Add("Invalid relay authentication type");
-		else
-			cfg.f_relayAuthType = relayAuthType;
+			MailAuthType::E relayAuthType;
+			if (!MailAuthType::ReadNrAndVerify(relayAuthTypeStr, relayAuthType))
+				errs.Add("Invalid relay authentication type");
+			else
+				cfg.f_relayAuthType = relayAuthType;
 
-		cfg.f_relayPassword = Crypt::ProtectData(relayPassword, CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN);
+			if (!relayPassword.EqualExact(c_zSmtpRelayPwValueNoChange))
+			{
+				if (!relayPassword.n)
+					cfg.f_relayPassword.Clear();
+				else
+					cfg.f_relayPassword = Crypt::ProtectData(relayPassword, CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN);
+			}
+		}
 	}
 	
 
@@ -283,12 +297,12 @@ namespace At
 	ENTITY_DEF_CLOSE(SmtpSendFailure);
 
 
-	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendErr::E err, LookedUpAddr const* mx,
+	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx,
 		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines)
 	{
 		Rp<SmtpSendFailure> f = new SmtpSendFailure(Entity::Contained);
 		f->f_stage = stage;
-		f->f_err = err;
+		f->f_detail = detail;
 		if (mx)
 			mx->EncObj(f->f_mx);
 		f->f_replyCode = code.Value();
@@ -356,21 +370,21 @@ namespace At
 		Str line;
 		line.SetAdd("Send stage ", SmtpSendStage::Name(f.f_stage), ", ");
 
-		Seq errName = SmtpSendErr::Name(f.f_err);
-		Seq errDesc = SmtpSendErr::Desc(f.f_err);
-		if (errName.EqualInsensitive(errDesc))
+		Seq detailName = SmtpSendDetail::Name(f.f_detail);
+		Seq detailDesc = SmtpSendDetail::Desc(f.f_detail);
+		if (detailName.EqualInsensitive(detailDesc))
 		{
-			line.Add("error ").Add(errName);
+			line.Add("detail ").Add(detailName);
 			if (f.f_desc.Any())
 				line.Ch(';');
 			addLine(line);
 		}
 		else
 		{
-			line.Add("error ").Add(errName).Add(":");
+			line.Add("detail ").Add(detailName).Add(":");
 			addLine(line);
 
-			line.Set(errDesc);
+			line.Set(detailDesc);
 			if (f.f_desc.Any())
 				line.Ch(';');
 			addLine(line);
@@ -489,33 +503,32 @@ namespace At
 		html	.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().InputCheckbox().IdAndName("emailSrvBinding_ipv6Only").CheckedIf(binding.f_ipv6Only).EndP().EndTd()
+				.Td().P().Label("emailSrvBinding_ipv6Only", "IPv6 only").EndP().EndTd()
 				.Td()
-					.P().Label("emailSrvBinding_ipv6Only", "IPv6 only").EndP()
+					.P().InputCheckbox().IdAndName("emailSrvBinding_ipv6Only").CheckedIf(binding.f_ipv6Only).EndP()
 					.P().Class("help").T("If the interface is an IPv6 address such as ").B("::").T(", then if this is checked, only IPv6 connections will be accepted. "
 						"If not checked, both IPv6 and IPv4 connections will be accepted if the OS permits. Has no effect if the interface is an IPv4 address.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().InputCheckbox().IdAndName("emailSrvBinding_implicitTls").CheckedIf(binding.f_implicitTls).EndP().EndTd()
+				.Td().P().Label("emailSrvBinding_implicitTls", "Implicit TLS").EndP().EndTd()
 				.Td()
-					.P().Label("emailSrvBinding_implicitTls", "Implicit TLS").EndP()
+					.P().InputCheckbox().IdAndName("emailSrvBinding_implicitTls").CheckedIf(binding.f_implicitTls).EndP()
 					.P().Class("help").T("If checked, connections to this binding must start TLS immediately. If not checked, the connection starts in plaintext "
 						"and the client can start TLS using the ").B(proto == EmailSrvBindingProto::POP3 ? "STLS" : "STARTTLS").T(" command.").EndP()
+				.EndTd()
+			.EndTr()
+			.Tr()
+				.Td().P().Label("emailSrvBinding_computerName", "Computer name").EndP().EndTd()
+				.Td()
+					.P().InputDnsName().IdAndName("emailSrvBinding_computerName").Value(binding.f_computerName).EndP()
+					.P().Class("help").T("A fully-qualified DNS name of this computer. If not configured (empty), the global computer name setting is used.").EndP()
 				.EndTd()
 			.EndTr();
 
 		if (EmailSrvBindingProto::SMTP == proto)
 		{
 			html.Tr()
-					.Td().P().Label("emailSrvBinding_computerName", "Computer name").EndP().EndTd()
-					.Td()
-						.P().InputDnsName().IdAndName("emailSrvBinding_computerName").Value(binding.f_computerName).EndP()
-						.P().Class("help").T("A fully-qualified DNS name of this computer that should be sent to connections at this binding. "
-							"If not configured (empty), the global SMTP receiver setting is used.").EndP()
-					.EndTd()
-				.EndTr()
-				.Tr()
 					.Td().P().Label("emailSrvBinding_maxInMsgKb", "Maximum incoming message size (kB)").EndP().EndTd()
 					.Td()
 						.P().InputNumber().IdAndName("emailSrvBinding_maxInMsgKb").Value(Str().UInt(binding.f_maxInMsgKb)).EndP()
@@ -543,6 +556,7 @@ namespace At
 		uint64 port            =  req.PostNvp("emailSrvBinding_port"         ).Trim().ReadNrUInt64Dec();
 		binding.f_ipv6Only     = (req.PostNvp("emailSrvBinding_ipv6Only"     ) == "1");
 		binding.f_implicitTls  = (req.PostNvp("emailSrvBinding_implicitTls"  ) == "1");
+		binding.f_computerName =  req.PostNvp("emailSrvBinding_computerName" ).Trim();
 		binding.f_desc         =  req.PostNvp("emailSrvBinding_desc"         );
 
 		SockAddr sa;
@@ -557,55 +571,76 @@ namespace At
 			binding.f_port = port;
 
 		if (EmailSrvBindingProto::SMTP == proto)
-		{
-			binding.f_computerName = req.PostNvp("emailSrvBinding_computerName" ).Trim();
 			binding.f_maxInMsgKb   = req.PostNvp("emailSrvBinding_maxInMsgKb"   ).Trim().ReadNrUInt64Dec();
-		}
 	}
 
 
 	HtmlBuilder& EmailSrvBindings_RenderTable(HtmlBuilder& html, EntVec<EmailSrvBinding> const& bindings, EmailSrvBindingProto proto, Seq editBindingBaseUrl, Seq removeBindingBaseCmd)
 	{
-		html.Table()
-				.Tr()
-					.Th("Interface")
-					.Th("Port")
-					.Th("IPv6 only")
-					.Th("Implicit TLS");
-
-		if (EmailSrvBindingProto::SMTP == proto)
+		if (!bindings.Any())
+			html.P().T("No bindings are currently defined in this section.").EndP();
+		else
 		{
-			html	.Th("Computer")
-					.Th("Max msg size");
-		}
-
-		html		.Th("Description")
-					.Th("Edit")
-					.Th("Remove")
-				.EndTr();
-
-		for (EmailSrvBinding const& b : bindings)
-		{
-			html.Tr()
-					.Td(b.f_intf)
-					.Td(Str().UInt(b.f_port))
-					.Td(b.f_ipv6Only    ? "&check;" : "")
-					.Td(b.f_implicitTls ? "&check;" : "");
+			html.Table()
+					.Tr()
+						.Th("Interface")
+						.Th("Port")
+						.Th("IPv6 only")
+						.Th("Implicit TLS");
 
 			if (EmailSrvBindingProto::SMTP == proto)
 			{
-				html.Td(b.f_computerName)
-					.Td(b.f_maxInMsgKb ? Str().UInt(b.f_maxInMsgKb) : Str());
+				html	.Th("Computer")
+						.Th("Max msg size");
 			}
 
-			html	.Td(b.f_desc)
-					.Td().A(Str::Join(editBindingBaseUrl, b.f_token), "Edit").EndTd()
-					.Td().ConfirmSubmit("Confirm", Str::Join(removeBindingBaseCmd, b.f_token), "Remove").EndTd()
-				.EndTr();
+			html		.Th("Description")
+						.Th("Edit")
+						.Th("Remove")
+					.EndTr();
+
+			for (EmailSrvBinding const& b : bindings)
+			{
+				html.Tr()
+						.Td(b.f_intf)
+						.Td(Str().UInt(b.f_port))
+						.Td(b.f_ipv6Only    ? "&check;" : "")
+						.Td(b.f_implicitTls ? "&check;" : "");
+
+				if (EmailSrvBindingProto::SMTP == proto)
+				{
+					html.Td(b.f_computerName)
+						.Td(b.f_maxInMsgKb ? Str().UInt(b.f_maxInMsgKb) : Str());
+				}
+
+				html	.Td(b.f_desc)
+						.Td().A(Str::Join(editBindingBaseUrl, b.f_token), "Edit").EndTd()
+						.Td().ConfirmSubmit("Confirm", Str::Join(removeBindingBaseCmd, b.f_token), "Remove").EndTd()
+					.EndTr();
+			}
+
+			html.EndTable();
 		}
 
-		html.EndTable();
 		return html;
+	}
+
+
+	bool EmailSrvBindings_HaveRemoveBindingCmd(HttpRequest const& req, Seq removeBindingBaseCmd, Seq& removeBindingToken)
+	{
+		InsensitiveNameValuePairsWithStore::ConstIt removeCmdIt = req.PostNvp().LowerBound(removeBindingBaseCmd);
+		if (removeCmdIt.Any())
+		{
+			Seq name = removeCmdIt->m_name;
+			if (name.StripPrefixExact(removeBindingBaseCmd))
+			{
+				removeBindingToken = name;
+				return true;
+			}
+		}
+
+		removeBindingToken = Seq();
+		return false;
 	}
 
 
@@ -613,6 +648,7 @@ namespace At
 	// Pop3ServerCfg
 
 	ENTITY_DEF_BEGIN(Pop3ServerCfg)
+	ENTITY_DEF_FLD_V(Pop3ServerCfg, computerName, 1)
 	ENTITY_DEF_FIELD(Pop3ServerCfg, bindings)
 	ENTITY_DEF_CLOSE(Pop3ServerCfg);
 
@@ -631,6 +667,27 @@ namespace At
 			b.f_intf = "::";
 			b.f_port = 995;
 			b.f_implicitTls = true; }
+	}
+
+
+	HtmlBuilder& Pop3ServerCfg_RenderRows(HtmlBuilder& html, Pop3ServerCfg const& cfg)
+	{
+		html.Tr()
+				.Td().P().Label("pop3ServerCfg_computerName", "Computer name").EndP().EndTd()
+				.Td()
+					.P().InputDnsName().IdAndName("pop3ServerCfg_computerName").Value(cfg.f_computerName).EndP()
+					.P().Class("help").T("A fully-qualified DNS name of this computer. This helps find the TLS certificate to present to POP3 clients. "
+						"Can be overridden in settings for an individual binding.").EndP()
+				.EndTd()
+			.EndTr();
+
+		return html;
+	}
+
+
+	void Pop3ServerCfg_ReadFromPostRequest(Pop3ServerCfg& cfg, HttpRequest const& req, Vec<Str>&)
+	{
+		cfg.f_computerName = req.PostNvp("pop3ServerCfg_computerName" ).Trim();
 	}
 
 
@@ -667,8 +724,8 @@ namespace At
 				.Td().P().Label("smtpReceiverCfg_computerName", "Computer name").EndP().EndTd()
 				.Td()
 					.P().InputDnsName().IdAndName("smtpReceiverCfg_computerName").Value(cfg.f_computerName).EndP()
-					.P().Class("help").T("A fully-qualified DNS name of this computer that should be sent to SMTP senders. "
-						"Can be overridden in settings for an individual binding.").EndP()
+					.P().Class("help").T("A fully-qualified DNS name of this computer. This will be sent to SMTP senders as part of the SMTP greeting, "
+						"and helps find the TLS certificate to present to senders. Can be overridden in settings for an individual binding.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()

@@ -130,7 +130,7 @@ namespace At
 							body = bodyChunks[0];
 						else
 						{
-							bodyBuf.Resize(bodyBytesReceived);
+							bodyBuf.ResizeExact(bodyBytesReceived);
 							sizet bytesCopied = 0;
 							for (Str const& chunk : bodyChunks)
 							{

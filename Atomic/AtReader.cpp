@@ -9,9 +9,9 @@ namespace At
 	void Reader::SwapOutProcessed(Str& dest)
 	{
 		sizet bytesInBufToProcess = m_bytesInBuf - m_bytesInBufProcessed;
-		dest.Resize(bytesInBufToProcess);
+		dest.ResizeExact(bytesInBufToProcess);
 		memmove(dest.Ptr(), m_buf.Ptr() + m_bytesInBufProcessed, bytesInBufToProcess);
-		m_buf.Resize(m_bytesInBufProcessed);
+		m_buf.ResizeExact(m_bytesInBufProcessed);
 		dest.Swap(m_buf);
 		m_bufferPinned = false;
 	}
@@ -105,7 +105,7 @@ namespace At
 			}
 		}
 
-		m_buf.Resize(m_bytesInBuf + readSize);
+		m_buf.ResizeExact(m_bytesInBuf + readSize);
 		return readSize;
 	}
 }

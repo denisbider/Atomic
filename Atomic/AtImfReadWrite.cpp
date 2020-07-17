@@ -90,7 +90,7 @@ namespace At
 						{
 							int cchWideChar { rc + 4 };
 							AuxStr wideHolder { storage };
-							wideHolder.Resize(sizeof(wchar_t) * cchWideChar);
+							wideHolder.ResizeExact(sizeof(wchar_t) * cchWideChar);
 
 							LPWSTR pWide { (LPWSTR) wideHolder.Ptr() };
 							rc = MultiByteToWideChar(cp, 0, (LPCSTR) decoded.p, cchMultiByte, pWide, cchWideChar);
@@ -194,7 +194,11 @@ namespace At
 					reader.DropToFirstByteNotOf(Seq::AsciiWsBytes);
 
 					// Write out the mid words, if any
-					Seq mid { reader.ReadToAfterLastByteOf(Seq::AsciiWsBytes) };
+					Seq mid = reader;
+					reader = mid.RevReadToFirstByteOf(Seq::AsciiWsBytes);
+
+					// "reader" now contains the last word.
+					// If there are two words, "mid" is empty. Otherwise, "mid" contains the middle words + trailing whitespace
 					while (mid.n)
 					{
 						Seq midWord = mid.ReadToFirstByteOf(Seq::AsciiWsBytes);
@@ -999,6 +1003,7 @@ namespace At
 			//   multipart/mixed       -> any child == text/html
 			//   multipart/alternative -> any child == multipart/related     -> 1st child == text/html
 			//   multipart/alternative -> any child == text/html
+			//   multipart/related     -> 1st child == multipart/alternative -> any child == text/html
 			//   multipart/related     -> 1st child == text/html
 			//   text/html
 			//
@@ -1120,10 +1125,20 @@ namespace At
 			{
 				if (isFirst)
 				{
-					if (!part.m_contentType.Any() || !part.m_contentType->IsTextHtml())
+					if (part.m_contentType.Any())
+					{
+						if (part.m_contentType->IsTextHtml())
+							m_htmlContentPart = &part;
+						else if (part.m_contentType->IsMultipartAlternative())
+						{
+							if (!m_plainTextContentPart)
+								LocateParts_Alternative(part);
+						}
+					}
+
+					if (!m_htmlContentPart)
 						break;
 
-					m_htmlContentPart = &part;
 					isFirst = false;
 				}
 				else
@@ -1177,6 +1192,9 @@ namespace At
 
 		bool NormalizeEmailAddress(Seq address, Str& normalized)
 		{
+			if (!address.n)
+				return false;
+
 			ParseTree pt { address };
 			if (!pt.Parse(C_addr_spec))
 				return false;

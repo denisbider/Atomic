@@ -52,7 +52,7 @@ namespace At
 		{
 			if (!m_built.Any())
 			{
-				m_built.Set(Seq(m_s).DropLastByte());
+				m_built.Set(Seq(m_s).RevDropByte());
 				BuildDesc(m_built);
 				m_built.Byte(0);
 			}

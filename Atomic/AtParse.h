@@ -84,8 +84,8 @@ namespace At
 		bool G_OneOrMoreOf(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2, ParseFunc pf3, ParseFunc pf4);
 		bool G_OneOrMoreOf(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2, ParseFunc pf3, ParseFunc pf4, ParseFunc pf5);
 
-		bool G_Not(ParseNode& p, ParseFunc pfNot, ParseFunc pfYes);
-		template <bool (*FN)(ParseNode&), bool (*FY)(ParseNode&)> inline bool G_Not(ParseNode& p) { return G_Not(p, FN, FY); }
+		bool G_Except(ParseNode& p, Ruid const& type, ParseFunc pf, ParseFunc pfExcept);
+		template <bool (*F)(ParseNode&), bool (*FE)(ParseNode&)> inline bool G_Except(ParseNode& p) { return G_Except(p, id_Append, F, FE); }
 
 		bool G_NotFollowedBy(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2);
 		template <bool (*F1)(ParseNode&), bool (*F2)(ParseNode&)> inline bool G_NotFollowedBy(ParseNode& p) { return G_NotFollowedBy(p, id_Append, F1, F2); }
@@ -160,8 +160,6 @@ namespace At
 		inline bool V_SqOpenBr   (ParseNode& p) { return V_ByteIs(p, '[' ); }
 		inline bool V_SqCloseBr  (ParseNode& p) { return V_ByteIs(p, ']' ); }
 		inline bool V_Underscore (ParseNode& p) { return V_ByteIs(p, '_' ); }
-
-		bool V_Remaining(ParseNode& p);
 
 		bool V_SeqMatch(ParseNode& p, CaseMatch cm, Seq s);		
 		inline bool V_SeqMatchExact (ParseNode& p, Seq s) { return V_SeqMatch(p, CaseMatch::Exact,       s); }
@@ -250,7 +248,6 @@ namespace At
 		inline bool C_QuestnMark (ParseNode& p) { return G_Req    (p, id_QuestnMark,     V_QuestnMark           ); }
 		inline bool C_SqOpenBr   (ParseNode& p) { return G_Req    (p, id_SqOpenBr,       V_SqOpenBr             ); }
 		inline bool C_SqCloseBr  (ParseNode& p) { return G_Req    (p, id_SqCloseBr,      V_SqCloseBr            ); }
-		inline bool C_Remaining  (ParseNode& p) { return G_Req    (p, id_Remaining,      V_Remaining            ); }
 
 		bool C_UntilIncl(ParseNode& p, Ruid const& type, ParseFunc pfRepeat, Ruid const& untilType, sizet minCount = 1, sizet maxCount = SIZE_MAX);
 		template <bool (*FR)(ParseNode&), Ruid const& U> inline bool C_UntilIncl(ParseNode& p) { return C_UntilIncl(p, id_Append, FR, U); }

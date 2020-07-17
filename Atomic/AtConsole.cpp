@@ -113,7 +113,7 @@ namespace At
 				sizet nrConsumed { (sizet) (pRemaining - a_readByteBuf.Ptr()) };
 				sizet nrRemaining { a_readByteBuf.Len() - nrConsumed };
 				memmove(a_readByteBuf.Ptr(), pRemaining, nrRemaining);
-				a_readByteBuf.Resize(nrRemaining);
+				a_readByteBuf.ResizeExact(nrRemaining);
 			}
 		}
 
@@ -200,7 +200,7 @@ namespace At
 					reader.Read( [] (Seq& data) -> Reader::Instr::E
 						{
 							sizet origLen { a_readByteBuf.Len() };
-							a_readByteBuf.Resize(origLen + data.n);
+							a_readByteBuf.ResizeAtLeast(origLen + data.n);
 							memcpy_s(a_readByteBuf.Ptr() + origLen, a_readByteBuf.Len() - origLen, data.p, data.n);
 							return Reader::Instr::Done;
 						} );
@@ -261,7 +261,7 @@ namespace At
 							{
 								// Add translated Unicode character to wide char buffer
 								sizet origLen { a_readWideBuf.Len() };
-								a_readWideBuf.Resize(origLen + ker.wRepeatCount);
+								a_readWideBuf.ResizeAtLeast(origLen + ker.wRepeatCount);
 								
 								wchar_t* pWrite { a_readWideBuf.Ptr() + origLen };
 								for (uint i=0; i!=ker.wRepeatCount; ++i)
@@ -284,14 +284,14 @@ namespace At
 					{
 						// Read wide chars from console
 						sizet origLen { a_readWideBuf.Len() };
-						a_readWideBuf.Resize(origLen + dwBytesHint);
+						a_readWideBuf.ResizeAtLeast(origLen + dwBytesHint);
 						wchar_t* pwcWrite { a_readWideBuf.Ptr() + origLen };
 
 						DWORD nrCharsRead {};
 						if (!ReadConsoleW(a_handles[0], pwcWrite, dwBytesHint, &nrCharsRead, 0))
 							{ LastWinErr e; throw e.Make<>("Console: ReplenishReadQueue: Error in ReadConsole()"); }
 					
-						a_readWideBuf.Resize(origLen + nrCharsRead);
+						a_readWideBuf.ResizeExact(origLen + nrCharsRead);
 
 						// Decode wide char buffer into read queue
 						Decode_ReadWideBuf_Into_ReadQueue();

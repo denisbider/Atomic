@@ -53,11 +53,11 @@ void TestEmailAddress(Seq addr)
 }
 
 
-void EmailAddressTest(int argc, char** argv)
+void EmailAddressTest(Slice<Seq> args)
 {
 	try
 	{
-		if (argc < 3)
+		if (args.Len() < 3)
 		{
 			TestEmailAddress("(!) \"foo;bar,shar!\" (woof \r\n \"\"\") @ (blah; zar, far) +-!~.example.com (???)");
 			TestEmailAddress("aa@bb; group:aa@bb,cc@dd;, xx@yy, \";,_\" (uff) @ (f;u,f) example.com, "
@@ -65,8 +65,8 @@ void EmailAddressTest(int argc, char** argv)
 		}
 		else
 		{
-			for (int i=2; i!=argc; ++i)
-				TestEmailAddress(argv[i]);
+			for (sizet i=2; i!=args.Len(); ++i)
+				TestEmailAddress(args[i]);
 		}
 	}
 	catch (std::exception const& e)

@@ -30,9 +30,9 @@ private:
 
 		AuthCx(SockAddr const& fromHost, Seq fromMailbox) : m_fromHost(fromHost), m_fromMailbox(fromMailbox) {}
 
-		SmtpReceiveInstruction SmtpReceiverAuthCx_OnMailFrom_HaveAuth (Seq fromMailbox                       ) override final;
-		SmtpReceiveInstruction SmtpReceiverAuthCx_OnRcptTo            (Seq toMailbox                         ) override final;
-		SmtpReceiveInstruction SmtpReceiverAuthCx_OnData              (Vec<Str> const& toMailboxes, Seq data ) override final;
+		SmtpReceiveInstruction SmtpReceiverAuthCx_OnMailFrom (Seq fromMailbox                       ) override final;
+		SmtpReceiveInstruction SmtpReceiverAuthCx_OnRcptTo   (Seq toMailbox                         ) override final;
+		SmtpReceiveInstruction SmtpReceiverAuthCx_OnData     (Vec<Str> const& toMailboxes, Seq data ) override final;
 	};
 };
 
@@ -97,7 +97,7 @@ SmtpReceiveInstruction AutSmtpReceiver::SmtpReceiver_OnMailFrom_NoAuth(SockAddr 
 }
 
 
-SmtpReceiveInstruction AutSmtpReceiver::AuthCx::SmtpReceiverAuthCx_OnMailFrom_HaveAuth(Seq fromMailbox)
+SmtpReceiveInstruction AutSmtpReceiver::AuthCx::SmtpReceiverAuthCx_OnMailFrom(Seq fromMailbox)
 {
 	m_fromMailbox = fromMailbox;
 	return RandomReply([&] (char const* replyText)

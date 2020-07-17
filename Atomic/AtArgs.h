@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AtException.h"
+#include "AtSlice.h"
 
 
 namespace At
@@ -20,10 +21,14 @@ namespace At
 		Seq NextOrErr(Seq errDescIfNone);
 		Seq Next();
 
+		Args& ConvertAll() { while (Any()) Next(); return *this; }
+		Slice<Seq> Converted() { return m_convertedSeqs; }
+
 	private:
 		sizet m_argc {};
 		wchar_t const* const* m_argv {};
 		Vec<Str> m_converted;
+		Vec<Seq> m_convertedSeqs;
 	};
 
 }

@@ -24,11 +24,8 @@ namespace At
 	class ParseNode
 	{
 	public:
-		enum { MaxDepth = 1000 };
-
-		struct Err              : StrErr { Err              (Seq s) : StrErr(s) {} };
-		struct MaxDepthExceeded : Err    { MaxDepthExceeded ()      : Err("Maximum parser depth exceeded")  {} };
-		struct NodeNotFound     : Err    { NodeNotFound     ()      : Err("Expected parser node not found") {} };
+		struct Err          : StrErr { Err          (Seq s) : StrErr(s) {} };
+		struct NodeNotFound : Err    { NodeNotFound ()      : Err("Expected parser node not found") {} };
 
 	public:
 		// Interface for end users
@@ -66,6 +63,7 @@ namespace At
 		{
 			ChildIt(ParseNode const* node) noexcept : m_node(node) {}
 			ChildIt& operator++ () { EnsureThrow(m_node != nullptr); m_node = m_node->m_nextSibling; return *this; }
+			bool operator== (ChildIt const& it) const noexcept { return m_node == it.m_node; }
 			bool operator!= (ChildIt const& it) const noexcept { return m_node != it.m_node; }
 			ParseNode const& operator* () const { EnsureThrow(m_node != nullptr); return *m_node; }
 		private:
@@ -112,7 +110,7 @@ namespace At
 		void RefineType(Ruid const& newType);
 		void RefineParentType(Ruid const& parentType, Ruid const& newType);
 
-		ParseNode* NewChild(Ruid const& type);
+		ParseNode* NewChild(Ruid const& type);	// Returns nullptr if MaxDepth exceeded
 		bool CommitChild  (ParseNode* child);	// Always returns true
 		bool FailChild    (ParseNode* child);	// Always returns false. Defined inline after ParseTree
 		void DiscardChild (ParseNode* child);						  // Defined inline after ParseTree

@@ -3,10 +3,18 @@
 
 #include "AtUnicode.h"
 
+
 namespace At
 {
 	namespace Utf8
 	{
+		namespace Lit
+		{
+			Seq const BOM      { "\xEF\xBB\xBF", 3 };	// U+FEFF
+			Seq const Ellipsis { "\xE2\x80\xA6", 3 };	// U+2026
+		}
+
+
 		ReadResult::E ReadCodePoint(Seq& s, uint& v) noexcept
 		{
 			v = UINT_MAX;
@@ -53,7 +61,7 @@ namespace At
 		}
 
 
-		ReadResult::E ReadLastCodePoint(Seq& s, uint& v) noexcept
+		ReadResult::E RevReadCodePoint(Seq& s, uint& v) noexcept
 		{
 			v = UINT_MAX;
 
@@ -61,7 +69,7 @@ namespace At
 			sizet nrBytesRead {};
 			while (true)
 			{
-				uint c { reverseReader.ReadLastByte() };
+				uint c { reverseReader.RevReadByte() };
 				if (c == UINT_MAX)
 					return ReadResult::CharStartNotFound;
 

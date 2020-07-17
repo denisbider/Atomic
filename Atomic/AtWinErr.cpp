@@ -39,7 +39,7 @@ namespace At
 
 	void DescribeWinErr(Enc& enc, int64 err)
 	{
-		enc.Add("Windows error ").ErrCode(err);
+		enc.Add("Windows code ").ErrCode(err);
 		TryAddWinErrDesc(enc, err);
 	}
 

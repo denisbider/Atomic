@@ -79,7 +79,9 @@ namespace At
 
 	void SmtpReceiverThread::WorkPoolThread_ProcessWorkItem(void* pvWorkItem)
 	{
+		SockInit sockInit;
 		AutoFree<EmailServerWorkItem> workItem = (EmailServerWorkItem*) pvWorkItem;
+		Socket& sk = workItem->m_sk;
 
 		SmtpReceiverCfg cfg { Entity::Contained };
 		m_workPool->SmtpReceiver_GetCfg(cfg);
@@ -93,9 +95,6 @@ namespace At
 		uint64 maxInMsgBytes;
 		if (binding && binding->f_maxInMsgKb != 0) maxInMsgBytes = binding->f_maxInMsgKb * 1024;
 		else                                       maxInMsgBytes = cfg.f_maxInMsgKb * 1024;
-
-		SockInit sockInit;
-		Socket& sk = workItem->m_sk;
 
 		// It is NOT a good idea to enable TCP_NODELAY here.
 		// It would cause inefficiency in response sending in combination with PIPELINING.
@@ -126,7 +125,7 @@ namespace At
 
 				auto startTls = [&] ()
 					{
-						m_workPool->SmtpReceiver_AddSchannelCerts(conn);
+						m_workPool->SmtpReceiver_AddSchannelCerts(ourName, conn);
 						conn.InitCred(ProtoSide::Server);
 						conn.SetExpireMs(EmailServer_RecvTimeoutMs);
 						conn.StartTls();
@@ -167,10 +166,10 @@ namespace At
 							"\r\n8BITMIME"
 							"\r\nSIZE ").UInt(maxInMsgBytes);
 
-						if (!conn.TlsStarted() && m_workPool->SmtpReceiver_TlsSupported())
+						if (!conn.TlsStarted() && m_workPool->SmtpReceiver_TlsSupported(ourName))
 							ehloReply.Add("\r\nSTARTTLS");
 
-						if (conn.TlsStarted() && m_workPool->SmtpReceiver_AuthSupported())
+						if (conn.TlsStarted() && m_workPool->SmtpReceiver_AuthSupported(ourName))
 						{
 							// We require TLS before AUTH so that we can use AUTH PLAIN
 							// We prefer AUTH PLAIN so that passwords can be stored hashed
@@ -181,7 +180,7 @@ namespace At
 						SendReply(conn, 250, ehloReply);
 						rset();
 					}
-					else if (cmd.m_cmd == "starttls" && m_workPool->SmtpReceiver_TlsSupported())
+					else if (cmd.m_cmd == "starttls" && m_workPool->SmtpReceiver_TlsSupported(ourName))
 					{
 						if (cmd.m_params.Any())
 							SendReply(conn, 501, "STARTTLS command failed, no parameters allowed");
@@ -194,10 +193,10 @@ namespace At
 							startTls();
 						}
 					}
-					else if (cmd.m_cmd == "auth" && conn.TlsStarted() && m_workPool->SmtpReceiver_AuthSupported())
+					else if (cmd.m_cmd == "auth" && conn.TlsStarted() && m_workPool->SmtpReceiver_AuthSupported(ourName))
 					{
 						if (l_authCx.Any())
-							SendReply(conn, 503, "AUTH command unavailable, already authenticated");
+							SendReply(conn, 503, "AUTH command unavailable, authentication context already established");
 						else
 						{
 							Seq paramsReader = cmd.m_params;
@@ -312,7 +311,7 @@ namespace At
 								{
 									Opt<SmtpReceiveInstruction> instr;
 									if (l_authCx.Any())
-										instr.Init(l_authCx->SmtpReceiverAuthCx_OnMailFrom_HaveAuth(fromMailbox));
+										instr.Init(l_authCx->SmtpReceiverAuthCx_OnMailFrom(fromMailbox));
 									else
 									{
 										instr.Init(m_workPool->SmtpReceiver_OnMailFrom_NoAuth(workItem->m_saRemote, conn, ourName, l_ehloHost, fromMailbox, l_authCx));
@@ -412,6 +411,10 @@ namespace At
 			catch (SmtpReceiver_Disconnect const& e)
 				{ SendReply(conn, e.m_code, e.what()); }
 		}
+		catch (Schannel::SspiErr_Acquire const& e)
+		{
+			m_workPool->WorkPool_LogEvent(EVENTLOG_WARNING_TYPE, e.what());
+		}
 		catch (CommunicationErr const&)
 		{
 			// Just close the connection.
@@ -423,16 +426,16 @@ namespace At
 	{
 		host = host.Trim();
 		if (!host.Any())
-			return EhloHost(EhloHostType::Empty, Seq());
+			return EhloHost(EhloHostType::Unspecified, Seq());
 
 		ParseTree pt { host };
 		if (!pt.Parse(Smtp::C_Domain_or_AddrLit))
 			return EhloHost(EhloHostType::Invalid, host);
 
-		if (pt.Root().FlatFind(Smtp::id_Domain))
+		if (pt.Root().DeepFind(Smtp::id_Domain))
 			return EhloHost(EhloHostType::Domain, host);
 
-		if (pt.Root().FlatFind(Smtp::id_AddrLit))
+		if (pt.Root().DeepFind(Smtp::id_AddrLit))
 			return EhloHost(EhloHostType::AddrLit, host);
 
 		return EhloHost(EhloHostType::Unexpected, host);

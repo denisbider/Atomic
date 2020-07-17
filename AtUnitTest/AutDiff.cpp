@@ -179,16 +179,16 @@ void DiffTestSimple(Seq oldText, Seq newText, Diff::DiffParams const& diffParams
 }
 
 
-void DiffTests(int argc, char** argv)
+void DiffTests(Slice<Seq> args)
 {
 	Diff::DiffParams diffParams;
 
 	bool helpRequested {}, simpleInput {}, haveOldParam {}, haveNewParam {};
 	Seq oldParam, newParam;
 
-	for (int i=2; i<argc; ++i)
+	for (sizet i=2; i<args.Len(); ++i)
 	{
-		Seq arg = argv[i];
+		Seq arg = args[i];
 		if (arg.StartsWithExact("-"))
 		{
 			if (arg == "-?")

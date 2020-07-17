@@ -4,6 +4,7 @@
 #include "AtHtmlCharRefs.h"
 #include "AtNumCvt.h"
 #include "AtSeq.h"
+#include "AtUnits.h"
 #include "AtVec.h"
 
 
@@ -136,6 +137,11 @@ namespace At
 
 		Enc& ErrCode(int64 v);
 		Enc& TzOffset(int64 v) { return SInt(v, AddSign::Always, 10, 4); }
+
+		Enc& UIntDecGrp(uint64 v);
+		Enc& UIntUnits (uint64 v, Slice<Units::Unit> units);
+		Enc& UIntBytes (uint64 v) { return UIntUnits(v, Units::Bytes); }
+		Enc& UIntKb    (uint64 v) { return UIntUnits(v, Units::kB); }
 
 		Enc& Lower(Seq source);
 		Enc& Upper(Seq source);

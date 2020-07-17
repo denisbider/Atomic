@@ -1,11 +1,8 @@
 #include "AutIncludes.h"
 
 
-void ActvTests(int argc, char** argv)
+void ActvTests()
 {
-	(void) argc;
-	(void) argv;
-
 	try
 	{
 		Crypt::Initializer cryptInit;

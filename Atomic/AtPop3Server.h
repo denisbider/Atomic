@@ -42,7 +42,7 @@ namespace At
 		// Must copy or initialize POP3 server configuration into the provided entity
 		virtual void Pop3Server_GetCfg(Pop3ServerCfg& cfg) const = 0;
 
-		virtual void Pop3Server_AddSchannelCerts(Schannel& conn) = 0;
+		virtual void Pop3Server_AddSchannelCerts(Seq ourName, Schannel& conn) = 0;
 
 		// userName and password are already whitespace-trimmed
 		virtual EmailServerAuthResult Pop3Server_Authenticate(SockAddr const& fromHost, Schannel& conn, Seq userName, Seq password, Rp<Pop3ServerAuthCx>& authCx) = 0;

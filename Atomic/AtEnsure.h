@@ -29,6 +29,9 @@ namespace At
 
 	void SetEnsureReportHandler_EventLog(wchar_t const* sourceName, DWORD eventId);
 
+	bool EnsureReportHandler_Interactive (char const* desc);
+	bool EnsureReportHandler_EventLog    (char const* desc);
+
 
 	struct InternalInconsistency : public std::exception {};
 
@@ -37,8 +40,6 @@ namespace At
 	// - if onFail == OnFail::Throw, and there is no uncaught exception, throws an exception deriving from InternalInconsistency;
 	// - if onFail == OnFail::Abort, or Throw and there is an uncaught exception, calls the registered EnsureReportHandler and exits;
 	// - if onFail == OnFail::Report, calls the registered EnsureReportHandler and continues if the handler succeeded; otherwise, exits.
-	
-	__declspec(noinline) void EnsureFail(OnFail::E onFail, char const* locAndDesc);
 
 	__declspec(noinline) void EnsureFail_Report (char const* locAndDesc);
 	__declspec(noinline) void EnsureFail_Throw  (char const* locAndDesc);

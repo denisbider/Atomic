@@ -2,11 +2,8 @@
 #include "AutMain.h"
 
 
-void RsaSignerTests(int argc, char** argv)
+void RsaSignerTests()
 {
-	(void) argc;
-	(void) argv;
-
 	try
 	{
 		Crypt::Initializer cryptInitializer;

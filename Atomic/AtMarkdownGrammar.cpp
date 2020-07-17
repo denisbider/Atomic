@@ -142,7 +142,7 @@ namespace At
 
 			Seq before { p.BeforeRemaining() };
 			uint prevChar;
-			Utf8::ReadLastCodePoint(before, prevChar);
+			Utf8::RevReadCodePoint(before, prevChar);
 			uint prevCharCat { EmphCharCat(prevChar) };
 
 			Ruid const* type;
@@ -159,7 +159,10 @@ namespace At
 					return false;					// Marker is not right-flanking
 			}
 			
-			ParseNode* pn { p.NewChild(*type) };
+			ParseNode* pn = p.NewChild(*type);
+			if (!pn)
+				return false;
+
 			pn->ConsumeUtf8Seq(marker.n);
 			return p.CommitChild(pn);
 		}
@@ -170,7 +173,10 @@ namespace At
 			if (!p.Remaining().StartsWithExact("`"))
 				return false;
 
-			ParseNode* pnSpan { p.NewChild(id_Append) };
+			ParseNode* pnSpan = p.NewChild(id_Append);
+			if (!pnSpan)
+				return false;
+
 			if (!G_Repeat(*pnSpan, id_Junk, V_Backtick))
 				return p.FailChild(pnSpan);
 
@@ -193,7 +199,10 @@ namespace At
 			if (!nrCodeBytes)
 				return p.FailChild(pnSpan);
 
-			ParseNode* pnCode { pnSpan->NewChild(id_Code) };
+			ParseNode* pnCode = pnSpan->NewChild(id_Code);
+			if (!pnCode)
+				return p.FailChild(pnSpan);
+
 			pnCode->ConsumeUtf8Seq(nrCodeBytes);
 			pnSpan->CommitChild(pnCode);
 
@@ -274,7 +283,10 @@ namespace At
 				if (m_parent)
 					return m_first->Parse(p);
 				
-				ParseNode* pn { p.NewChild(id_Junk) };
+				ParseNode* pn = p.NewChild(id_Junk);
+				if (!pn)
+					return false;
+
 				BlockContCrit* cur { this };
 				do
 				{
@@ -300,7 +312,10 @@ namespace At
 					// Succeed for a blank line, even if it doesn't have sufficient indentation
 					V_HWs_Indent(p, 1, m_param);
 
-					ParseNode* pnEnd { p.NewChild(id_Append) };
+					ParseNode* pnEnd = p.NewChild(id_Append);
+					if (!pnEnd)
+						return false;
+
 					bool atEnd { V_LineEnd(*pnEnd) || N_End(*pnEnd) };
 					p.DiscardChild(pnEnd);
 					return atEnd;
@@ -324,7 +339,9 @@ namespace At
 
 		static bool C_CritAndBlock(ParseNode& p, BlockContCrit* contCrit, BlockParseFunc bpf, BlockParseScope scope)
 		{
-			ParseNode* pnAppend { p.NewChild(id_Append) };
+			ParseNode* pnAppend = p.NewChild(id_Append);
+			if (!pnAppend)
+				return false;
 
 			if (!BlockContCrit::Parse(*pnAppend, contCrit) ||
 				!bpf(*pnAppend, contCrit, scope))
@@ -348,7 +365,9 @@ namespace At
 
 		bool C_QuoteBlock(ParseNode& p, BlockContCrit* contCrit, BlockParseScope scope)
 		{
-			ParseNode* pnQuote { p.NewChild(id_QuoteBlock) };
+			ParseNode* pnQuote = p.NewChild(id_QuoteBlock);
+			if (!pnQuote)
+				return false;
 
 			// First child block
 			if (!G_QuoteBlockMarker(*pnQuote, id_Junk))
@@ -363,7 +382,10 @@ namespace At
 			{
 				while (true)
 				{
-					ParseNode* pnChildBlock { pnQuote->NewChild(id_Append) };
+					ParseNode* pnChildBlock = pnQuote->NewChild(id_Append);
+					if (!pnChildBlock)
+						return p.FailChild(pnQuote);
+
 					if (!C_CritAndBlock(*pnChildBlock, &thisBlockContCrit, C_Block, scope))
 						{ pnQuote->FailChild(pnChildBlock); break; }
 
@@ -394,7 +416,9 @@ namespace At
 		bool C_ListItemBlock(ParseNode& p, BlockContCrit* contCrit, BlockParseScope scope)
 		{
 			bool loose {};
-			ParseNode* pnListItem { p.NewChild(id_ListItem) };
+			ParseNode* pnListItem = p.NewChild(id_ListItem);
+			if (!pnListItem)
+				return false;
 
 			// First child block
 			if (!C_ListBulletDash(*pnListItem) &&
@@ -425,7 +449,10 @@ namespace At
 			{
 				while (true)
 				{
-					ParseNode* pnChildBlock { pnListItem->NewChild(id_Append) };
+					ParseNode* pnChildBlock = pnListItem->NewChild(id_Append);
+					if (!pnChildBlock)
+						return p.FailChild(pnListItem);
+
 					if (!C_CritAndBlock(*pnChildBlock, &thisBlockContCrit, C_Block, scope))
 						{ pnListItem->FailChild(pnChildBlock); break; }
 
@@ -454,7 +481,9 @@ namespace At
 
 		bool C_ListBlock(ParseNode& p, BlockContCrit* contCrit, BlockParseScope scope)
 		{
-			ParseNode* pnList { p.NewChild(id_List) };
+			ParseNode* pnList = p.NewChild(id_List);
+			if (!pnList)
+				return false;
 
 			// First list item
 			if (!C_ListItemBlock(*pnList, contCrit, scope))
@@ -468,7 +497,9 @@ namespace At
 				// Subsequent list items
 				while (true)
 				{
-					ParseNode* pnAppend { pnList->NewChild(id_Append) };
+					ParseNode* pnAppend = pnList->NewChild(id_Append);
+					if (!pnAppend)
+						return p.FailChild(pnList);
 				
 					// Accept up to one blank line between list items
 					if (C_CritAndBlock(*pnAppend, contCrit, C_BlankLine, scope))
@@ -494,7 +525,9 @@ namespace At
 
 		bool C_CodeBlock(ParseNode& p, BlockContCrit* contCrit, BlockParseScope scope)
 		{
-			ParseNode* pnBlock { p.NewChild(id_CodeBlock) };
+			ParseNode* pnBlock = p.NewChild(id_CodeBlock);
+			if (!pnBlock)
+				return false;
 
 			// First line
 			if (!C_HWs_Indent(*pnBlock, id_HWs, 4, 4))
@@ -511,7 +544,9 @@ namespace At
 				// Subsequent lines
 				while (true)
 				{
-					ParseNode* pnAppend { pnBlock->NewChild(id_Append) };
+					ParseNode* pnAppend = pnBlock->NewChild(id_Append);
+					if (!pnAppend)
+						return p.FailChild(pnBlock);
 
 					// Read until next fully indented line, if any
 					enum State { Invalid, Mismatch, Continue, ReachedEnd } state = Invalid;
@@ -565,7 +600,9 @@ namespace At
 		
 		bool C_HorizRule(ParseNode& p)
 		{
-			ParseNode* pn { p.NewChild(id_HorizRule) };
+			ParseNode* pn = p.NewChild(id_HorizRule);
+			if (!pn)
+				return false;
 
 			C_HWs_Indent(*pn, id_HWs, 1, 3);
 
@@ -586,7 +623,9 @@ namespace At
 		
 		bool C_Link(ParseNode& p)
 		{
-			ParseNode* pn { p.NewChild(id_Link) };
+			ParseNode* pn = p.NewChild(id_Link);
+			if (!pn)
+				return false;
 
 			C_HWs_Indent(*pn, id_HWs, 1, 3);
 
@@ -612,7 +651,9 @@ namespace At
 
 		bool C_HeadingPrefix(ParseNode& p)
 		{
-			ParseNode* pn { p.NewChild(id_Junk) };
+			ParseNode* pn = p.NewChild(id_Junk);
+			if (!pn)
+				return false;
 
 			V_HWs_Indent(*pn, 1, 3);
 
@@ -641,7 +682,9 @@ namespace At
 
 		bool C_Paragraph(ParseNode& p, BlockContCrit* contCrit, BlockParseScope scope)
 		{
-			ParseNode* pnPara { p.NewChild(id_Paragraph) };
+			ParseNode* pnPara = p.NewChild(id_Paragraph);
+			if (!pnPara)
+				return false;
 
 			// First line
 			if (!C_ParagraphLine(*pnPara))
@@ -652,7 +695,9 @@ namespace At
 				// Subsequent lines
 				while (true)
 				{
-					ParseNode* pnAppend { pnPara->NewChild(id_Append) };
+					ParseNode* pnAppend = pnPara->NewChild(id_Append);
+					if (!pnAppend)
+						return p.FailChild(pnPara);
 
 					if (!BlockContCrit::Parse(*pnAppend, contCrit))
 						{ pnPara->FailChild(pnAppend); break; }
@@ -660,7 +705,10 @@ namespace At
 					if (C_HWs_Indent(*pnAppend, id_HWs, 2, SIZE_MAX))
 						{ pnPara->FailChild(pnAppend); break; }
 
-					ParseNode* pnDiscard { pnAppend->NewChild(id_Discard) };
+					ParseNode* pnDiscard = pnAppend->NewChild(id_Discard);
+					if (!pnDiscard)
+						{ pnPara->FailChild(pnAppend); return p.FailChild(pnPara); }
+
 					bool isContinuation { C_Block(*pnDiscard, contCrit, BlockParseScope::Start) && pnDiscard->FirstChild().IsType(id_Paragraph) };
 					pnAppend->DiscardChild(pnDiscard);
 					if (!isContinuation)

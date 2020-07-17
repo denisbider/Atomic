@@ -398,11 +398,12 @@ namespace At
 		static void   JsonEncodeKind            (Enc& enc, Entity const& entity);
 		static void   JsonEncodeEnumValue       (Enc& enc, uint32 v, EntityFieldInfo const& efi);
 		static void   JsonEncodeStrValue        (Enc& enc, Seq field);
-		static void   JsonEncodeDynEntityOrNull (Enc& enc, Rp<Entity> const& o);
+		static void   JsonEncodeDynEntity       (Enc& enc, Entity const& e);
+		static void   JsonEncodeDynEntityOrNull (Enc& enc, Rp<Entity> const& e);
 
 		static ObjId  JsonDecodeObjId           (ParseNode const& p, JsonIds* jsonIds);
 		static uint32 JsonDecodeUInt32WDesc     (ParseNode const& p);
-		template <class StrType>
+		template <class StrType>			    
 		static void   JsonDecodeStrValue        (ParseNode const& p, StrType& field);
 		static void   JsonDecodeDynEntityOrNull (ParseNode const& p, Rp<Entity>& o);
 

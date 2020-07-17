@@ -4,7 +4,7 @@
 namespace At
 {
 
-	void RwLock::AcquireReadLock()
+	void RwLock::AcquireReadLock() noexcept
 	{
 		bool readLockAcquired {};
 		do
@@ -21,7 +21,7 @@ namespace At
 	}
 
 	
-	void RwLock::AcquireWriteLock()
+	void RwLock::AcquireWriteLock() noexcept
 	{
 		bool writeLockAcquired {};
 		do

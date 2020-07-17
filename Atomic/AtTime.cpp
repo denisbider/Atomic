@@ -129,58 +129,61 @@ namespace At
 	}
 
 
-	Time Time::ReadIsoStyleTimeStr(Seq& s) noexcept
+	bool Time::ReadIsoStyleTimeStr(Seq& reader, Time& x) noexcept
 	{
+		x = Time();
+
 		SYSTEMTIME st {};
 		uint64 microseconds {};
 
-		if (s.n >= 4)
+		Seq rdr = reader;
+		if (rdr.n >= 4)
 		{
-			Seq t { s.p, 4 };
-			st.wYear = t.ReadNrUInt16Dec();
-			if (!t.n && st.wYear >= 1601 && s.DropBytes(4).ReadByte() == '-' && s.n >= 2)
+			Seq field { rdr.p, 4 };
+			st.wYear = field.ReadNrUInt16Dec();
+			if (!field.n && st.wYear >= 1601 && rdr.DropBytes(4).StripPrefixExact("-") && rdr.n >= 2)
 			{
-				t = Seq(s.p, 2);
-				st.wMonth = t.ReadNrUInt16Dec();
-				if (!t.n && st.wMonth >= 1 && st.wMonth <= 12 && s.DropBytes(2).ReadByte() == '-' && s.n >= 2)
+				field = Seq(rdr.p, 2);
+				st.wMonth = field.ReadNrUInt16Dec();
+				if (!field.n && st.wMonth >= 1 && st.wMonth <= 12 && rdr.DropBytes(2).StripPrefixExact("-") && rdr.n >= 2)
 				{
-					t = Seq(s.p, 2);
-					st.wDay = t.ReadNrUInt16Dec();
-					if (!t.n && st.wDay >= 1 && st.wDay <= 31)
+					field = Seq(rdr.p, 2);
+					st.wDay = field.ReadNrUInt16Dec();
+					if (!field.n && st.wDay >= 1 && st.wDay <= 31)
 					{
-						uint nc { s.DropBytes(2).ReadByte() };
-						if ((nc == ' ' || nc == 'T' || nc == 't') && s.n >= 2)
+						rdr.DropBytes(2);
+						if ((rdr.StripPrefixExact(" ") || rdr.StripPrefixInsensitive("T")) && rdr.n >= 2)
 						{
-							t = Seq(s.p, 2);
-							st.wHour = t.ReadNrUInt16Dec();
-							if (t.n || st.wHour > 23)
+							field = Seq(rdr.p, 2);
+							st.wHour = field.ReadNrUInt16Dec();
+							if (field.n || st.wHour > 23)
 								st.wHour = 0;
-							else if (s.DropBytes(2).ReadByte() == ':' && s.n >= 2)
+							else if (rdr.DropBytes(2).StripPrefixExact(":") && rdr.n >= 2)
 							{
-								t = Seq(s.p, 2);
-								st.wMinute = t.ReadNrUInt16Dec();
-								if (t.n || st.wMinute > 59)
+								field = Seq(rdr.p, 2);
+								st.wMinute = field.ReadNrUInt16Dec();
+								if (field.n || st.wMinute > 59)
 									st.wMinute = 0;
-								else if (s.DropBytes(2).ReadByte() == ':' && s.n >= 2)
+								else if (rdr.DropBytes(2).StripPrefixExact(":") && rdr.n >= 2)
 								{
-									t = Seq(s.p, 2);
-									st.wSecond = t.ReadNrUInt16Dec();
-									if (t.n || st.wSecond > 59)
+									field = Seq(rdr.p, 2);
+									st.wSecond = field.ReadNrUInt16Dec();
+									if (field.n || st.wSecond > 59)
 										st.wSecond = 0;
-									else if (s.DropBytes(2).ReadByte() == '.' && s.n >= 3)
+									else if (rdr.DropBytes(2).StripPrefixExact(".") && rdr.n >= 3)
 									{
-										t = Seq(s.p, 3);
-										st.wMilliseconds = t.ReadNrUInt16Dec();
-										if (t.n)
+										field = Seq(rdr.p, 3);
+										st.wMilliseconds = field.ReadNrUInt16Dec();
+										if (field.n)
 											st.wMilliseconds = 0;
-										else if (s.DropBytes(3).n >= 3)
+										else if (rdr.DropBytes(3).n >= 3)
 										{
-											t = Seq(s.p, 3);
-											microseconds = t.ReadNrUInt16Dec();
-											if (t.n)
+											field = Seq(rdr.p, 3);
+											microseconds = field.ReadNrUInt16Dec();
+											if (field.n)
 												microseconds = 0;
 											else
-												s.DropBytes(3);
+												rdr.DropBytes(3);
 										}
 									}
 								}
@@ -188,13 +191,15 @@ namespace At
 						}
 
 						// We have at least YYYY-MM-DD, and possibly other components.
-						return FromSystemTime(st) + Time::FromMicroseconds(microseconds);
+						x = FromSystemTime(st) + Time::FromMicroseconds(microseconds);
+						reader = rdr;
+						return true;
 					}
 				}
 			}
 		}
 
-		return Time();
+		return false;
 	}
 
 

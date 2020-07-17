@@ -148,6 +148,9 @@ namespace At
 		bool C_extension_field_name (ParseNode& p)
 		{
 			ParseNode* pn = p.NewChild(id_extension_field_name);
+			if (!pn)
+				return false;
+
 			if (V_SeqMatchExact(*pn, "--"))
 				return p.FailChild(pn);
 			if (!Imf::V_field_name(*pn))
@@ -183,7 +186,10 @@ namespace At
 			ParseNode const& bodyNode         { p.FindAncestorRef(id_multipart_body) };
 			ParseNode const& dashBoundaryNode { bodyNode.FlatFindRef(id_dash_boundary) };
 			Seq              dashBoundary     { dashBoundaryNode.SrcText() }; 
-			ParseNode*       pn               { p.NewChild(id_part_content) };
+
+			ParseNode* pn = p.NewChild(id_part_content);
+			if (!pn)
+				return false;
 
 			while (true)
 			{

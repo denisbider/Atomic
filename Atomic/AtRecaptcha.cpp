@@ -10,19 +10,18 @@
 namespace At
 {
 	
-	FormInputType const fit_recaptchaKey ( "50", "100", 100 );
+	FormInputType const fit_recaptchaKey ( "100", 100, "50" );
 
 
-	void Recaptcha::ReInit(HttpRequest& req, Seq siteKey, Seq secret)
+	void Recaptcha::Init(Seq siteKey, Seq secret)
 	{
-		m_secure = req.IsSecure();
 		m_siteKey = siteKey;
 		m_secret = secret;
 		m_verifyError.Clear();
 	}
 
 
-	bool Recaptcha::ProcessPost(HttpRequest& req)
+	bool Recaptcha::ProcessPost(HttpRequest const& req)
 	{
 		Seq response = req.PostNvp("g-recaptcha-response").Trim();
 

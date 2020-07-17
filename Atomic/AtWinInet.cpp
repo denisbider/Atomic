@@ -99,14 +99,14 @@ namespace At
 		sizet totalBytesRead = 0;
 		while (true)
 		{
-			response.Resize(totalBytesRead + readChunkSize);
+			response.ResizeExact(totalBytesRead + readChunkSize);
 		
 			DWORD bytesRead;
 			if (!InternetReadFile(m_hRequest, response.Ptr() + totalBytesRead, readChunkSize, &bytesRead))
 				{ LastWinErr e; throw e.Make<>("AtWinInet: Error in InternetReadFile"); }
 
 			totalBytesRead += bytesRead;
-			response.Resize(totalBytesRead);
+			response.ResizeExact(totalBytesRead);
 		
 			if (!bytesRead)
 				break;

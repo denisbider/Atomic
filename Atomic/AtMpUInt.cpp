@@ -29,7 +29,7 @@ namespace At
 			m_words.Clear();
 		else
 		{
-			m_words.Resize(1);
+			m_words.ResizeExact(1);
 			m_words.First() = v;
 		}
 
@@ -193,8 +193,7 @@ namespace At
 		uint32 shiftBits  = x % WordBits;
 
 		sizet resultWords = NrWords() - shiftWords;
-		r.m_words.ReserveExact(resultWords);
-		r.m_words.Resize(resultWords);
+		r.m_words.ResizeExact(resultWords);
 
 		uint32 carry {};
 		for (sizet i=r.NrWords(); i!=0; )
@@ -217,7 +216,7 @@ namespace At
 
 		sizet resultWords = NrWords() + shiftWords;
 		r.m_words.ReserveExact(resultWords + 1);
-		r.m_words.Resize(resultWords);
+		r.m_words.ResizeExact(resultWords);
 
 		uint32 carry {};
 		for (sizet i=0; i!=NrWords(); ++i)
@@ -250,7 +249,7 @@ namespace At
 		}
 
 		r.m_words.ReserveExact(NrWords() + 1);
-		r.m_words.Resize(NrWords());
+		r.m_words.ResizeExact(NrWords());
 
 		sizet i {};
 		uint32 carry {};
@@ -295,7 +294,7 @@ namespace At
 			return;
 		}
 
-		r.m_words.Resize(NrWords());
+		r.m_words.ResizeExact(NrWords());
 
 		sizet i {};
 		uint32 borrow {};
@@ -332,7 +331,7 @@ namespace At
 		}
 
 		r.m_words.ReserveExact(NrWords() + 1);
-		r.m_words.Resize(NrWords());
+		r.m_words.ResizeExact(NrWords());
 
 		uint32 carry {};
 		sizet i {};
@@ -392,7 +391,7 @@ namespace At
 		}
 		else
 		{
-			quotient.m_words.Resize(NrWords());
+			quotient.m_words.ResizeExact(NrWords());
 			remainder = 0;
 
 			for (sizet i=NrWords(); i!=0; )

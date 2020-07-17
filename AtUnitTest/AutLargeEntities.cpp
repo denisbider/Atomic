@@ -28,11 +28,8 @@ namespace
 } // anon
 
 
-void LargeEntitiesTests(int argc, char** argv)
+void LargeEntitiesTests()
 {
-	(void) argc;
-	(void) argv;
-
 	try
 	{
 		Crypt::Initializer cryptInit;
@@ -63,7 +60,7 @@ void LargeEntitiesTests(int argc, char** argv)
 						lastSizeUsed = (sizet) sizeDbl;
 						Rp<LargeEntity> e = new LargeEntity(g_store, ObjId::Root);
 						e->f_seqNr = i;
-						e->f_content.Resize(lastSizeUsed, 'a');
+						e->f_content.ResizeExact(lastSizeUsed, 'a');
 						e->Insert_ParentExists();
 						++nrEntitiesInserted;
 						sizeDbl *= sizeMul;

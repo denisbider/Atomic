@@ -209,7 +209,7 @@ namespace At
 			m_sha512.Update(actvCodeBinary);
 			m_sha512.Final(digest);
 			EnsureThrow(64 == digest.Len());
-			digest.Resize(32);
+			digest.ResizeExact(32);
 
 			Str sig;
 			m_key.Sign(nullptr, digest, sig, 0);
@@ -237,7 +237,7 @@ namespace At
 			m_sha512.Update(actvCodeData);
 			m_sha512.Final(digest);
 			EnsureThrow(64 == digest.Len());
-			digest.Resize(32);
+			digest.ResizeExact(32);
 
 			return m_key.Verify(nullptr, digest, sig, 0);
 		}

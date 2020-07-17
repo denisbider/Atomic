@@ -17,8 +17,12 @@ namespace At
 		bool G_Req(ParseNode& p, Ruid const& type, ParseFunc pf)
 		{
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			if (!pf(*pn))
 				return p.FailChild(pn);
+
 			return p.CommitChild(pn);
 		}
 
@@ -26,8 +30,11 @@ namespace At
 		template <int R1, int R2>
 		bool G_Req(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2)
 		{
-			bool success;
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
+			bool success;
 			success = pf1(*pn); if (R1 && !success) return p.FailChild(pn);
 			success = pf2(*pn); if (R2 && !success) return p.FailChild(pn);
 			return p.CommitChild(pn);
@@ -41,8 +48,11 @@ namespace At
 		template <int R1, int R2, int R3>
 		bool G_Req(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2, ParseFunc pf3)
 		{
-			bool success;
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
+			bool success;
 			success = pf1(*pn); if (R1 && !success) return p.FailChild(pn);
 			success = pf2(*pn); if (R2 && !success) return p.FailChild(pn);
 			success = pf3(*pn); if (R3 && !success) return p.FailChild(pn);
@@ -61,8 +71,11 @@ namespace At
 		template <int R1, int R2, int R3, int R4>
 		bool G_Req(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2, ParseFunc pf3, ParseFunc pf4)
 		{
-			bool success;
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
+			bool success;
 			success = pf1(*pn); if (R1 && !success) return p.FailChild(pn);
 			success = pf2(*pn); if (R2 && !success) return p.FailChild(pn);
 			success = pf3(*pn); if (R3 && !success) return p.FailChild(pn);
@@ -90,8 +103,11 @@ namespace At
 		template <int R1, int R2, int R3, int R4, int R5>
 		bool G_Req(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2, ParseFunc pf3, ParseFunc pf4, ParseFunc pf5)
 		{
-			bool success;
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
+			bool success;
 			success = pf1(*pn); if (R1 && !success) return p.FailChild(pn);
 			success = pf2(*pn); if (R2 && !success) return p.FailChild(pn);
 			success = pf3(*pn); if (R3 && !success) return p.FailChild(pn);
@@ -136,8 +152,11 @@ namespace At
 		template <int R1, int R2, int R3, int R4, int R5, int R6>
 		bool G_Req(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2, ParseFunc pf3, ParseFunc pf4, ParseFunc pf5, ParseFunc pf6)
 		{
-			bool success;
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
+			bool success;
 			success = pf1(*pn); if (R1 && !success) return p.FailChild(pn);
 			success = pf2(*pn); if (R2 && !success) return p.FailChild(pn);
 			success = pf3(*pn); if (R3 && !success) return p.FailChild(pn);
@@ -217,7 +236,10 @@ namespace At
 		{
 			EnsureThrow(minCount <= maxCount);
 
-			ParseNode* pn { p.NewChild(type) };
+			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			sizet i;
 			for (i=0; i!=maxCount; ++i)
 			{
@@ -239,11 +261,17 @@ namespace At
 		{
 			EnsureThrow(minCount <= maxCount);
 
-			ParseNode* pn { p.NewChild(type) };
+			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			sizet i;
 			for (i=0; i!=maxCount; ++i)
 			{
-				ParseNode* pn2 { pn->NewChild(id_Discard) };
+				ParseNode* pn2 = pn->NewChild(id_Discard);
+				if (!pn2)
+					return p.FailChild(pn);
+
 				bool untilResult { pfUntil(*pn2) };
 				pn->DiscardChild(pn2);
 				if (untilResult)
@@ -267,7 +295,10 @@ namespace At
 		{
 			while (*pfArray)
 			{
-				ParseNode* pn { p.NewChild(type) };
+				ParseNode* pn = p.NewChild(type);
+				if (!pn)
+					return false;
+
 				if ((*pfArray)(*pn))
 					return p.CommitChild(pn);
 
@@ -349,6 +380,8 @@ namespace At
 		bool G_OneOrMoreOf(ParseNode& p, Ruid const& type, ParseFunc* pfArray)
 		{
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
 
 			bool success = false;
 			while (*pfArray)
@@ -392,25 +425,45 @@ namespace At
 		}
 
 
-		bool G_Not(ParseNode& p, ParseFunc pfNot, ParseFunc pfYes)
+		bool G_Except(ParseNode& p, Ruid const& type, ParseFunc pf, ParseFunc pfExcept)
 		{
-			ParseNode* pn { p.NewChild(id_Discard) };
-			bool pfNotResult { pfNot(*pn) };
-			p.DiscardChild(pn);
-			if (pfNotResult)
-				return false;
+			{
+				ParseNode* pn = p.NewChild(id_Discard);
+				if (!pn)
+					return false;
 
-			return pfYes(p);
+				bool exceptResult = pfExcept(*pn);
+				p.DiscardChild(pn);
+				if (exceptResult)
+					return false;
+			}
+
+			{
+				ParseNode* pn = p.NewChild(type);
+				if (!pn)
+					return false;
+
+				if (!pf(*pn))
+					return p.FailChild(pn);
+				else
+					return p.CommitChild(pn);
+			}
 		}
 
 
 		bool G_NotFollowedBy(ParseNode& p, Ruid const& type, ParseFunc pf1, ParseFunc pf2)
 		{
-			ParseNode* pn { p.NewChild(type) };
+			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			if (!pf1(*pn))
 				return p.FailChild(pn);
 
-			ParseNode* pn2 { pn->NewChild(id_Discard) };
+			ParseNode* pn2 = pn->NewChild(id_Discard);
+			if (!pn2)
+				return p.FailChild(pn);
+
 			bool pf2Result { pf2(*pn2) };
 			pn->DiscardChild(pn2);
 			if (pf2Result)
@@ -423,6 +476,9 @@ namespace At
 		bool G_SeqMatch(ParseNode& p, Ruid const& type, CaseMatch cm, Seq s)
 		{
 			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			return V_SeqMatch(*pn, cm, s) ? p.CommitChild(pn) : p.FailChild(pn);
 		}
 
@@ -511,14 +567,6 @@ namespace At
 				return false;
 
 			p.ConsumeUtf8Char(c, origN - reader.n);
-			return true;
-		}
-
-	
-		bool V_Remaining(ParseNode& p)
-		{
-			while (p.Remaining().n)
-				p.ConsumeByte();
 			return true;
 		}
 
@@ -613,7 +661,10 @@ namespace At
 		{
 			EnsureThrow(minCount <= maxCount);
 
-			ParseNode* pn { p.NewChild(type) };
+			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			sizet i;
 			for (i=0; i!=maxCount; ++i)
 			{
@@ -636,7 +687,10 @@ namespace At
 
 		bool C_HWs_Indent(ParseNode& p, Ruid const& type, sizet minNrCols, sizet maxNrCols)
 		{
-			ParseNode* pn { p.NewChild(type) };
+			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
 			if (!V_HWs_Indent(*pn, minNrCols, maxNrCols))
 				return p.FailChild(pn);
 			return p.CommitChild(pn);

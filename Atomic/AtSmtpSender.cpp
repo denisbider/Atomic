@@ -106,10 +106,10 @@ namespace At
 			bool atMemUsageLimit {};
 			Time nextPumpTime;
 
-			if (0 != cfg.f_memUsageLimitBytes)
+			if (0 != cfg.f_memUsageLimitKb)
 			{
 				ptrdiff const curUsageBytes = InterlockedExchangeAdd_PtrDiff(&m_memUsage->m_nrBytes, 0);
-				if (curUsageBytes >= SatCast<ptrdiff>(cfg.f_memUsageLimitBytes))
+				if (curUsageBytes >= SatMulConst<ptrdiff, 1024>(SatCast<ptrdiff>(cfg.f_memUsageLimitKb)))
 					atMemUsageLimit = true;
 			}
 
@@ -148,8 +148,8 @@ namespace At
 									}
 
 									LONG64 const curUsageBytes = wi->RegisterMemUsage(m_memUsage);
-									if (0 != cfg.f_memUsageLimitBytes)
-										if (curUsageBytes >= SatCast<LONG64>(cfg.f_memUsageLimitBytes))
+									if (0 != cfg.f_memUsageLimitKb)
+										if (curUsageBytes >= SatMulConst<LONG64, 1024>(SatCast<LONG64>(cfg.f_memUsageLimitKb)))
 										{
 											atMemUsageLimit = true;
 											return false;

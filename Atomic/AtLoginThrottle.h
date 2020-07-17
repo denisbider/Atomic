@@ -12,7 +12,7 @@ namespace At
 	public:
 		enum { ThrottleSeconds = 3 };
 
-		LoginThrottle() { m_entries.Resize(1, nullptr); }
+		LoginThrottle() { m_entries.ResizeAtLeast(1, nullptr); }
 		~LoginThrottle();
 
 		// Returns true if there was a recent login failure either for the specified user name, or from the specified address.

@@ -2,11 +2,8 @@
 #include "AutMain.h"
 
 
-void MpUIntTests(int argc, char** argv)
+void MpUIntTests()
 {
-	(void) argc;
-	(void) argv;
-
 	try
 	{
 		MpUInt m;

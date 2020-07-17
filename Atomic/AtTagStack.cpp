@@ -34,4 +34,12 @@ namespace At
 		return false;
 	}
 
+
+	void TagStack::PopTagMismatch(Seq expected, Seq actual)
+	{
+		Str msg;
+		msg.SetAdd("Pop tag mismatch - expected: ", expected, ", actual: ", actual, Seq("\0", 1));
+		EnsureFailWithDesc(OnFail::Throw, msg.CharPtr(), __FUNCTION__, __LINE__);
+	}
+
 }

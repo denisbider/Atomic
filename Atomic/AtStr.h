@@ -40,9 +40,12 @@ namespace At
 		Str& ReserveExact   (sizet c2)         { Vec<byte>::ReserveExact   (c2);           return *this; }
 		Str& ReserveAtLeast (sizet c2)         { Vec<byte>::ReserveAtLeast (c2);           return *this; }
 		Str& ReserveInc     (sizet inc)        { Vec<byte>::ReserveInc     (inc);          return *this; }
-		Str& Resize         (sizet s2, byte x) { Vec<byte>::Resize         (s2, x);        return *this; }
-		Str& Resize         (sizet s2, char x) { Vec<byte>::Resize         (s2, (byte) x); return *this; }
-		Str& Resize         (sizet s2)         { Vec<byte>::Resize         (s2);           return *this; }
+		Str& ResizeAtLeast  (sizet s2, byte x) { Vec<byte>::ResizeAtLeast  (s2, x);        return *this; }
+		Str& ResizeAtLeast  (sizet s2, char x) { Vec<byte>::ResizeAtLeast  (s2, (byte) x); return *this; }
+		Str& ResizeAtLeast  (sizet s2)         { Vec<byte>::ResizeAtLeast  (s2);           return *this; }
+		Str& ResizeExact    (sizet s2, byte x) { Vec<byte>::ResizeExact    (s2, x);        return *this; }
+		Str& ResizeExact    (sizet s2, char x) { Vec<byte>::ResizeExact    (s2, (byte) x); return *this; }
+		Str& ResizeExact    (sizet s2)         { Vec<byte>::ResizeExact    (s2);           return *this; }
 		Str& ResizeInc      (sizet inc)        { Vec<byte>::ResizeInc      (inc);          return *this; }
 
 		// ASSIGN
@@ -75,8 +78,8 @@ namespace At
 		Str& SetEndExact       (Seq x)               { if (!Seq(*this).EndsWithExact      (x    )) Add(x); return *this; }
 		Str& SetEndInsensitive (Seq x)               { if (!Seq(*this).EndsWithInsensitive(x    )) Add(x); return *this; }
 
-		Str& TruncUtf8_MaxBytes (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) Resize(t.n).Add(ellipsis); return *this; }
-		Str& TruncUtf8_MaxChars (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Resize(t.n).Add(ellipsis); return *this; }
+		Str& TruncUtf8_MaxBytes (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) ResizeExact(t.n).Add(ellipsis); return *this; }
+		Str& TruncUtf8_MaxChars (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) ResizeExact(t.n).Add(ellipsis); return *this; }
 
 		Str& Set_TruncUtf8_MaxBytes (Seq x, sizet n, Seq ellipsis = "...") { Seq r=x; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
 		Str& Set_TruncUtf8_MaxChars (Seq x, sizet n, Seq ellipsis = "...") { Seq r=x; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
@@ -136,6 +139,11 @@ namespace At
 
 		Str& ErrCode       (int64 v)                                                { Enc::ErrCode(v);           return *this; }
 		Str& TzOffset      (int64 v)                                                { Enc::TzOffset(v);          return *this; }
+
+		Str& UIntDecGrp    (uint64 v)                                               { Enc::UIntDecGrp(v);        return *this; }
+		Str& UIntUnits     (uint64 v, Slice<Units::Unit> units)                     { Enc::UIntUnits(v, units);  return *this; }
+		Str& UIntBytes     (uint64 v)                                               { Enc::UIntBytes(v);         return *this; }
+		Str& UIntKb        (uint64 v)                                               { Enc::UIntKb(v);            return *this; }
 
 		Str& Lower         (Seq source)                                             { Enc::Lower(source);        return *this; }
 		Str& Upper         (Seq source)                                             { Enc::Upper(source);        return *this; }

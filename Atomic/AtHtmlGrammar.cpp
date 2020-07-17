@@ -53,10 +53,12 @@ namespace At
 
 		DEF_RUID_B(RawText)
 		DEF_RUID_B(SpecialElem)
-		DEF_RUID_X(Script,   id_SpecialElem)
-		DEF_RUID_X(Style,    id_SpecialElem)
-		DEF_RUID_X(Title,    id_SpecialElem)
-		DEF_RUID_X(TextArea, id_SpecialElem)
+		DEF_RUID_X(RawTextElem, id_SpecialElem)
+		DEF_RUID_X(Script,      id_RawTextElem)
+		DEF_RUID_X(Style,       id_RawTextElem)
+		DEF_RUID_X(RcdataElem,  id_SpecialElem)
+		DEF_RUID_X(Title,       id_RcdataElem)
+		DEF_RUID_X(TextArea,    id_RcdataElem)
 
 		DEF_RUID_B(TrashTag)
 		DEF_RUID_B(SuspectChar)
@@ -126,30 +128,30 @@ namespace At
 		bool V_EndTagStart           (ParseNode& p) { return G_Req<1,1>            (p, id_Append,          V_LessSlash, VTag                                                                             ); }
 																																																		 
 		template <bool (*VTag)(ParseNode&)>																																								 
-		bool V_RawTextCharNfb        (ParseNode& p) { return G_NotFollowedBy       (p, id_Append,          V_Utf8CharAny, V_EndTagStart<VTag>                                                            ); }
+		bool V_RawTextCharExcept     (ParseNode& p) { return G_Except              (p, id_Append,          V_Utf8CharAny, V_EndTagStart<VTag>                                                            ); }
 																																																		 
 		template <bool (*VTag)(ParseNode&)>																																								 
-		bool C_RawText               (ParseNode& p) { return G_Repeat              (p, id_RawText,         V_RawTextCharNfb<VTag>                                                                        ); }
+		bool C_RawText               (ParseNode& p) { return G_Repeat              (p, id_RawText,         V_RawTextCharExcept<VTag>                                                                     ); }
 																																																		 
 		template <bool (*VTag)(ParseNode&)>																																								 
-		bool V_EscRawTextCharNfb     (ParseNode& p) { return G_NotFollowedBy       (p, id_Append,          V_Utf8CharAny, G_Choice<C_CharRef, V_EndTagStart<VTag>>                                       ); }
+		bool V_RcdataCharExcept      (ParseNode& p) { return G_Except              (p, id_Append,          V_Utf8CharAny, G_Choice<C_CharRef, V_EndTagStart<VTag>>                                       ); }
 																																																		 
 		template <bool (*VTag)(ParseNode&)>																																								 
-		bool C_EscRawTextNoCharRef   (ParseNode& p) { return G_Repeat              (p, id_RawText,         V_EscRawTextCharNfb<VTag>                                                                     ); }
+		bool C_RcdataExcept          (ParseNode& p) { return G_Repeat              (p, id_RawText,         V_RcdataCharExcept<VTag>                                                                      ); }
 																																																		 
 		template <bool (*VTag)(ParseNode&)>																																								 
-		bool C_EscRawText            (ParseNode& p) { return G_Repeat              (p, id_Append,          G_Choice<C_EscRawTextNoCharRef<VTag>, C_CharRef>                                              ); }
+		bool C_Rcdata                (ParseNode& p) { return G_Repeat              (p, id_Append,          G_Choice<C_RcdataExcept<VTag>, C_CharRef>                                                     ); }
 																																																		 
 		bool V_ScriptTag             (ParseNode& p) { return V_SeqMatchInsens      (p,                     "script"                                                                                      ); }
 		bool V_StyleTag              (ParseNode& p) { return V_SeqMatchInsens      (p,                     "style"                                                                                       ); }
 		bool V_TitleTag              (ParseNode& p) { return V_SeqMatchInsens      (p,                     "title"                                                                                       ); }
 		bool V_TextAreaTag           (ParseNode& p) { return V_SeqMatchInsens      (p,                     "textarea"                                                                                    ); }
 																																																		 
-		bool C_Script                (ParseNode& p) { return G_Req<1,0,1>          (p, id_Script,          C_StartTag<V_ScriptTag>, C_RawText<V_ScriptTag>, C_EndTag<V_ScriptTag>                        ); }
-		bool C_Style                 (ParseNode& p) { return G_Req<1,0,1>          (p, id_Style,           C_StartTag<V_StyleTag>, C_RawText<V_StyleTag>, C_EndTag<V_StyleTag>                           ); }
+		bool C_Script                (ParseNode& p) { return G_Req<1,0,1>          (p, id_Script,          C_StartTag<V_ScriptTag>, C_RawText<V_ScriptTag>, G_Choice<C_EndTag<V_ScriptTag>, N_End>       ); }
+		bool C_Style                 (ParseNode& p) { return G_Req<1,0,1>          (p, id_Style,           C_StartTag<V_StyleTag>, C_RawText<V_StyleTag>, G_Choice<C_EndTag<V_StyleTag>, N_End>          ); }
 																																																		 
-		bool C_Title                 (ParseNode& p) { return G_Req<1,0,1>          (p, id_Title,           C_StartTag<V_TitleTag>, C_EscRawText<V_TitleTag>, C_EndTag<V_TitleTag>                        ); }
-		bool C_TextArea              (ParseNode& p) { return G_Req<1,0,1>          (p, id_TextArea,        C_StartTag<V_TextAreaTag>, C_EscRawText<V_TextAreaTag>, C_EndTag<V_TextAreaTag>               ); }
+		bool C_Title                 (ParseNode& p) { return G_Req<1,0,1>          (p, id_Title,           C_StartTag<V_TitleTag>, C_Rcdata<V_TitleTag>, G_Choice<C_EndTag<V_TitleTag>, N_End>           ); }
+		bool C_TextArea              (ParseNode& p) { return G_Req<1,0,1>          (p, id_TextArea,        C_StartTag<V_TextAreaTag>, C_Rcdata<V_TextAreaTag>, G_Choice<C_EndTag<V_TextAreaTag>, N_End>  ); }
 																																																		 
 		bool V_TrashTagStartChar     (ParseNode& p) { return V_ByteIf              (p,                     [] (uint c) -> bool { return Ascii::IsAlpha(c) || c=='!' || c=='/'; }                         ); }
 		bool V_TrashTagTextChar      (ParseNode& p) { return V_Utf8CharIf          (p,                     [] (uint c) -> bool { return c!='>'; }                                                        ); }

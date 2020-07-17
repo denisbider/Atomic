@@ -7,19 +7,30 @@
 namespace At
 {
 
-	// FormInputType
+	// MaxLenField
 
-	struct FormInputType
+	struct MaxLenField
 	{
-		char const* const mc_zWidth  {};
 		char const* const mc_zMaxLen {};
 		uint const        mc_nMaxLen {};
 
-		FormInputType(char const* zWidth, char const* zMaxLen, uint nMaxLen)
-			: mc_zWidth(zWidth), mc_zMaxLen(zMaxLen), mc_nMaxLen(nMaxLen) {}
+		MaxLenField(char const* zMaxLen, uint nMaxLen)
+			: mc_zMaxLen(zMaxLen), mc_nMaxLen(nMaxLen) {}
 
 		virtual void EncObj(Enc& s) const;
 		virtual bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const;
+	};
+
+
+
+	// FormInputType
+
+	struct FormInputType : MaxLenField
+	{
+		char const* const mc_zWidth  {};
+
+		FormInputType(char const* zMaxLen, uint nMaxLen, char const* zWidth)
+			: MaxLenField(zMaxLen, nMaxLen), mc_zWidth(zWidth) {}
 	};
 
 
@@ -50,8 +61,8 @@ namespace At
 		char const* const mc_zMinLen {};
 		uint const        mc_nMinLen {};
 
-		FormInputTypeWithMin(char const* zWidth, char const* zMaxLen, uint nMaxLen, char const* zMinLen, uint nMinLen)
-			: FormInputType(zWidth, zMaxLen, nMaxLen), mc_zMinLen(zMinLen), mc_nMinLen(nMinLen) {}
+		FormInputTypeWithMin(char const* zMaxLen, uint nMaxLen, char const* zWidth, char const* zMinLen, uint nMinLen)
+			: FormInputType(zMaxLen, nMaxLen, zWidth), mc_zMinLen(zMinLen), mc_nMinLen(nMinLen) {}
 
 		void EncObj(Enc& s) const override;
 		bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const override;
@@ -63,8 +74,8 @@ namespace At
 
 	struct FormInputTypeWithChars : FormInputTypeWithMin
 	{
-		FormInputTypeWithChars(char const* zWidth, char const* zMaxLen, uint nMaxLen, char const* zMinLen, uint nMinLen, CharCriterion charCrit, char const* charDesc)
-			: FormInputTypeWithMin(zWidth, zMaxLen, nMaxLen, zMinLen, nMinLen), mc_charCrit(charCrit), mc_charDesc(charDesc) {}
+		FormInputTypeWithChars(char const* zMaxLen, uint nMaxLen, char const* zWidth, char const* zMinLen, uint nMinLen, CharCriterion charCrit, char const* charDesc)
+			: FormInputTypeWithMin(zMaxLen, nMaxLen, zWidth, zMinLen, nMinLen), mc_charCrit(charCrit), mc_charDesc(charDesc) {}
 
 		CharCriterion const mc_charCrit;
 		char const*   const mc_charDesc;
@@ -72,5 +83,21 @@ namespace At
 		void EncObj(Enc& s) const override;
 		bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const override;
 	};
+
+
+
+	// TextAreaDims
+
+	struct TextAreaDims : MaxLenField
+	{
+		TextAreaDims(char const* zMaxLen, uint nMaxLen, char const* zRows, char const* zCols)
+			: MaxLenField(zMaxLen, nMaxLen), mc_zRows(zRows), mc_zCols(zCols) {}
+
+		char const* const mc_zRows   {};
+		char const* const mc_zCols   {};
+	};
+
+	extern TextAreaDims const tad_policy;
+	extern TextAreaDims const tad_centerpiece;
 
 }

@@ -346,8 +346,34 @@ namespace At
 
 	void Service::CallRun(int argc, wchar_t const* const* argv)
 	{
+		try
+		{
+			Str modulePath = GetModulePath();
+			Seq moduleDir = GetDirectoryOfFileName(modulePath);
+			WinStr moduleDirW { moduleDir };
+			if (!SetCurrentDirectoryW(moduleDirW.Z()))
+				{ LastWinErr e; throw e.Make<>(__FUNCTION__ ": SetCurrentDirectoryW"); }
+		}
+		catch (std::exception const& e)
+		{
+			LogError(Str::Join("Error changing directory to module path: ", e.what()));
+			m_status.dwWin32ExitCode = ERROR_EXCEPTION_IN_SERVICE;
+			return;
+		}
+
 		SetState(SERVICE_START_PENDING);
-		m_status.dwWin32ExitCode = Run(argc, argv);
+
+		try
+		{
+			m_status.dwWin32ExitCode = Run(argc, argv);
+		}
+		catch (std::exception const& e)
+		{
+			LogError(Str::Join(__FUNCTION__ ": Exception in Service::Run: ", e.what()));
+			m_status.dwWin32ExitCode = ERROR_EXCEPTION_IN_SERVICE;
+			return;
+		}
+
 		SetState(SERVICE_STOPPED);
 	}
 
@@ -365,7 +391,7 @@ namespace At
 	}
 
 
-	void Service::SetState(DWORD state)
+	void Service::SetState(DWORD state) noexcept
 	{
 		m_status.dwCurrentState = state;
 		if (m_startedAsService)
@@ -390,6 +416,8 @@ namespace At
 
 	void Service::LogEvent(WORD eventType, Seq text)
 	{
+		text = text.Trim();
+
 		if (!m_startedAsService)
 		{
 			char const* zEventType { LogEventType::Name(eventType) };

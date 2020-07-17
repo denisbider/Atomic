@@ -654,6 +654,9 @@ namespace At
 		bool C_opt_field_name(ParseNode& p)
 		{
 			ParseNode* pn = p.NewChild(id_opt_field_name);
+			if (!pn)
+				return false;
+
 			if (!V_field_name(*pn))
 				return p.FailChild(pn);
 
@@ -702,6 +705,9 @@ namespace At
 		bool C_inv_trr_fld_name(ParseNode& p)
 		{
 			ParseNode* pn = p.NewChild(id_opt_field_name);
+			if (!pn)
+				return false;
+
 			if (!V_field_name(*pn))
 				return p.FailChild(pn);
 

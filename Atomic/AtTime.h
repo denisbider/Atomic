@@ -143,7 +143,7 @@ namespace At
 		// Conversions from/to other internal representations
 		static Time FromFt(uint64 v) noexcept { Time t; t.m_ft = v; return t; }
 		static Time FromFt(FILETIME ft) noexcept { uint64 v = (((uint64) ft.dwHighDateTime) << 32U) | ft.dwLowDateTime; return FromFt(v); }
-		static Time FromSystemTime(SYSTEMTIME const& st) noexcept;	// Value is zero on failure (!IsValid() && IsMin())
+		static Time FromSystemTime(SYSTEMTIME const& st) noexcept;	// Value is zero on failure
 		static Time FromUnixTime(int64 v) noexcept { Time t; t.m_ft = SatCast<uint64>(SatAdd<int64>(UnixTimeOrigin, SatMulConst<int64, 10000000LL>(v))); return t; }
 
 		uint64 ToFt() const noexcept { return m_ft; }
@@ -153,9 +153,11 @@ namespace At
 	public:
 		// Conversions from/to external representations
 
-		// Will read partial times. At least YYYY-MM-DD must be present. Value is zero on failure (!IsValid() && IsMin()).
-		static Time ReadIsoStyleTimeStr(Seq& s) noexcept;
-		static Time FromIsoStyleTimeStr(Seq s) noexcept { return ReadIsoStyleTimeStr(s); }
+		// Will read partial times. At least YYYY-MM-DD must be present. Returns true if at least YYYY-MM-DD could be read.
+		// If it returns false, "reader" is not advanced. On success, "reader" is not advanced past the last field that could be read.
+		static bool ReadIsoStyleTimeStr(Seq& reader, Time& x) noexcept;
+		static Opt<Time> ReadIsoStyleTimeStr(Seq& reader) noexcept { Time x; if (ReadIsoStyleTimeStr(reader, x)) return Opt<Time>(x); return Opt<Time>(); }
+		static Opt<Time> FromIsoStyleTimeStr(Seq s) noexcept { return ReadIsoStyleTimeStr(s); }
 
 		// In common situations, the Enc_Xxxx methods need to be called multiple times in a row.
 		// Passing Opt<SYSTEMTIME>& allows to avoid superfluous conversions from the internal representation to SYSTEMTIME.

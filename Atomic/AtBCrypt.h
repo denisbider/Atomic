@@ -29,7 +29,7 @@ namespace At
 			// Available for providers that have been opened with a suitable BCrypt algorithm ID, such as using OpenRng().
 			Provider const& GenRandom(PUCHAR p, ULONG n, ULONG flags) const;
 			Provider const& GenRandom(void* p, sizet n) const { return GenRandom((PUCHAR) p, NumCast<ULONG>(n), 0); }
-			Provider const& SetBufRandom(Str& buf, sizet n) const { buf.Resize(n); return GenRandom(buf.Ptr(), n); }
+			Provider const& SetBufRandom(Str& buf, sizet n) const { buf.ResizeExact(n); return GenRandom(buf.Ptr(), n); }
 			
 			// Generates a number X such that 0 <= X <= maxVal, with a uniform probability distribution.
 			uint64 GenRandomNr(uint64 maxVal) const;

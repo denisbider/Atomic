@@ -58,7 +58,7 @@ namespace At
 		sizet bytesDecoded = GeneralPurposeHexDecode(enc.Ptr() + origLen, maxBytesToDecode, skipInput);
 		sizet newLen = origLen + bytesDecoded;
 		EnsureAbort(newLen <= enc.Len());
-		enc.Resize(newLen);
+		enc.ResizeExact(newLen);
 		return bytesDecoded;
 	}
 
@@ -457,9 +457,126 @@ namespace At
 	}
 
 
-	Time Seq::ReadIsoStyleTimeStr() noexcept
+	bool Seq::ReadIsoStyleTimeStr(Time& t) noexcept
 	{
-		return Time().ReadIsoStyleTimeStr(*this);
+		return Time::ReadIsoStyleTimeStr(*this, t);
+	}
+
+
+	Seq Seq::RevReadToPtr(byte const* r) noexcept
+	{
+		EnsureAbort(r >= p);
+		sizet leftLen = (sizet) (r - p);
+		EnsureAbort(leftLen <= n);
+		sizet rightLen = n - leftLen;
+		n -= rightLen;
+		return Seq { r, rightLen };
+	}
+
+
+	uint Seq::RevReadUtf8Char() noexcept
+	{
+		uint c;
+		Utf8::ReadResult::E readResult = Utf8::RevReadCodePoint(*this, c);
+		if (readResult == Utf8::ReadResult::OK)
+			return c;
+
+		return UINT_MAX;
+	}
+
+
+	Seq Seq::RevReadToByte(uint b) noexcept
+	{
+		byte const* r;
+		if (b > UINT8_MAX)
+			r = p;
+		else
+		{
+			r = p + n;
+			while (r != p)
+			{
+				--r;
+				if (*r == b)
+				{
+					++r;
+					break;
+				}
+			}
+		}
+
+		return RevReadToPtr(r);
+	}
+
+
+	Seq Seq::RevReadToFirstByteOf(char const* bytes) noexcept
+	{
+		byte const* r { p + n };
+		while (r != p)
+		{
+			--r;
+			if (ZChr(bytes, *r))
+			{
+				++r;
+				break;
+			}
+		}
+
+		return RevReadToPtr(r);
+	}
+
+
+	Seq Seq::RevReadToFirstByteNotOf(char const* bytes) noexcept
+	{
+		byte const* r { p + n };
+		while (r != p)
+		{
+			--r;
+			if (!ZChr(bytes, *r))
+			{
+				++r;
+				break;
+			}
+		}
+
+		return RevReadToPtr(r);
+	}
+
+
+	Seq Seq::RevReadToFirstUtf8CharOfType(CharCriterion criterion) noexcept
+	{
+		byte const* r = p + n;
+		Seq reader = *this;
+
+		while (reader.n)
+		{
+			uint c;
+			Utf8::ReadResult::E readResult = Utf8::RevReadCodePoint(reader, c);
+			if (readResult != Utf8::ReadResult::OK || criterion(c))
+				break;
+
+			r = reader.p + reader.n;
+		}
+
+		return RevReadToPtr(r);
+	}
+	
+	
+	Seq Seq::RevReadToFirstUtf8CharNotOfType(CharCriterion criterion) noexcept
+	{
+		byte const* r = p + n;
+		Seq reader = *this;
+
+		while (reader.n)
+		{
+			uint c;
+			Utf8::ReadResult::E readResult = Utf8::RevReadCodePoint(reader, c);
+			if (readResult != Utf8::ReadResult::OK || !criterion(c))
+				break;
+
+			r = reader.p + reader.n;
+		}
+
+		return RevReadToPtr(r);
 	}
 
 
@@ -476,17 +593,6 @@ namespace At
 		}
 
 		return true;
-	}
-
-
-	uint Seq::ReadLastUtf8Char() noexcept
-	{
-		uint c;
-		Utf8::ReadResult::E readResult = Utf8::ReadLastCodePoint(*this, c);
-		if (readResult == Utf8::ReadResult::OK)
-			return c;
-
-		return UINT_MAX;
 	}
 
 
@@ -525,94 +631,6 @@ namespace At
 			if (ToLower(p[i]) != ToLower(x.p[i]))
 				break;
 		return Seq(p, i);
-	}
-
-
-	Seq Seq::ReadToAfterLastByte(uint b) noexcept
-	{
-		if (b > UINT8_MAX)
-			return Seq { p, 0 };
-
-		byte const* r { p + n };
-		while (r != p)
-		{
-			--r;
-			if (*r == b)
-			{
-				++r;
-				break;
-			}
-		}
-
-		return ReadBytes((sizet) (r - p));
-	}
-
-	Seq Seq::ReadToAfterLastByteOf(char const* bytes) noexcept
-	{
-		byte const* r { p + n };
-		while (r != p)
-		{
-			--r;
-			if (ZChr(bytes, *r))
-			{
-				++r;
-				goto Done;
-			}
-		}
-
-	Done:
-		return ReadBytes((sizet) (r - p));
-	}
-
-	Seq Seq::ReadToAfterLastByteNotOf(char const* bytes) noexcept
-	{
-		byte const* r { p + n };
-		while (r != p)
-		{
-			--r;
-			if (!ZChr(bytes, *r))
-			{
-				++r;
-				goto Done;
-			}
-		}
-
-	Done:
-		return ReadBytes((sizet) (r - p));
-	}
-
-
-	Seq Seq::ReadToAfterLastUtf8CharOfType(CharCriterion criterion) noexcept
-	{
-		Seq reader = *this;
-		while (reader.n)
-		{
-			uint c;
-			Utf8::ReadResult::E readResult = Utf8::ReadLastCodePoint(reader, c);
-			if (readResult != Utf8::ReadResult::OK || criterion(c))
-				break;
-
-			*this = reader;
-		}
-
-		return *this;
-	}
-	
-	
-	Seq Seq::ReadToAfterLastUtf8CharNotOfType(CharCriterion criterion) noexcept
-	{
-		Seq reader = *this;
-		while (reader.n)
-		{
-			uint c;
-			Utf8::ReadResult::E readResult = Utf8::ReadLastCodePoint(reader, c);
-			if (readResult != Utf8::ReadResult::OK || !criterion(c))
-				break;
-
-			*this = reader;
-		}
-
-		return *this;
 	}
 
 

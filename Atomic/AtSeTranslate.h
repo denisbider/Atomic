@@ -1,30 +1,36 @@
 #pragma once
 
 #include "AtException.h"
+#include "AtEnsureFailDesc.h"
 
 
 namespace At
 {
-	char const* DescribeStructuredException(int64 code);
+	char const* DescribeStructuredExceptionCode(int64 code);
 
 
-	struct StructuredException : public Exception
+	struct StructuredException : Exception
 	{
-		StructuredException(int64 code) : m_code(code) {}
-		char const* what() const { return DescribeStructuredException(m_code); }
+		StructuredException(int64 code, EnsureFailDescRef&& efdRef) noexcept
+			: m_code(code), m_efdRef(std::move(efdRef)) {}
 
-		int64 m_code;
+		char const* what() const override final { return m_efdRef.Z(); }
+		int64 Code() const { return m_code; }
+
+	private:
+		int64             m_code;
+		EnsureFailDescRef m_efdRef;
 	};
 
 
-	struct SE_NullPointerAccess : public StructuredException
+	struct SE_NullPointerAccess : StructuredException
 	{
-		SE_NullPointerAccess() : StructuredException(EXCEPTION_ACCESS_VIOLATION) {}
-		char const* what() const { return "Null pointer access"; }
+		SE_NullPointerAccess(EnsureFailDescRef&& efdRef) noexcept
+			: StructuredException(EXCEPTION_ACCESS_VIOLATION, std::move(efdRef)) {}
 	};
 
-	struct SE_NullPointerRead  : public SE_NullPointerAccess { char const* what() const { return "Null pointer read";  } };
-	struct SE_NullPointerWrite : public SE_NullPointerAccess { char const* what() const { return "Null pointer write"; } };
+	struct SE_NullPointerRead  : SE_NullPointerAccess { SE_NullPointerRead  (EnsureFailDescRef&& efdRef) noexcept : SE_NullPointerAccess(std::move(efdRef)) {} };
+	struct SE_NullPointerWrite : SE_NullPointerAccess { SE_NullPointerWrite (EnsureFailDescRef&& efdRef) noexcept : SE_NullPointerAccess(std::move(efdRef)) {} };
 
 
 	void SeTranslator(uint code, _EXCEPTION_POINTERS* p);

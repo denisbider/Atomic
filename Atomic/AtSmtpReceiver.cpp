@@ -9,8 +9,9 @@
 namespace At
 {
 
-	void SmtpReceiver::SmtpReceiver_AddSchannelCerts(Schannel&)
-		{ throw NotImplemented(); }
+	bool SmtpReceiver::SmtpReceiver_TlsSupported     (Seq)            { return false; }
+	bool SmtpReceiver::SmtpReceiver_AuthSupported    (Seq)            { return false; }
+	void SmtpReceiver::SmtpReceiver_AddSchannelCerts (Seq, Schannel&) { throw NotImplemented(); }
 
 	EmailServerAuthResult SmtpReceiver::SmtpReceiver_Authenticate(SockAddr const&, Schannel&, Seq, EhloHost const&, Seq, Seq, Seq, Rp<SmtpReceiverAuthCx>&)
 		{ throw NotImplemented(); }

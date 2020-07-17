@@ -14,11 +14,11 @@ public:
 public:
 	// SmtpSender interface
 
-	Entity&      SmtpSender_GetStorageParent   ()                         override final;
-	SmtpSendLog& SmtpSender_GetSendLog         ()                         override final;
-	void         SmtpSender_GetCfg             (SmtpSenderCfg& cfg) const override final;
-	Str          SmtpSender_SenderComputerName (Seq fromDomainName) const override final;
-	void         SmtpSender_AddSchannelCerts   (Schannel& conn)           override final;
+	Entity&      SmtpSender_GetStorageParent   ()                            override final;
+	SmtpSendLog& SmtpSender_GetSendLog         ()                            override final;
+	void         SmtpSender_GetCfg             (SmtpSenderCfg& cfg)    const override final;
+	Str          SmtpSender_SenderComputerName (Seq fromDomainName)    const override final;
+	void         SmtpSender_AddSchannelCerts   (Seq ourName, Schannel& conn) override final;
 
 	SmtpDeliveryInstr::E SmtpSender_InTx_OnDeliveryResult(SmtpMsgToSend& msg, Seq msgContent,
 		Vec<MailboxResult> const& mailboxResults, SmtpTlsAssurance::E tlsAssuranceAchieved) override final;

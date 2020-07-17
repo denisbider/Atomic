@@ -3,8 +3,10 @@
 #include "AtMap.h"
 #include "AtPinStore.h"
 
+
 namespace At
 {
+
 	struct NameValuePair
 	{
 		NameValuePair(Seq n, Seq v) : m_name(n), m_value(v) {}
@@ -13,6 +15,7 @@ namespace At
 		Seq m_name;
 		Seq m_value;
 	};
+
 
 	template <class B>
 	class NameValuePairsBase : public MapCore<B>
@@ -39,6 +42,7 @@ namespace At
 		Range<ValueIt> EqualRange(Seq name) const { return MapCore<B>::EqualRange(name); }
 	};
 
+
 	template <class B>
 	class NameValuePairs : public NameValuePairsBase<B>
 	{
@@ -50,6 +54,7 @@ namespace At
 			return *this;
 		}
 	};
+
 
 	template <class B>
 	class NameValuePairsWithStore : public NameValuePairsBase<B>
@@ -70,10 +75,12 @@ namespace At
 		PinStore m_store;
 	};
 
+
 	using ExactNameValuePairsBase            = NameValuePairsBase     <MapCritLess           <KeyInVal<NameValuePair>>>;
 	using InsensitiveNameValuePairsBase      = NameValuePairsBase     <MapCritLessInsensitive<KeyInVal<NameValuePair>>>;
 	using ExactNameValuePairs                = NameValuePairs         <MapCritLess           <KeyInVal<NameValuePair>>>;
 	using InsensitiveNameValuePairs          = NameValuePairs         <MapCritLessInsensitive<KeyInVal<NameValuePair>>>;
 	using ExactNameValuePairsWithStore       = NameValuePairsWithStore<MapCritLess           <KeyInVal<NameValuePair>>>;
 	using InsensitiveNameValuePairsWithStore = NameValuePairsWithStore<MapCritLessInsensitive<KeyInVal<NameValuePair>>>;
+
 }

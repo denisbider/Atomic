@@ -120,7 +120,7 @@ namespace At
 					while (body.n);
 
 					while (Seq(storage).EndsWithExact("\r\n\r\n"))
-						storage.Resize(storage.Len() - 2);
+						storage.ResizeExact(storage.Len() - 2);
 				}
 
 				return storage;

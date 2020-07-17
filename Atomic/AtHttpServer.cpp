@@ -175,7 +175,7 @@ namespace At
 			if (StopEvent().IsSignaled())
 				break;
 
-			m_ioBuf.Resize(ReqBufSize);
+			m_ioBuf.ResizeExact(ReqBufSize);
 
 			ZeroMemory(&m_ovl, sizeof(m_ovl));
 			m_ovl.hEvent = m_httpEvent.Handle();

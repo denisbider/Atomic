@@ -642,7 +642,7 @@ namespace At
 		if (nc != Asn1::NonCanon::Permit && innerSeq.n != 0)                      return false;
 
 		Str blob;
-		blob.Resize(sizeof(BCRYPT_RSAKEY_BLOB) + pubExp.n + modulus.n);
+		blob.ResizeExact(sizeof(BCRYPT_RSAKEY_BLOB) + pubExp.n + modulus.n);
 
 		BCRYPT_RSAKEY_BLOB* pBlob = (BCRYPT_RSAKEY_BLOB*) blob.Ptr();
 		pBlob->Magic       = BCRYPT_RSAPUBLIC_MAGIC;

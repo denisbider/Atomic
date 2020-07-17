@@ -238,7 +238,16 @@ namespace At
 			bool m_success;
 			Seq  m_decoded;
 
-			PartContent(Part const& part, PinStore& store) { m_success = part.DecodeContent(m_decoded, store); }
+			PartContent(Part const& part, PinStore& store)
+			{
+				if (!part.IsMultipart())
+					m_success = part.DecodeContent(m_decoded, store);
+				else
+				{
+					m_decoded = part.m_contentEncoded;
+					m_success = true;
+				}
+			}
 		};
 
 	}

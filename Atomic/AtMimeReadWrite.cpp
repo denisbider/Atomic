@@ -300,12 +300,17 @@ namespace At
 
 		void Part::EncLoc(Enc& e, Slice<sizet> loc)
 		{
-			while (true)
+			e.Ch('/');
+
+			if (loc.Any())
 			{
-				e.Ch('/');
-				if (!loc.Any()) break;
-				e.UInt(loc.First());
-				loc.PopFirst();
+				while (true)
+				{
+					e.UInt(loc.First());
+					loc.PopFirst();
+					if (!loc.Any()) break;
+					e.Ch('/');
+				}
 			}
 		}
 
@@ -315,19 +320,22 @@ namespace At
 			if (!reader.StripPrefixExact("/"))
 				return false;
 
-			do
+			if (reader.n)
 			{
-				uint c = reader.FirstByte();
-				if (UINT_MAX == c) return false;
-				if (!Ascii::IsDecDigit(c)) return false;
+				do
+				{
+					uint c = reader.FirstByte();
+					if (UINT_MAX == c) return false;
+					if (!Ascii::IsDecDigit(c)) return false;
 
-				uint64 n = reader.ReadNrUInt64Dec();
-				if (UINT64_MAX == n) return false;
-				if (SIZE_MAX < n) return false;
+					uint64 n = reader.ReadNrUInt64Dec();
+					if (UINT64_MAX == n) return false;
+					if (SIZE_MAX < n) return false;
 
-				loc.Add((sizet) n);
+					loc.Add((sizet) n);
+				}
+				while (reader.StripPrefixExact("/"));
 			}
-			while (reader.StripPrefixExact("/"));
 
 			return true;
 		}

@@ -26,9 +26,6 @@ namespace At
 	{
 		m_depth = parent.m_depth + 1;
 		m_parent = &parent;
-		
-		if (m_depth > MaxDepth)
-			throw MaxDepthExceeded();
 
 		m_start = parent.m_remaining;
 		m_remaining = parent.m_remaining;

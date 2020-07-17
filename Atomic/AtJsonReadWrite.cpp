@@ -37,6 +37,16 @@ namespace At
 			}
 		}
 
+
+		void EncodeTime(Enc& enc, Time t)
+		{
+			if (!t.Any())
+				enc.Add("0");
+			else
+				enc.Ch('"').Obj(t, TimeFmt::IsoMicroZ, 'T').Ch('"');
+		}
+
+
 		void EncodeArray(Enc& enc, sizet nrValues, std::function<void(Enc&, sizet)> encodeValue)
 		{
 			enc.Ch('['); 
@@ -218,16 +228,25 @@ namespace At
 
 		Time DecodeTime(ParseNode const& p)
 		{
-			if (!p.IsType(Json::id_String))
-				throw Json::DecodeErr(p, "Expected string containing ISO 8601-style UTC date or date-time");
+			Time v;
 
-			Str s;
-			Json::DecodeString(p, s);
+			if (p.IsType(Json::id_Number))
+			{
+				if (!p.SrcText().EqualExact("0"))
+					throw Json::DecodeErr(p, "Date-time is encoded as a number and it is not 0");
+			}
+			else
+			{
+				if (!p.IsType(Json::id_String))
+					throw Json::DecodeErr(p, "Expected 0 or string containing ISO 8601-style UTC date or date-time");
 
-			Seq reader { s };
-			Time v = reader.ReadIsoStyleTimeStr();
-			if (!v || !reader.EqualExact("Z"))
-				throw Json::DecodeErr(p, "Expected ISO 8601-style UTC date or date-time");
+				Str s;
+				Json::DecodeString(p, s);
+
+				Seq reader { s };
+				if (!reader.ReadIsoStyleTimeStr(v) || !reader.EqualExact("Z"))
+					throw Json::DecodeErr(p, "Expected ISO 8601-style UTC date or date-time");
+			}
 
 			return v;
 		}

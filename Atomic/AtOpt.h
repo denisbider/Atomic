@@ -76,7 +76,9 @@ namespace At
 			return *this;
 		}
 
-		T& ReInit() noexcept(std::is_nothrow_destructible<T>::value && std::is_nothrow_default_constructible<T>::value) { return Clear().Init(); }
+		template <typename... Args>
+		T& ReInit(Args&&... args) noexcept(std::is_nothrow_destructible<T>::value && std::is_nothrow_constructible<T, Args...>::value)
+			{ return Clear().Init(std::forward<Args>(args)...); }
 
 		bool Any() const noexcept { return m_any; }
 

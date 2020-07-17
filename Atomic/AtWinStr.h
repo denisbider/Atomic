@@ -15,7 +15,7 @@ namespace At
 		WinStr(WinStr&&       x) : m_ws(std::move(x.m_ws)) {}
 
 		WinStr& Set(Seq            s) { if (!s.n) m_ws.Clear(); else ToUtf16(s, m_ws, CP_UTF8, NullTerm::Yes);                                        return *this; }
-		WinStr& Set(wchar_t const* z) { if (!z)   m_ws.Clear(); else { m_ws.Resize(ZLen(z)+1); memcpy(m_ws.Ptr(), z, m_ws.Len() * sizeof(wchar_t)); } return *this; }
+		WinStr& Set(wchar_t const* z) { if (!z)   m_ws.Clear(); else { m_ws.ResizeExact(ZLen(z)+1); memcpy(m_ws.Ptr(), z, m_ws.Len() * sizeof(wchar_t)); } return *this; }
 		WinStr& Set(WinStr const&  x) { m_ws = x.m_ws;            return *this; }
 		WinStr& Set(WinStr&&       x) { m_ws = std::move(x.m_ws); return *this; }
 

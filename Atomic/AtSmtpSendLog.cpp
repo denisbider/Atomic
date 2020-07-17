@@ -146,7 +146,7 @@ namespace At
 				entry.Add("\" mx=\"").HtmlAttrValue(result.f_successMx, Html::CharRefs::Escape);
 			else
 				entry.Add("\" stage=\"").Add(SmtpSendStage::Name(result.f_failure->f_stage))
-					 .Add("\" err=\"").Add(SmtpSendErr::Name(result.f_failure->f_err))
+					 .Add("\" detail=\"").Add(SmtpSendDetail::Name(result.f_failure->f_detail))
 					 .Add("\" mx=\"").Add(result.f_failure->f_mx)
 					 .Add("\" replyCode=\"").Obj(SmtpReplyCode(result.f_failure->f_replyCode))
 					 .Add("\" enhStatus=\"").Obj(SmtpEnhStatus::FromUint(result.f_failure->f_enhStatus))

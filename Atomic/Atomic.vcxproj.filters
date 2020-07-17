@@ -487,8 +487,29 @@
     <ClCompile Include="AtFormInputType.cpp">
       <Filter>HTML</Filter>
     </ClCompile>
-    <ClCompile Include="AtHtmlField.cpp">
+    <ClCompile Include="AtEnsureFailDesc.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEnsureStackTrace.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtEnsureConvert.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtHtmlForm.cpp">
       <Filter>HTML</Filter>
+    </ClCompile>
+    <ClCompile Include="AtInitWaitEvent.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtUnits.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCertStore.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="AtCert.cpp">
+      <Filter>Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1056,8 +1077,29 @@
     <ClInclude Include="AtFormInputType.h">
       <Filter>HTML</Filter>
     </ClInclude>
-    <ClInclude Include="AtHtmlField.h">
+    <ClInclude Include="AtEnsureFailDesc.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEnsureStackTrace.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtEnsureConvert.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtHtmlForm.h">
       <Filter>HTML</Filter>
+    </ClInclude>
+    <ClInclude Include="AtInitWaitEvent.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUnits.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCertStore.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtCert.h">
+      <Filter>Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

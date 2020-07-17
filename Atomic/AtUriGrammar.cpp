@@ -152,11 +152,8 @@ namespace At
 
 		Seq FindLeadingUri(Seq s, ParseTree::Storage* storage)
 		{
-			auto parseFunc = [] (ParseNode& p) -> bool
-				{ return G_Req<1,0>(p, id_Append, C_absURI_optFragment, C_Remaining); };
-
 			ParseTree pt { s, storage };
-			if (!pt.Parse(parseFunc))
+			if (!pt.Parse(C_absURI_optFragment, ParseTree::AllowPartial))
 				return Seq();
 
 			return pt.Root().FrontFindRef(id_absURI_optFragment).SrcText();
@@ -284,7 +281,7 @@ namespace At
 								if ((uri.EndsWithExact(",") && !uri.EndsWithExact(",,")) ||
 									(uri.EndsWithExact(";") && !uri.EndsWithExact(";;")))
 								{
-									uri.DropLastByte();
+									uri.RevDropByte();
 								}
 							}
 						}

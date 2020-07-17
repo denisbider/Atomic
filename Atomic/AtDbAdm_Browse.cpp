@@ -289,7 +289,7 @@ namespace At
 			}
 
 			html.SideEffectForm(browsePath, "saveForm")
-					.P().A().Id("editLink").Href("#").T(jsonBeingEdited ? "Edit" : "Cancel").EndA().EndP()
+					.P().A().Id("editLink").Href("#").T(jsonBeingEdited ? "Cancel" : "Edit").EndA().EndP()
 					.TextArea().IdAndName("entityJson").Rows("20").Cols("120").DisabledIf(!jsonBeingEdited)
 						.T(displayEntityJson)
 					.EndTextArea()

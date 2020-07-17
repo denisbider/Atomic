@@ -484,7 +484,7 @@ namespace At
 		sizet objSizeMin = 0;
 		sizet objSizeMax = 32;
 
-		m_writePlanFileSizes.Resize(FileId::MaxNonSpecial + 1, UINT64_MAX);
+		m_writePlanFileSizes.ResizeExact(FileId::MaxNonSpecial + 1, UINT64_MAX);
 
 		m_metaFile.SetId(FileId::Meta);
 		m_metaFile.SetFullPath(JoinPath(m_dir, "Meta.dat"));
@@ -1902,7 +1902,7 @@ namespace At
 				of->ReadBytesUnaligned(&objSize, 4, 0);
 			
 				tob->m_committedData = new RcStr;
-				tob->m_committedData->Resize(objSize);
+				tob->m_committedData->ResizeExact(objSize);
 				of->ReadBytesUnaligned(tob->m_committedData->Ptr(), objSize, 4);
 			}
 			else
@@ -1931,7 +1931,7 @@ namespace At
 					EnsureAbort(4 + ((sizet) objSize) <= df->ObjSizeMax());
 
 					tob->m_committedData = new RcStr;
-					tob->m_committedData->Resize(objSize);
+					tob->m_committedData->ResizeExact(objSize);
 					df->ReadBytesUnaligned(tob->m_committedData->Ptr(), objSize, fileOffset + 4);
 				}
 			}
@@ -1985,14 +1985,14 @@ namespace At
 		if (m_metaFile.FileSize() == 0)
 		{
 			m_lastUniqueId = 0;
-			m_lastWriteStateHash.Resize(hash.HashSize(), (byte) 0);
+			m_lastWriteStateHash.ResizeExact(hash.HashSize(), (byte) 0);
 		}
 		else
 		{
 			m_metaFile.ReadPages(page.Ptr(), 1, 0);
 			m_lastUniqueId = ((uint64*) page.Ptr())[0];
 		
-			m_lastWriteStateHash.Resize(hash.HashSize());
+			m_lastWriteStateHash.ResizeExact(hash.HashSize());
 			memcpy(m_lastWriteStateHash.Ptr(), page.Ptr() + 8, hash.HashSize());
 		}
 

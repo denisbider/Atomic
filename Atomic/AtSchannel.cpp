@@ -97,9 +97,6 @@ namespace At
 			EnsureReportWithNr(st == SEC_E_OK, st);
 		}
 
-		for (PCCERT_CONTEXT cert : m_certs)
-			CertFreeCertificateContext(cert);	// According to MSDN, "The function always returns nonzero."
-
 		if (m_haveCtxt)
 		{
 			SECURITY_STATUS st { DeleteSecurityContext(&m_ctxt) };
@@ -161,7 +158,7 @@ namespace At
 							SECURITY_STATUS st;
 
 							if (m_side == ProtoSide::Client)
-								st = InitializeSecurityContext(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, nullptr, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
+								st = InitializeSecurityContextW(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, nullptr, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 							else
 								st = AcceptSecurityContext(&m_credHandle, &m_ctxt, nullptr, m_reqFlags, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 							
@@ -237,7 +234,7 @@ namespace At
 	{
 		EnsureThrow(m_state != State::Ended);
 
-		OnExit setEnded( [&] () { m_state = State::Ended; } );
+		OnExit setEnded = [this] () { m_state = State::Ended; };
 
 		if (m_state == State::NotStarted)
 		{
@@ -259,7 +256,7 @@ namespace At
 				unsigned long retFlags = 0;
 
 				if (m_side == ProtoSide::Client)
-					st = InitializeSecurityContext(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, nullptr, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
+					st = InitializeSecurityContextW(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, nullptr, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 				else
 					st = AcceptSecurityContext(&m_credHandle, &m_ctxt, nullptr, m_reqFlags, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 				
@@ -277,13 +274,12 @@ namespace At
 	}
 
 
-	void Schannel::AddCert(PCCERT_CONTEXT certContext)
+	void Schannel::AddCert(Cert const& cert)
 	{
 		EnsureThrow(m_state == State::NotStarted);
 		EnsureThrow(!m_haveCredHandle);
-		EnsureThrow(certContext != nullptr);
-
-		m_certs.Add(certContext);
+		EnsureThrow(cert.Any());
+		m_certs.Add(cert);
 	}
 
 
@@ -302,15 +298,35 @@ namespace At
 		else
 			m_cred.grbitEnabledProtocols = SP_PROT_TLS1_0_SERVER | SP_PROT_TLS1_1_SERVER | SP_PROT_TLS1_2_SERVER;
 
-		m_cred.dwMinimumCipherStrength = 128;
-		m_cred.dwFlags = SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS | SCH_SEND_AUX_RECORD | SCH_USE_STRONG_CRYPTO;
-		
-		m_cred.cCreds = NumCast<DWORD>(m_certs.Len());
-		m_cred.paCred = m_certs.Ptr();
+		enum { NrAlgs = 3 };
+		ALG_ID algs[NrAlgs] = { CALG_ECDH_EPHEM, CALG_DH_EPHEM, CALG_RSA_KEYX };
+		m_cred.palgSupportedAlgs = algs;
+		m_cred.cSupportedAlgs = NrAlgs;
 
-		SECURITY_STATUS st = AcquireCredentialsHandle(nullptr, UNISP_NAME, SECPKG_CRED_OUTBOUND, nullptr, &m_cred, nullptr, nullptr, &m_credHandle, nullptr);
+		m_cred.dwMinimumCipherStrength = 128;
+		m_cred.dwFlags = SCH_SEND_AUX_RECORD | SCH_USE_STRONG_CRYPTO;
+		if (m_side == ProtoSide::Client)
+			m_cred.dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS;
+		
+		// Currently don't know how to set up AcquireCredentialsHandle for SNI. Awaiting possible answers on Stack Overflow:
+		// https://stackoverflow.com/questions/62879526/windows-schannel-server-side-how-to-use-acquirecredentialshandle-with-multiple
+
+		m_certPtrs.Clear().ReserveExact(m_certs.Len());
+		for (Cert const& cert : m_certs)
+			m_certPtrs.Add(cert.Ptr());
+
+		m_cred.cCreds = NumCast<DWORD>(m_certPtrs.Len());
+		m_cred.paCred = m_certPtrs.Ptr();
+
+		unsigned long credUse;
+		if (m_side == ProtoSide::Client)
+			credUse = SECPKG_CRED_OUTBOUND;
+		else
+			credUse = SECPKG_CRED_INBOUND;
+
+		SECURITY_STATUS st = AcquireCredentialsHandleW(nullptr, UNISP_NAME, credUse, nullptr, &m_cred, nullptr, nullptr, &m_credHandle, nullptr);
 		if (st != SEC_E_OK)
-			throw SspiErr(st, "Error in AcquireCredentialsHandle");
+			throw SspiErr_Acquire(st, "Error in AcquireCredentialsHandle");
 
 		m_haveCredHandle = true;
 	}
@@ -460,11 +476,11 @@ namespace At
 			if ((retFlags & expectedRetFlags) != expectedRetFlags)
 				throw Err(Str("Initialize or AcceptSecurityContext succeeded, but not all expected security features are present. Expected: ").UInt(expectedRetFlags).Add(", actual: ").UInt(retFlags));
 
-			SECURITY_STATUS st = QueryContextAttributes(&m_ctxt, SECPKG_ATTR_STREAM_SIZES, &m_streamSizes);
+			SECURITY_STATUS st = QueryContextAttributesW(&m_ctxt, SECPKG_ATTR_STREAM_SIZES, &m_streamSizes);
 			if (st != SEC_E_OK)
 				throw SspiErr(st, "Error in QueryContextAttributes (SECPKG_ATTR_STREAM_SIZES)");
 
-			m_encryptBuf.Resize(m_streamSizes.cbHeader + m_streamSizes.cbMaximumMessage + m_streamSizes.cbTrailer);
+			m_encryptBuf.ResizeExact(m_streamSizes.cbHeader + m_streamSizes.cbMaximumMessage + m_streamSizes.cbTrailer);
 		}
 	}
 

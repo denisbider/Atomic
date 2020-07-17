@@ -3,9 +3,9 @@
 
 #pragma warning (disable: 4702) // Spurious unreachable code warning
 
-void SchannelClientTest(int argc, char** argv)
+void SchannelClientTest(Slice<Seq> args)
 {
-	if (argc < 3)
+	if (args.Len() < 3)
 		throw "Missing <host:port> parameter";
 
 	struct ServerType { enum E { Http, Smtp }; };
@@ -13,12 +13,12 @@ void SchannelClientTest(int argc, char** argv)
 	ServerType::E serverType  { ServerType::Http };
 	uint          defaultPort { 443 };
 	bool          serverAuth  { true };
-	Seq           hostPort    { argv[2] };
+	Seq           hostPort    { args[2] };
 	Seq           host        { Seq(hostPort).ReadToByte(':') };
 
-	for (int i=3; i!=argc; ++i)
+	for (sizet i=3; i!=args.Len(); ++i)
 	{
-		Seq arg { argv[i] };
+		Seq arg { args[i] };
 		     if (arg.EqualInsensitive("-smtp"))         { serverType = ServerType::Smtp; defaultPort = 25; }
 		else if (arg.EqualInsensitive("-noserverauth")) { serverAuth = false; }
 		else throw "Unrecognized switch or parameter";

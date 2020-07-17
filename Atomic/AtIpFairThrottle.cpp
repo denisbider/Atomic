@@ -33,7 +33,7 @@ namespace At
 		for (sizet iLevel=0; iLevel!=4; ++iLevel)
 		{
 			Level& level { m_levels[iLevel] };
-			level.m_buckets.Resize(m_nrBucketsPerLevel);
+			level.m_buckets.ResizeExact(m_nrBucketsPerLevel);
 			for (Bucket& bucket : level.m_buckets)
 				bucket.m_holds.FixCap(m_maxHoldsPerBucket);
 		}

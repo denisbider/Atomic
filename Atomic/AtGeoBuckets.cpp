@@ -59,7 +59,7 @@ namespace At
 	void GeoBuckets::Init()
 	{
 		m_buckets.ReserveExact(2*25291);
-		m_bucketsByLng.Resize(360);
+		m_bucketsByLng.ResizeExact(360);
 
 		int id {};
 		for (int southHem=0; southHem!=2; ++southHem)

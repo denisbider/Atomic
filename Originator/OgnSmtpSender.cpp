@@ -42,7 +42,7 @@ Str OgnSmtpSender::SmtpSender_SenderComputerName(Seq /*fromDomainName*/) const
 }
 
 
-void OgnSmtpSender::SmtpSender_AddSchannelCerts(Schannel& /*conn*/)
+void OgnSmtpSender::SmtpSender_AddSchannelCerts(Seq /*ourName*/, Schannel& /*conn*/)
 {
 	// Not using certificates for SMTP client authentication
 }

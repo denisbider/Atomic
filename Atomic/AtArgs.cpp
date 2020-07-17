@@ -46,6 +46,7 @@ namespace At
 		m_converted.ReserveAtLeast(m_argc);
 		Str& r = m_converted.Add();
 		FromUtf16(*m_argv, -1, r, CP_UTF8);
+		m_convertedSeqs.Add(r);
 
 		--m_argc;
 		++m_argv;

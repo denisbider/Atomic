@@ -220,10 +220,105 @@ namespace At
 	}
 
 
+	Enc& Enc::UIntDecGrp(uint64 v)
+	{
+		uint64 vFrac = (v / 1000);
+		uint64 groupSize = 1;
+		while (groupSize <= vFrac)
+			groupSize *= 1000;
+
+		uint zeroPadWidth {};
+		while (true)
+		{
+			uint64 groupValue = (v / groupSize);
+			UInt(groupValue, 10, zeroPadWidth);
+			if (1 == groupSize)
+				break;
+
+			v %= groupSize;
+			groupSize /= 1000;
+			zeroPadWidth = 3;
+			Ch(',');
+		}
+
+		return *this;
+	}
+
+
+	Enc& Enc::UIntUnits(uint64 v, Slice<Units::Unit> units)
+	{
+		// Find largest fit unit, if any
+		Units::Unit const* largestFitUnit {};
+		Units::Unit const* nextLargerUnit {};
+		for (Units::Unit const& unit : units)
+		{
+			if (unit.m_size > v)
+			{
+				if (!v && unit.m_size == 1)
+					largestFitUnit = &unit;
+				else
+					nextLargerUnit = &unit;
+
+				break;
+			}
+			
+			largestFitUnit = &unit;
+		}
+
+		if (!largestFitUnit || 1 == largestFitUnit->m_size)
+		{
+			// Base unit: no rounding, no decimal point
+			UIntDecGrp(v);
+		}
+		else
+		{
+			// Non-base unit: use rounding, maybe use decimal point
+			uint64 whole, frac;
+			uint fracWidth, fracDiv;
+
+			while (true)
+			{
+				whole = (v / largestFitUnit->m_size);
+				frac  = ((v % largestFitUnit->m_size) * 1000) / largestFitUnit->m_size;
+
+				     if (whole >= 100) { fracWidth = 0; frac += 500; fracDiv =    0; }
+				else if (whole >=  10) { fracWidth = 1; frac +=  50; fracDiv =  100; }
+				else                   { fracWidth = 2; frac +=   5; fracDiv =   10; }
+
+				if (frac >= 1000)
+				{
+					++whole;
+					frac -= 1000;
+				}
+
+				if (!nextLargerUnit) break;
+
+				uint64 nextUnits = (nextLargerUnit->m_size / largestFitUnit->m_size);
+				if (whole < nextUnits) break;
+					
+				largestFitUnit = nextLargerUnit;
+				nextLargerUnit = nullptr;
+			}
+
+				 if (1 == fracWidth) { if (whole >= 100) { fracWidth = 0; fracDiv =   0; } }
+			else if (2 == fracWidth) { if (whole >=  10) { fracWidth = 1; fracDiv = 100; } }
+
+			UIntDecGrp(whole);
+			if (fracWidth)
+				Ch('.').UInt(frac / fracDiv, 10, fracWidth);
+		}
+
+		if (largestFitUnit && largestFitUnit->m_zName && largestFitUnit->m_zName[0])
+			Ch(' ').Add(largestFitUnit->m_zName);
+
+		return *this;
+	}
+
+
 	Enc& Enc::Lower(Seq source)
 	{
 		sizet len = Len();
-		Resize(len + source.n);
+		ResizeAtLeast(len + source.n);
 		byte* p = Ptr() + len;
 		while (source.n--)
 			*p++ = ToLower(*source.p++);
@@ -234,7 +329,7 @@ namespace At
 	Enc& Enc::Upper(Seq source)
 	{
 		sizet len = Len();
-		Resize(len + source.n);
+		ResizeAtLeast(len + source.n);
 		byte* p = Ptr() + len;
 		while (source.n--)
 			*p++ = ToUpper(*source.p++);
@@ -309,7 +404,10 @@ namespace At
 					codePoint = readAhead.ReadNrUInt32Dec();
 
 				if (readAhead.StripPrefixExact(";") && codePoint != UINT_MAX)
+				{
 					Add("&#").UInt(codePoint).Ch(';');
+					found = true;
+				}
 			}
 			else
 			{

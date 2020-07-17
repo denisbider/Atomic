@@ -14,6 +14,8 @@ namespace At
 
 		inline void EncodeString(Enc& enc, Seq s) { enc.Ch('"'); EncodeStringPart(enc, s); enc.Ch('"'); }
 
+		void EncodeTime(Enc& enc, Time t);
+
 		void EncodeArray(Enc& enc, sizet nrValues, std::function<void(Enc&, sizet)> encodeValue);
 
 

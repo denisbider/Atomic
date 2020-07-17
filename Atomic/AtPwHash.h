@@ -14,7 +14,7 @@ namespace At
 			   Len = BB_SaltLen + BusyBeaver<BB_SHA512>::OutputSize };
 
 		static void Generate(Seq pw, byte* result);
-		static Str Generate(Seq pw) { Str result; result.Resize(Len); Generate(pw, result.Ptr()); return result; }
+		static Str Generate(Seq pw) { Str result; result.ResizeExact(Len); Generate(pw, result.Ptr()); return result; }
 
 		static bool Verify(Seq pw, Seq pwHash);
 

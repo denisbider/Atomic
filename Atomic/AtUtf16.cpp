@@ -38,7 +38,7 @@ namespace At
 			sizet origLen = v.Len();
 			v.ResizeInc(2);
 			uint n = WriteCodePoint<WcharTransform>(v.Ptr() + origLen, c);
-			v.Resize(origLen + n);
+			v.ResizeExact(origLen + n);
 		}
 
 		template void AddCodePoint<Identity>(Vec<wchar_t>&, uint);

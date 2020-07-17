@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AtCert.h"
 #include "AtReader.h"
 #include "AtWriter.h"
 #include "AtWinStr.h"
@@ -28,7 +29,7 @@ namespace At
 		Vec<SecBuffer> m_bufs;
 
 	private:
-		void SetSize(unsigned long n) { m_bufs.Resize(n); m_sbd.cBuffers = n; m_sbd.pBuffers = m_bufs.Ptr(); }
+		void SetSize(unsigned long n) { m_bufs.ResizeExact(n); m_sbd.cBuffers = n; m_sbd.pBuffers = m_bufs.Ptr(); }
 		void InitBufAt(sizet i, unsigned long t) { SecBuffer& sb { m_bufs[i] }; sb.BufferType = t; sb.cbBuffer = 0; sb.pvBuffer = nullptr; }
 	};
 
@@ -48,6 +49,7 @@ namespace At
 	public:
 		struct Err : CommunicationErr { Err(Seq msg) : CommunicationErr(msg) {} };
 		struct SspiErr : WinErr<Err> { SspiErr(int64 rc, Seq msg) : WinErr<Err>(rc, Str("Schannel: ").Add(msg)) {} };
+		struct SspiErr_Acquire : SspiErr { SspiErr_Acquire(int64 rc, Seq msg) : SspiErr(rc, msg) {} };
 		struct SspiErr_LikelyDhIssue_TryRestart : SspiErr { SspiErr_LikelyDhIssue_TryRestart(int64 rc, Seq msg) : SspiErr(rc, Str(msg).Add(" - likely DH issue, try restart")) {} };
 
 		Schannel(Reader* reader = 0, Writer* writer = 0) : m_reader(reader), m_writer(writer) {} 
@@ -70,7 +72,7 @@ namespace At
 
 		bool TlsStarted() const { return m_state != State::NotStarted; }
 
-		void AddCert(PCCERT_CONTEXT certContext);		// Freed by Schannel on exit
+		void AddCert(Cert const& cert);
 		void InitCred(ProtoSide side);
 		void ValidateServerName(Seq serverName);		// For client use. If not called, or if an empty name is provided, server certificate is not validated
 		void StartTls();
@@ -86,7 +88,8 @@ namespace At
 		State::E m_state { State::NotStarted };
 
 		ProtoSide                 m_side           { ProtoSide::None };
-		Vec<PCCERT_CONTEXT>       m_certs;
+		Vec<Cert>                 m_certs;
+		Vec<PCCERT_CONTEXT>       m_certPtrs;
 		bool                      m_haveCredHandle {};
 		SCHANNEL_CRED             m_cred;
 		CredHandle                m_credHandle;

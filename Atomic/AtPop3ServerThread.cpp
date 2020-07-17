@@ -10,15 +10,18 @@ namespace At
 
 	void Pop3ServerThread::WorkPoolThread_ProcessWorkItem(void* pvWorkItem)
 	{
+		SockInit sockInit;
 		AutoFree<EmailServerWorkItem> workItem = (EmailServerWorkItem*) pvWorkItem;
+		Socket& sk = workItem->m_sk;
 
 		Pop3ServerCfg cfg { Entity::Contained };
 		m_workPool->Pop3Server_GetCfg(cfg);
 
 		EmailSrvBinding const* binding = EmailSrvBindings_FindPtrByToken(cfg.f_bindings, workItem->m_bindingToken);
 
-		SockInit sockInit;
-		Socket& sk = workItem->m_sk;
+		Str ourName;
+		if (binding && binding->f_computerName.Any()) ourName = binding->f_computerName;
+		else                                          ourName = cfg.f_computerName;
 
 		SocketReader reader { sk.GetSocket() };
 		SocketWriter writer { sk.GetSocket() };
@@ -36,7 +39,7 @@ namespace At
 
 				auto startTls = [&] ()
 					{
-						m_workPool->Pop3Server_AddSchannelCerts(conn);
+						m_workPool->Pop3Server_AddSchannelCerts(ourName, conn);
 						conn.InitCred(ProtoSide::Server);
 						conn.SetExpireMs(EmailServer_RecvTimeoutMs);
 						conn.StartTls();
@@ -306,6 +309,10 @@ namespace At
 			}
 			catch (EmailServer_Disconnect const& e)
 				{ SendSingleLineReply(conn, Pop3ReplyType::Err, e.what()); }
+		}
+		catch (Schannel::SspiErr_Acquire const& e)
+		{
+			m_workPool->WorkPool_LogEvent(EVENTLOG_WARNING_TYPE, e.what());
 		}
 		catch (CommunicationErr const&)
 		{

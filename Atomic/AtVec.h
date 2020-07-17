@@ -184,28 +184,50 @@ namespace At
 			return *this;
 		}
 
-		VecCore<B>& Resize(sizet len)
+		VecCore<B>& ResizeAtLeast(sizet len)
 		{
 			if (len > m_len)
 				AddN(len - m_len);
 			else
-				while (len < m_len)
-					PopLast();
+				Resize_Shrink(len);
 			return *this;
 		}
 
-		VecCore<B>& Resize(sizet len, Val const& x)
+		VecCore<B>& ResizeAtLeast(sizet len, Val const& x)
 		{
 			if (len > m_len)
 				AddN(len - m_len, x);									// Container state is unchanged if this throws
 			else
-				while (len < m_len)
-					PopLast();											// Does not require nothrow_move_constructible, unlike Erase
+				Resize_Shrink(len);
 			return *this;
 		}
 
-		VecCore<B>& ResizeInc(sizet len)               { EnsureThrow(len < SIZE_MAX - m_len); return Resize(m_len + len);    }
-		VecCore<B>& ResizeInc(sizet len, Val const& x) { EnsureThrow(len < SIZE_MAX - m_len); return Resize(m_len + len, x); }
+		VecCore<B>& ResizeExact(sizet len)
+		{
+			if (len > m_len)
+			{
+				ReserveExact(len);
+				AddN(len - m_len);
+			}
+			else
+				Resize_Shrink(len);
+			return *this;
+		}
+
+		VecCore<B>& ResizeExact(sizet len, Val const& x)
+		{
+			if (len > m_len)
+			{
+				ReserveExact(len);
+				AddN(len - m_len, x);									// Container state is unchanged if this throws
+			}
+			else
+				Resize_Shrink(len);
+			return *this;
+		}
+
+		VecCore<B>& ResizeInc(sizet len)               { EnsureThrow(len < SIZE_MAX - m_len); return ResizeAtLeast(m_len + len);    }
+		VecCore<B>& ResizeInc(sizet len, Val const& x) { EnsureThrow(len < SIZE_MAX - m_len); return ResizeAtLeast(m_len + len, x); }
 
 		VecCore<B>& ShrinkToFit()
 		{
@@ -448,6 +470,23 @@ namespace At
 			}
 		}
 
+		void Resize_Shrink(sizet len)
+		{
+			if (m_len > len)
+			{
+				if (std::is_trivially_destructible<Val>::value)
+				{
+					Mem::Zero<Val>(Ptr() + len, m_len - len);
+					m_len = len;
+				}
+				else
+				{
+					do PopLast();										// Does not require nothrow_move_constructible, unlike Erase
+					while (m_len > len);
+				}
+			}
+		}
+
 		void AddMoveRange(Val* p, sizet n)
 		{
 			ReserveExact(m_len + n);
@@ -466,7 +505,7 @@ namespace At
 	};
 
 
-	template <class T>         struct Vec    : VecCore<VecBaseHeap<T>>    { Vec   () = default; Vec   (sizet i) { Resize(i); } };
-	template <class T, uint C> struct VecFix : VecCore<VecBaseFixed<T,C>> { VecFix() = default; VecFix(sizet i) { Resize(i); } };
+	template <class T>         struct Vec    : VecCore<VecBaseHeap<T>>    { Vec   () = default; Vec   (sizet i) { ResizeExact(i); } };
+	template <class T, uint C> struct VecFix : VecCore<VecBaseFixed<T,C>> { VecFix() = default; VecFix(sizet i) { ResizeExact(i); } };
 
 }

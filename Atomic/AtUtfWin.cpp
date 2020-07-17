@@ -18,7 +18,7 @@ namespace At
 				out.Clear();
 			else
 			{
-				out.Resize(1);
+				out.ResizeExact(1);
 				out[0] = 0;
 			}
 		}
@@ -30,17 +30,17 @@ namespace At
 				{ LastWinErr e; throw e.Make<>("ToUtf16: Error in first call to MultiByteToWideChar"); }
 
 			int cchWideChar { rc + 4 };
-			out.Resize(NumCast<sizet>(cchWideChar));
+			out.ResizeExact(NumCast<sizet>(cchWideChar));
 			rc = MultiByteToWideChar(inCodePage, 0, (LPCSTR) in.p, cbMultiByte, out.Ptr(), cchWideChar);
 			if (rc <= 0)
 				{ LastWinErr e; throw e.Make<>("ToUtf16: Error in second call to MultiByteToWideChar"); }
 
 			sizet outSize { NumCast<sizet>(rc) };
 			if (nt == NullTerm::No)
-				out.Resize(outSize);
+				out.ResizeExact(outSize);
 			else
 			{
-				out.Resize(outSize + 1);
+				out.ResizeExact(outSize + 1);
 				out[outSize] = 0;
 			}
 		}
@@ -50,14 +50,14 @@ namespace At
 	void NormalizeUtf16(PCWSTR pStr, int nWideChars, Vec<wchar_t>& out)
 	{
 		if (!nWideChars)
-			out.Resize(0);
+			out.Clear();
 		else
 		{
 			int rc = Call_NormalizeString(NormalizationC, pStr, nWideChars, 0, 0);
 			if (rc <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("NormalizeUtf16: Error in first call to NormalizeString"); }
 
-			out.Resize((sizet) rc);
+			out.ResizeExact((sizet) rc);
 
 			rc = Call_NormalizeString(NormalizationC, pStr, nWideChars, out.Ptr(), rc);
 			if (rc <= 0)
@@ -69,7 +69,7 @@ namespace At
 			if (nWideChars < 0 && rc > 0)
 				--rc;
 
-			out.Resize((sizet) rc);
+			out.ResizeExact((sizet) rc);
 		}
 	}
 
@@ -110,25 +110,25 @@ namespace At
 			if (wcCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("StrCvtCp: Error in first call to MultiByteToWideChar"); }
 
-			convertBuf.Resize((sizet) wcCount);
+			convertBuf.ResizeExact((sizet) wcCount);
 
 			wcCount = MultiByteToWideChar(inCodePage, 0, (LPCSTR) in.p, inSize, (LPWSTR) convertBuf.Ptr(), wcCount);
 			if (wcCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("StrCvtCp: Error in second call to MultiByteToWideChar"); }
 
-			convertBuf.Resize((sizet) wcCount);
+			convertBuf.ResizeExact((sizet) wcCount);
 		
 			int mbCount = WideCharToMultiByte(outCodePage, 0, (LPCWSTR) convertBuf.Ptr(), wcCount, 0, 0, 0, 0);
 			if (mbCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("StrCvtCp: Error in first call to WideCharToMultiByte"); }
 
-			out.Resize((sizet) mbCount);
+			out.ResizeExact((sizet) mbCount);
 
 			mbCount = WideCharToMultiByte(outCodePage, 0, (LPCWSTR) convertBuf.Ptr(), wcCount, (LPSTR) out.Ptr(), mbCount, 0, 0);			
 			if (mbCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("StrCvtCp: Error in second call to WideCharToMultiByte"); }
 
-			out.Resize((sizet) mbCount);
+			out.ResizeExact((sizet) mbCount);
 		}
 	}
 
@@ -145,13 +145,13 @@ namespace At
 			if (wcCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in first call to MultiByteToWideChar"); }
 
-			convertBuf1.Resize((sizet) wcCount);
+			convertBuf1.ResizeExact((sizet) wcCount);
 
 			wcCount = MultiByteToWideChar(inCodePage, 0, (LPCSTR) in.p, inSize, convertBuf1.Ptr(), wcCount);
 			if (wcCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in second call to MultiByteToWideChar"); }
 
-			convertBuf1.Resize((sizet) wcCount);
+			convertBuf1.ResizeExact((sizet) wcCount);
 		
 			// Normalize UTF-16
 			NormalizeUtf16(convertBuf1.Ptr(), wcCount, convertBuf2);
@@ -162,13 +162,13 @@ namespace At
 			if (mbCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in first call to WideCharToMultiByte"); }
 		
-			out.Resize((sizet) mbCount);
+			out.ResizeExact((sizet) mbCount);
 
 			mbCount = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR) convertBuf2.Ptr(), wcCount, (LPSTR) out.Ptr(), mbCount, 0, 0);			
 			if (mbCount <= 0)
 				{ LastWinErr e; throw e.Make<InputErr>("ToUtf8Norm: Error in second call to WideCharToMultiByte"); }
 			
-			out.Resize((sizet) mbCount);
+			out.ResizeExact((sizet) mbCount);
 		}
 	}
 

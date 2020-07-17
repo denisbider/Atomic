@@ -42,7 +42,7 @@ namespace At
 			name.StripPrefixExact("class At::ThreadFinal<struct "))
 		{
 			if (name.EndsWithExact(">"))
-				name.DropLastByte();
+				name.RevDropByte();
 		}
 
 		return name;

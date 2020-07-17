@@ -42,8 +42,12 @@ namespace At
 	// ParseTree
 
 	ParseTree::ParseTree(Seq srcText, Storage* storage)
-		: m_storage(storage)
 	{
+		if (storage)
+			m_storage = storage;
+		else
+			m_storage = &m_instanceStorage;
+
 		m_firstBucket = m_lastBucket = GetNewBucket();
 		new (m_firstBucket->AddUnconstructedNode()) ParseNode(*this, srcText);
 
@@ -57,15 +61,15 @@ namespace At
 
 	ParseTree::~ParseTree() noexcept
 	{
-		for (Bucket* b=m_lastBucket; b!=0; )
+		for (Bucket* b=m_lastBucket; b!=nullptr; )
 		{
 			Bucket* d = b;
 			b = b->m_prevBucket;
-			FreeBucket(d);
+			m_storage->PushBucket(d);
 		}
 
-		m_firstBucket = 0;
-		m_lastBucket = 0;
+		m_firstBucket = nullptr;
+		m_lastBucket = nullptr;
 	}
 
 
@@ -76,8 +80,13 @@ namespace At
 
 		if (!parseFunc(Root()))
 			return false;
+
+		if (m_maxDepthExceeded)
+			return false;
+
 		if (!HaveRoot())
 			return false;
+
 		if (ParseAll == behavior && Root().m_remaining.n != 0)
 			return false;
 
@@ -89,6 +98,8 @@ namespace At
 	void ParseTree::EncObj(Enc& enc, EBestAttempt) const
 	{
 		enc.Add("Best parse attempt ended at row ").UInt(m_bestToRow).Add(", column ").UInt(m_bestToCol);
+		if (m_maxDepthExceeded)
+			enc.Add(": Max depth exceeded");
 
 		if (m_bestToStack.Any())
 		{
@@ -104,7 +115,13 @@ namespace At
 
 
 	ParseNode* ParseTree::NewNode(ParseNode& parent, Ruid const& type)
-	{
+	{		
+		if (parent.m_depth >= MaxDepth)
+			m_maxDepthExceeded = true;
+
+		if (m_maxDepthExceeded)
+			return nullptr;
+
 		if (m_lastBucket->m_nodesUsed == Bucket::NrNodesMax)
 		{
 			Bucket* newBucket = GetNewBucket();
@@ -148,39 +165,28 @@ namespace At
 
 	void ParseTree::DiscardNode(ParseNode* p)
 	{
-		for (Bucket* b=m_lastBucket; ; b=b->m_prevBucket)
+		while (true)
 		{
-			EnsureAbort(b != nullptr);
-			if (b->ContainsNode(p))
+			EnsureAbort(m_lastBucket != nullptr);
+			if (m_lastBucket->ContainsNode(p))
 			{
-				b->DiscardNodesFrom(p);
+				m_lastBucket->DiscardNodesFrom(p);
 				break;
 			}
 
-			b->m_nodesUsed = 0;
+			Bucket* b = m_lastBucket->m_prevBucket;
+			m_storage->PushBucket(m_lastBucket);
+			m_lastBucket = b;
 		}
 	}
 
 
 	ParseTree::Bucket* ParseTree::GetNewBucket()
 	{
-		if (m_storage)
-		{
-			Bucket* b = m_storage->Pop();
-			if (b)
-				return b;
-		}
-
-		return new Bucket;
-	}
-
-
-	void ParseTree::FreeBucket(Bucket* b) noexcept
-	{
-		if (m_storage)
-			m_storage->Push(b);
-		else
-			NoExcept(delete b);
+		Bucket* b = m_storage->PopBucket();
+		if (!b)
+			b = new Bucket;
+		return b;
 	}
 
 }

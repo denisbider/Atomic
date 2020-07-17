@@ -12,7 +12,7 @@
 namespace At
 {
 
-	enum class EhloHostType { Unexpected, Empty, Invalid, Domain, AddrLit };
+	enum class EhloHostType { Unexpected, Unspecified, Invalid, Domain, AddrLit };
 
 	struct EhloHost
 	{
@@ -45,10 +45,12 @@ namespace At
 	class SmtpReceiverAuthCx : public RefCountable
 	{
 	public:
-		// Only called on AuthCx if authentication was performed and was successful. Otherwise, SmtpReceiver::SmtpReceiver_OnMailFrom_NoAuth is called.
+		// This method is called if:
+		// - authentication was previously performed and constructed this SmtpReceiverAuthCx; or,
+		// - SmtpReceiver::SmtpReceiver_OnMailFrom_NoAuth was previously called and constructed this SmtpReceiverAuthCx.
 		// Just because this function returns SmtpReceiveInstruction::Accept doesn't mean the MAIL FROM command will be replied to positively.
 		// If dataBytesToAccept is less than the declared message size, the MAIL FROM command will be refused.
-		virtual SmtpReceiveInstruction SmtpReceiverAuthCx_OnMailFrom_HaveAuth(Seq fromMailbox) = 0;
+		virtual SmtpReceiveInstruction SmtpReceiverAuthCx_OnMailFrom(Seq fromMailbox) = 0;
 
 		// Just because this function returns SmtpReceiveInstruction::Accept doesn't mean the RCPT TO command will be replied to positively.
 		// If dataBytesToAccept is less than the declared message size, the RCPT TO command will be refused.
@@ -70,15 +72,15 @@ namespace At
 		virtual void SmtpReceiver_GetCfg(SmtpReceiverCfg& cfg) const = 0;
 
 		// Called from a variety of worker threads.
-		virtual bool SmtpReceiver_TlsSupported     () { return false; }
-		virtual bool SmtpReceiver_AuthSupported    () { return false; }
-		virtual void SmtpReceiver_AddSchannelCerts (Schannel&);
+		virtual bool SmtpReceiver_TlsSupported     (Seq ourName);
+		virtual bool SmtpReceiver_AuthSupported    (Seq ourName);
+		virtual void SmtpReceiver_AddSchannelCerts (Seq ourName, Schannel&);
 
 		// authorizationIdentity, authenticationIdentity and password are already whitespace-trimmed
 		virtual EmailServerAuthResult SmtpReceiver_Authenticate(SockAddr const& fromHost, Schannel& conn, Seq ourName, EhloHost const& ehloHost,
 			Seq authorizationIdentity, Seq authenticationIdentity, Seq password, Rp<SmtpReceiverAuthCx>& authCx);
 
-		// Called instead of authCx.SmtpReceiverAuthCx_OnMailFrom_HaveAuth if authCx is null.
+		// Called instead of authCx.SmtpReceiverAuthCx_OnMailFrom if authCx is null.
 		// If successful, must set a non-null authCx representing the anonymous session.
 		// The resulting authCx will have OnRcptTo and OnData methods called, but not OnMailFrom.
 		// Just because this function returns SmtpReceiveInstruction::Accept doesn't mean the MAIL FROM command will be replied to positively.

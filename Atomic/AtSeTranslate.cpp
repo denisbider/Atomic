@@ -1,6 +1,8 @@
 #include "AtIncludes.h"
 #include "AtSeTranslate.h"
 
+#include "AtEnsureStackTrace.h"
+
 
 namespace At
 {
@@ -9,7 +11,7 @@ namespace At
 	#define MAP(CODE)		case CODE: return #CODE;
 	#define MAP_END()		default: return "Unrecognized structured exception code"; }
 
-	char const* DescribeStructuredException(int64 code)
+	char const* DescribeStructuredExceptionCode(int64 code)
 	{
 		MAP_BEGIN(code)
 		MAP(EXCEPTION_ACCESS_VIOLATION)
@@ -45,6 +47,9 @@ namespace At
 
 	void SeTranslator(uint code, _EXCEPTION_POINTERS* p)
 	{
+		// Note that SeTranslator is NOT called at the point of exception, but rather after stack has already unwound to the nearest exception handler.
+		// For this reason, a stack trace performed at this point is not very useful. However, we can identify where the exception occurred from the exception context.
+
 		switch (code)
 		{
 		case EXCEPTION_ACCESS_VIOLATION:
@@ -54,10 +59,20 @@ namespace At
 			if (p->ExceptionRecord->NumberParameters < 2)             return;		// Must have parameters; otherwise, do not handle
 			if (p->ExceptionRecord->ExceptionInformation[1] > 0x3FFF) return;		// Must be null pointer dereference. Do not handle exception if program tries to access a random address
 																					// Null pointer assignment partition is up to 0xFFFF. To be safer, we tolerate just the first quarter of it
+			
+			EnsureFailDescRef efdRef { EnsureFailDesc::Create() };
 			if (p->ExceptionRecord->ExceptionInformation[0])
-				throw SE_NullPointerWrite();
+			{
+				efdRef.Add("Null pointer write\r\n");
+				Ensure_AddExceptionContext(efdRef, p);
+				throw SE_NullPointerWrite(std::move(efdRef));
+			}
 			else
-				throw SE_NullPointerRead();
+			{
+				efdRef.Add("Null pointer read\r\n");
+				Ensure_AddExceptionContext(efdRef, p);
+				throw SE_NullPointerRead(std::move(efdRef));
+			}
 		}
 
 		case EXCEPTION_STACK_OVERFLOW:
@@ -65,7 +80,10 @@ namespace At
 			return;
 
 		default:
-			throw StructuredException(code);
+			EnsureFailDescRef efdRef { EnsureFailDesc::Create() };
+			efdRef.Add(DescribeStructuredExceptionCode(code)).Add("\r\n");
+			Ensure_AddExceptionContext(efdRef, p);
+			throw StructuredException(code, std::move(efdRef));
 		}
 	}
 

@@ -126,6 +126,9 @@ namespace At
 		bool C_ext_field_name(ParseNode& p)
 		{
 			ParseNode* pn = p.NewChild(id_ext_field_name);
+			if (!pn)
+				return false;
+
 			if (!C_atext_word(*pn))
 				return p.FailChild(pn);
 

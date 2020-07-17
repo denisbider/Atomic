@@ -11,31 +11,15 @@
 namespace At
 {
 
-	// TextAreaDims
-
-	struct TextAreaDims
-	{
-		TextAreaDims(char const* zRows, char const* zCols)
-			: mc_zRows(zRows), mc_zCols(zCols) {}
-
-		char const* const mc_zRows {};
-		char const* const mc_zCols {};
-	};
-
-	extern TextAreaDims const tad_policy;
-	extern TextAreaDims const tad_centerpiece;
-
-
-
-	// HtmlBuilder
-
 	namespace Html { class Transform; }
+
 
 	struct HtmlState { enum E {
 		Attrs,
 		Elems,
 		ScriptOrStyle,
 	}; };
+
 
 	class HtmlBuilder : public PostFormSecurity
 	{
@@ -168,6 +152,11 @@ namespace At
 		HtmlBuilder& Dbl (double v, uint prec=4)                                                                    { if (m_state == HtmlState::Attrs) EndAttrs(); m_s.Dbl (v, prec        ); return *this; }
 		HtmlBuilder& TzOffset(int64 v)                                                                              { if (m_state == HtmlState::Attrs) EndAttrs(); m_s.TzOffset(v);           return *this; }
 
+		HtmlBuilder& UIntDecGrp (uint64 v)                           { if (m_state == HtmlState::Attrs) EndAttrs(); m_s.UIntDecGrp (v);        return *this; }
+		HtmlBuilder& UIntUnits  (uint64 v, Slice<Units::Unit> units) { if (m_state == HtmlState::Attrs) EndAttrs(); m_s.UIntUnits  (v, units); return *this; }
+		HtmlBuilder& UIntBytes  (uint64 v);
+		HtmlBuilder& UIntKb     (uint64 v);
+
 		// Void elements
 		HtmlBuilder& Area()    { AddVoidElem("area");  return *this; }
 		HtmlBuilder& Base()    { AddVoidElem("base");  return *this; }
@@ -262,7 +251,7 @@ namespace At
 		HtmlBuilder& Tr()         { AddNonVoidElem("tr");          return *this; }
 		HtmlBuilder& Ul()         { AddNonVoidElem("ul");          return *this; }
 
-		HtmlBuilder& TextArea(TextAreaDims const& d) { return TextArea().Rows(d.mc_zRows).Cols(d.mc_zCols); }
+		HtmlBuilder& TextArea(TextAreaDims const& d) { return TextArea().Rows(d.mc_zRows).Cols(d.mc_zCols).MaxLength(d.mc_zMaxLen); }
 
 		// Block-level element. Do not enclose in P/EndP.
 		HtmlBuilder& TextAreaOptStr(TextAreaDims const& d, Seq idAndName, Opt<Str> const& optStr, Enabled enabled = Enabled::Yes);

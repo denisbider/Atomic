@@ -52,50 +52,50 @@ static_assert(OgnSendStage::Cmd_Data			== SmtpSendStage::Cmd_Data,				"");
 static_assert(OgnSendStage::Content				== SmtpSendStage::Content,				"");
 static_assert(OgnSendStage::Cmd_Quit			== SmtpSendStage::Cmd_Quit,				"");
 
-static_assert(OgnSendErr::None									== SmtpSendErr::None,									"");
-static_assert(OgnSendErr::Unknown								== SmtpSendErr::Unknown,								"");
-static_assert(OgnSendErr::RelayLookup_LookupTimedOut			== SmtpSendErr::RelayLookup_LookupTimedOut,				"");
-static_assert(OgnSendErr::RelayLookup_LookupError				== SmtpSendErr::RelayLookup_LookupError,				"");
-static_assert(OgnSendErr::FindMx_LookupTimedOut					== SmtpSendErr::FindMx_LookupTimedOut,					"");
-static_assert(OgnSendErr::FindMx_LookupError					== SmtpSendErr::FindMx_LookupError,						"");
-static_assert(OgnSendErr::FindMx_LookupNoResults				== SmtpSendErr::FindMx_LookupNoResults,					"");
-static_assert(OgnSendErr::FindMx_DomainMatchRequired			== SmtpSendErr::FindMx_DomainMatchRequired,				"");
-static_assert(OgnSendErr::Connect_Error							== SmtpSendErr::Connect_Error,							"");
-static_assert(OgnSendErr::Send_Error							== SmtpSendErr::Send_Error,								"");
-static_assert(OgnSendErr::Reply_PrematureEndOfLine				== SmtpSendErr::Reply_PrematureEndOfLine,				"");
-static_assert(OgnSendErr::Reply_UnrecognizedCodeFormat			== SmtpSendErr::Reply_UnrecognizedCodeFormat,			"");
-static_assert(OgnSendErr::Reply_UnrecognizedLineSeparator		== SmtpSendErr::Reply_UnrecognizedLineSeparator,		"");
-static_assert(OgnSendErr::Reply_InconsistentCode				== SmtpSendErr::Reply_InconsistentCode,					"");
-static_assert(OgnSendErr::Reply_MaximumLengthExceeded			== SmtpSendErr::Reply_MaximumLengthExceeded,			"");
-static_assert(OgnSendErr::Reply_ReceiveError					== SmtpSendErr::Reply_ReceiveError,						"");
-static_assert(OgnSendErr::Greeting_SessionRefused				== SmtpSendErr::Greeting_SessionRefused,				"");
-static_assert(OgnSendErr::Greeting_Unexpected					== SmtpSendErr::Greeting_Unexpected,					"");
-static_assert(OgnSendErr::Ehlo_UnexpectedReply					== SmtpSendErr::Ehlo_UnexpectedReply,					"");
-static_assert(OgnSendErr::Capabilities_8BitMimeRequired			== SmtpSendErr::Capabilities_8BitMimeRequired,			"");
-static_assert(OgnSendErr::Capabilities_Size						== SmtpSendErr::Capabilities_Size,						"");
-static_assert(OgnSendErr::Tls_NotAvailable						== SmtpSendErr::Tls_NotAvailable,						"");
-static_assert(OgnSendErr::Tls_StartTlsRejected					== SmtpSendErr::Tls_StartTlsRejected,					"");
-static_assert(OgnSendErr::Tls_SspiErr_LikelyDh_TooManyRestarts	== SmtpSendErr::Tls_SspiErr_LikelyDh_TooManyRestarts,	"");
-static_assert(OgnSendErr::Tls_SspiErr_InvalidToken_IllegalMsg	== SmtpSendErr::Tls_SspiErr_InvalidToken_IllegalMsg,	"");
-static_assert(OgnSendErr::Tls_SspiErr_ServerAuthRequired		== SmtpSendErr::Tls_SspiErr_ServerAuthRequired,			"");
-static_assert(OgnSendErr::Tls_SspiErr_Other						== SmtpSendErr::Tls_SspiErr_Other,						"");
-static_assert(OgnSendErr::Tls_CommunicationErr					== SmtpSendErr::Tls_CommunicationErr,					"");
-static_assert(OgnSendErr::Tls_RequiredAssuranceNotAchieved		== SmtpSendErr::Tls_RequiredAssuranceNotAchieved,		"");
-static_assert(OgnSendErr::Auth_AuthCommandNotSupported			== SmtpSendErr::Auth_AuthCommandNotSupported,			"");
-static_assert(OgnSendErr::Auth_CfgAuthMechNotSupported			== SmtpSendErr::Auth_CfgAuthMechNotSupported,			"");
-static_assert(OgnSendErr::Auth_NoSuitableAuthMechanism			== SmtpSendErr::Auth_NoSuitableAuthMechanism,			"");
-static_assert(OgnSendErr::Auth_CfgAuthMechUnrecognized			== SmtpSendErr::Auth_CfgAuthMechUnrecognized,			"");
-static_assert(OgnSendErr::Auth_Rejected							== SmtpSendErr::Auth_Rejected,							"");
-static_assert(OgnSendErr::Auth_UnexpectedReply					== SmtpSendErr::Auth_UnexpectedReply,					"");
-static_assert(OgnSendErr::Auth_UnexpectedCramMd5ChallengeReply	== SmtpSendErr::Auth_UnexpectedCramMd5ChallengeReply,	"");
-static_assert(OgnSendErr::MailFrom_Rejected						== SmtpSendErr::MailFrom_Rejected,						"");
-static_assert(OgnSendErr::MailFrom_UnexpectedReply				== SmtpSendErr::MailFrom_UnexpectedReply,				"");
-static_assert(OgnSendErr::RcptTo_Rejected						== SmtpSendErr::RcptTo_Rejected,						"");
-static_assert(OgnSendErr::RcptTo_UnexpectedReply				== SmtpSendErr::RcptTo_UnexpectedReply,					"");
-static_assert(OgnSendErr::Data_Rejected							== SmtpSendErr::Data_Rejected,							"");
-static_assert(OgnSendErr::Data_UnexpectedReply					== SmtpSendErr::Data_UnexpectedReply,					"");
-static_assert(OgnSendErr::Content_Rejected						== SmtpSendErr::Content_Rejected,						"");
-static_assert(OgnSendErr::Content_UnexpectedReply				== SmtpSendErr::Content_UnexpectedReply,				"");
+static_assert(OgnSendDetail::None									== SmtpSendDetail::None,									"");
+static_assert(OgnSendDetail::Unknown								== SmtpSendDetail::Unknown,									"");
+static_assert(OgnSendDetail::RelayLookup_LookupTimedOut				== SmtpSendDetail::RelayLookup_LookupTimedOut,				"");
+static_assert(OgnSendDetail::RelayLookup_CouldNotLookup				== SmtpSendDetail::RelayLookup_CouldNotLookup,				"");
+static_assert(OgnSendDetail::FindMx_LookupTimedOut					== SmtpSendDetail::FindMx_LookupTimedOut,					"");
+static_assert(OgnSendDetail::FindMx_CouldNotLookup					== SmtpSendDetail::FindMx_CouldNotLookup,					"");
+static_assert(OgnSendDetail::FindMx_LookupNoResults					== SmtpSendDetail::FindMx_LookupNoResults,					"");
+static_assert(OgnSendDetail::FindMx_DomainMatchRequired				== SmtpSendDetail::FindMx_DomainMatchRequired,				"");
+static_assert(OgnSendDetail::Connect								== SmtpSendDetail::Connect,									"");
+static_assert(OgnSendDetail::Send									== SmtpSendDetail::Send,									"");
+static_assert(OgnSendDetail::Reply_PrematureEndOfLine				== SmtpSendDetail::Reply_PrematureEndOfLine,				"");
+static_assert(OgnSendDetail::Reply_UnrecognizedCodeFormat			== SmtpSendDetail::Reply_UnrecognizedCodeFormat,			"");
+static_assert(OgnSendDetail::Reply_UnrecognizedLineSeparator		== SmtpSendDetail::Reply_UnrecognizedLineSeparator,			"");
+static_assert(OgnSendDetail::Reply_InconsistentCode					== SmtpSendDetail::Reply_InconsistentCode,					"");
+static_assert(OgnSendDetail::Reply_MaximumLengthExceeded			== SmtpSendDetail::Reply_MaximumLengthExceeded,				"");
+static_assert(OgnSendDetail::Reply_CouldNotReceive					== SmtpSendDetail::Reply_CouldNotReceive,					"");
+static_assert(OgnSendDetail::Greeting_SessionRefused				== SmtpSendDetail::Greeting_SessionRefused,					"");
+static_assert(OgnSendDetail::Greeting_Unexpected					== SmtpSendDetail::Greeting_Unexpected,						"");
+static_assert(OgnSendDetail::Ehlo_UnexpectedReply					== SmtpSendDetail::Ehlo_UnexpectedReply,					"");
+static_assert(OgnSendDetail::Capabilities_8BitMimeRequired			== SmtpSendDetail::Capabilities_8BitMimeRequired,			"");
+static_assert(OgnSendDetail::Capabilities_Size						== SmtpSendDetail::Capabilities_Size,						"");
+static_assert(OgnSendDetail::Tls_NotAvailable						== SmtpSendDetail::Tls_NotAvailable,						"");
+static_assert(OgnSendDetail::Tls_StartTlsRejected					== SmtpSendDetail::Tls_StartTlsRejected,					"");
+static_assert(OgnSendDetail::Tls_Sspi_LikelyDh_TooManyRestarts		== SmtpSendDetail::Tls_Sspi_LikelyDh_TooManyRestarts,		"");
+static_assert(OgnSendDetail::Tls_Sspi_InvalidToken_IllegalMsg		== SmtpSendDetail::Tls_Sspi_InvalidToken_IllegalMsg,		"");
+static_assert(OgnSendDetail::Tls_Sspi_ServerAuthRequired			== SmtpSendDetail::Tls_Sspi_ServerAuthRequired,				"");
+static_assert(OgnSendDetail::Tls_Sspi_Other							== SmtpSendDetail::Tls_Sspi_Other,							"");
+static_assert(OgnSendDetail::Tls_Communication						== SmtpSendDetail::Tls_Communication,						"");
+static_assert(OgnSendDetail::Tls_RequiredAssuranceNotAchieved		== SmtpSendDetail::Tls_RequiredAssuranceNotAchieved,		"");
+static_assert(OgnSendDetail::Auth_AuthCommandNotSupported			== SmtpSendDetail::Auth_AuthCommandNotSupported,			"");
+static_assert(OgnSendDetail::Auth_CfgAuthMechNotSupported			== SmtpSendDetail::Auth_CfgAuthMechNotSupported,			"");
+static_assert(OgnSendDetail::Auth_NoSuitableAuthMechanism			== SmtpSendDetail::Auth_NoSuitableAuthMechanism,			"");
+static_assert(OgnSendDetail::Auth_CfgAuthMechUnrecognized			== SmtpSendDetail::Auth_CfgAuthMechUnrecognized,			"");
+static_assert(OgnSendDetail::Auth_Rejected							== SmtpSendDetail::Auth_Rejected,							"");
+static_assert(OgnSendDetail::Auth_UnexpectedReply					== SmtpSendDetail::Auth_UnexpectedReply,					"");
+static_assert(OgnSendDetail::Auth_UnexpectedCramMd5ChallengeReply	== SmtpSendDetail::Auth_UnexpectedCramMd5ChallengeReply,	"");
+static_assert(OgnSendDetail::MailFrom_Rejected						== SmtpSendDetail::MailFrom_Rejected,						"");
+static_assert(OgnSendDetail::MailFrom_UnexpectedReply				== SmtpSendDetail::MailFrom_UnexpectedReply,				"");
+static_assert(OgnSendDetail::RcptTo_Rejected						== SmtpSendDetail::RcptTo_Rejected,							"");
+static_assert(OgnSendDetail::RcptTo_UnexpectedReply					== SmtpSendDetail::RcptTo_UnexpectedReply,					"");
+static_assert(OgnSendDetail::Data_Rejected							== SmtpSendDetail::Data_Rejected,							"");
+static_assert(OgnSendDetail::Data_UnexpectedReply					== SmtpSendDetail::Data_UnexpectedReply,					"");
+static_assert(OgnSendDetail::Content_Rejected						== SmtpSendDetail::Content_Rejected,						"");
+static_assert(OgnSendDetail::Content_UnexpectedReply				== SmtpSendDetail::Content_UnexpectedReply,					"");
 
 
 namespace
@@ -172,7 +172,7 @@ char const* __cdecl OgnSendStage_Desc          (uint32_t v)                     
 bool        __cdecl OgnSendStage_NameToVal     (OgnSeq n, OgnSendStage::E& v)     { return SmtpSendStage::NameToValUInt(Seq_FromOgn(n), (uint32_t&) v); }
 OgnResult   __cdecl OgnSendStage_Values        (OgnEnumValues& x)                 { return OgnGetEnumValues(SmtpSendStage::sc_values, x); }
 
-char const* __cdecl OgnSendErr_Name            (uint32_t v)                       { return SmtpSendErr::Name(v); }
-char const* __cdecl OgnSendErr_Desc            (uint32_t v)                       { return SmtpSendErr::Desc(v); }
-bool        __cdecl OgnSendErr_NameToVal       (OgnSeq n, OgnSendErr::E& v)       { return SmtpSendErr::NameToValUInt(Seq_FromOgn(n), (uint32_t&) v); }
-OgnResult   __cdecl OgnSendErr_Values          (OgnEnumValues& x)                 { return OgnGetEnumValues(SmtpSendErr::sc_values, x); }
+char const* __cdecl OgnSendDetail_Name         (uint32_t v)                       { return SmtpSendDetail::Name(v); }
+char const* __cdecl OgnSendDetail_Desc         (uint32_t v)                       { return SmtpSendDetail::Desc(v); }
+bool        __cdecl OgnSendDetail_NameToVal    (OgnSeq n, OgnSendDetail::E& v)    { return SmtpSendDetail::NameToValUInt(Seq_FromOgn(n), (uint32_t&) v); }
+OgnResult   __cdecl OgnSendDetail_Values       (OgnEnumValues& x)                 { return OgnGetEnumValues(SmtpSendDetail::sc_values, x); }

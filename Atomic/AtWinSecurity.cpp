@@ -39,7 +39,7 @@ namespace At
 	void TokenInfo::GetInfo(HANDLE hToken, TOKEN_INFORMATION_CLASS infoClass, sizet firstCallBufSize)
 	{
 		if (firstCallBufSize != 0)
-			m_buf.Resize(firstCallBufSize);
+			m_buf.ResizeExact(firstCallBufSize);
 
 		enum { MaxTryCount = 5 };
 		sizet tryNr = 0;
@@ -51,7 +51,7 @@ namespace At
 			DWORD retLen = 0;
 			if (GetTokenInformation(hToken, infoClass, m_buf.Ptr(), NumCast<DWORD>(m_buf.Len()), &retLen))
 			{
-				m_buf.Resize(retLen);
+				m_buf.ResizeExact(retLen);
 				break;
 			}
 
@@ -59,7 +59,7 @@ namespace At
 			if (tryNr >= MaxTryCount || errorCode != ERROR_INSUFFICIENT_BUFFER)
 				throw WinErr<>(errorCode, "GetTokenInfo: Error in GetTokenInformation");
 
-			m_buf.Resize(retLen * tryNr);
+			m_buf.ResizeExact(retLen * tryNr);
 		}
 	}
 }

@@ -146,7 +146,10 @@ namespace At
 			sizet expectCol             { p.Tree().ApplyTab(parentCol)    };
 
 			// Consume horizontal whitespace
-			ParseNode* pn { p.NewChild(id_Append) };
+			ParseNode* pn = p.NewChild(id_Append);
+			if (!pn)
+				return false;
+
 			EnsureThrow(C_HWs(*pn));
 
 			if (pn->ToCol() != expectCol)

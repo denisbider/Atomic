@@ -278,14 +278,14 @@ namespace
 
 // EntityStoreTests
 
-void EntityStoreTests(int argc, char** argv)
+void EntityStoreTests(Slice<Seq> args)
 {
 	bool removeStore { true };
 	uint32 writeFailOdds {};
 
-	for (int i=2; i<argc; ++i)
+	for (sizet i=2; i<args.Len(); ++i)
 	{
-		Seq arg = argv[i];
+		Seq arg = args[i];
 		if (arg.StripPrefixInsensitive("-writeFailOdds="))
 			writeFailOdds = arg.ReadNrUInt32Dec();
 		else if (arg.EqualInsensitive("-noRemove"))

@@ -7,15 +7,6 @@
 namespace At
 {
 
-	// TextAreaDims
-
-	TextAreaDims const tad_policy      {  "5", "100" };
-	TextAreaDims const tad_centerpiece { "30", "120" };
-
-
-
-	// HtmlBuilder
-
 	HtmlBuilder::HtmlBuilder(sizet reserveHtml)
 	{
 		m_s.ReserveExact(reserveHtml).Add("<!DOCTYPE html><html");
@@ -364,6 +355,32 @@ namespace At
 			EndAttrs();
 
 		m_s.Add(text);
+		return *this;
+	}
+
+
+	HtmlBuilder& HtmlBuilder::UIntBytes(uint64 v)
+	{
+		if (m_state == HtmlState::Attrs)
+			EndAttrs();
+		
+		Span().TitleAttr(Str().UIntDecGrp(v).Add(" bytes"))
+			.UIntUnits(v, Units::Bytes)
+		.EndSpan();
+		
+		return *this;
+	}
+
+
+	HtmlBuilder& HtmlBuilder::UIntKb(uint64 v)
+	{
+		if (m_state == HtmlState::Attrs)
+			EndAttrs();
+		
+		Span().TitleAttr(Str().UIntDecGrp(v).Add(" kB"))
+			.UIntUnits(v, Units::kB)
+		.EndSpan();
+		
 		return *this;
 	}
 

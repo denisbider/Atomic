@@ -1,12 +1,12 @@
 #include "AutIncludes.h"
 
 
-void WinErrTest(int argc, char** argv)
+void WinErrTest(Slice<Seq> args)
 {
-	if (argc < 3)
+	if (args.Len() < 3)
 		throw "Missing error code";
 
-	Seq   errStr { argv[2] };
+	Seq   errStr { args[2] };
 	int64 err    {};
 
 	if (errStr.StripPrefixInsensitive("0x"))

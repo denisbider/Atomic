@@ -123,7 +123,7 @@ namespace At
 			if (st != STATUS_SUCCESS && st != STATUS_BUFFER_TOO_SMALL)
 				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptExportKey (first)");
 
-			buf.Resize(result);
+			buf.ResizeExact(result);
 
 			st = Call_BCryptExportKey(m_hKey, nullptr, blobType, buf.Ptr(), result, &result, 0);
 			if (st != STATUS_SUCCESS)
@@ -131,7 +131,7 @@ namespace At
 			if (result > buf.Len())
 				throw StrErr(__FUNCTION__ ": BCryptExportKey: Unexpected result size");
 
-			buf.Resize(result);
+			buf.ResizeExact(result);
 			return *this;
 		}
 
@@ -154,7 +154,7 @@ namespace At
 		Key& Key::Sign(void* padInfo, Seq hash, Str& sig, ULONG flags)
 		{
 			DWORD sigLen = GetProperty_DWORD(m_hKey, BCRYPT_SIGNATURE_LENGTH);
-			sig.Resize(sigLen);
+			sig.ResizeExact(sigLen);
 
 			ULONG result {};
 			NTSTATUS st = Call_BCryptSignHash(m_hKey, padInfo, (PUCHAR) hash.p, NumCast<ULONG>(hash.n), (PUCHAR) sig.Ptr(), sigLen, &result, flags);
@@ -201,7 +201,7 @@ namespace At
 		{
 			DWORD objLen = GetProperty_DWORD(provider.Handle(), BCRYPT_OBJECT_LENGTH);
 			m_hashLen = GetProperty_DWORD(provider.Handle(), BCRYPT_HASH_LENGTH);
-			m_obj.Resize(objLen);
+			m_obj.ResizeExact(objLen);
 			m_secretKey = secretKey;
 			return *this;
 		}

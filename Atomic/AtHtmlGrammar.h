@@ -34,8 +34,10 @@ namespace At
 
 		DECL_RUID(RawText)
 		DECL_RUID(SpecialElem)
+		DECL_RUID(RawTextElem)
 		DECL_RUID(Script)
 		DECL_RUID(Style)
+		DECL_RUID(RcdataElem)
 		DECL_RUID(Title)
 		DECL_RUID(TextArea)
 

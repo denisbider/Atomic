@@ -17,7 +17,7 @@ namespace At
 
 	namespace
 	{
-		// RFC 5321, section 4.5.3.2., specifies the following ridiculous timeouts:
+		// RFC 5321, section 4.5.3.2, specifies the following ridiculous timeouts:
 		//
 		// - Initial 220 Message: 5 Minutes
 		// - MAIL Command: 5 Minutes
@@ -90,11 +90,11 @@ namespace At
 
 	void SmtpSenderThread::WorkPoolThread_ProcessWorkItem(void* pvWorkItem)
 	{
+		SockInit                     sockInit;
 		AutoFree<SmtpSenderWorkItem> workItem { (SmtpSenderWorkItem*) pvWorkItem };
 		Rp<SmtpMsgToSend>&           msg      { workItem->m_msg };
 		Seq                          content  { workItem->m_content };
 		
-		SockInit            sockInit;
 		Vec<MailboxResult>  mailboxResults;
 		SmtpTlsAssurance::E tlsAssuranceAchieved { SmtpTlsAssurance::Unknown };
 
@@ -126,16 +126,16 @@ namespace At
 				else
 					FindMailExchangersAndSendMsg(cfg, timeouts, msg.Ref(), content, contains8bit, mailboxResults, tlsAssuranceAchieved);
 			}
-			catch (DeliveryFailure& e)			
+			catch (DeliveryFailure& e)
 			{
 				mailboxResults.Clear();
 
 				Time now = Time::NonStrictNow();
 				for (Str const& mailbox : msg->f_pendingMailboxes)
 					if (e.m_type == DeliveryFailure::Type::Temp)
-						MailboxResult_SetTempFailure(mailboxResults.Add(), now, mailbox, std::move(e.m_failure));
+						MailboxResult_SetTempFailure_Copy(mailboxResults.Add(), now, mailbox, e.m_failure);
 					else
-						MailboxResult_SetPermFailure(mailboxResults.Add(), now, mailbox, std::move(e.m_failure));
+						MailboxResult_SetPermFailure_Copy(mailboxResults.Add(), now, mailbox, e.m_failure);
 			}
 		}
 		
@@ -207,10 +207,10 @@ namespace At
 			aal->Start(GetStopCtl()).Join();
 		}
 		catch (Abortable::TimeExpired const&)
-			{ throw TempFailure(SmtpSendFailure_RelayLookup(SmtpSendErr::RelayLookup_LookupTimedOut, Seq())); }
+			{ throw TempFailure(SmtpSendFailure_RelayLookup(SmtpSendDetail::RelayLookup_LookupTimedOut, Seq())); }
 
 		if (aal->m_rc != 0)
-			throw TempFailure(SmtpSendFailure_RelayLookup(SmtpSendErr::RelayLookup_LookupError, Str().Fun(DescribeWinErr, aal->m_rc)));
+			throw TempFailure(SmtpSendFailure_RelayLookup(SmtpSendDetail::RelayLookup_CouldNotLookup, Str().Fun(DescribeWinErr, aal->m_rc)));
 
 		Map<LookedUpAddr> addrs;
 		ProcessAddrInfoResults(aal->m_result, cfg.f_relayHost, cfg.f_ipVerPreference, 0, addrs);
@@ -244,15 +244,15 @@ namespace At
 			aml->Start(GetStopCtl()).Join();
 		}
 		catch (Abortable::TimeExpired const&)
-			{ throw TempFailure(SmtpSendFailure_FindMx(SmtpSendErr::FindMx_LookupTimedOut, Seq())); }
+			{ throw TempFailure(SmtpSendFailure_FindMx(SmtpSendDetail::FindMx_LookupTimedOut, Seq())); }
 
 		if (aml->m_rc != 0)
-			throw TempFailure(SmtpSendFailure_FindMx(SmtpSendErr::FindMx_LookupError, Str().Fun(DescribeWinErr, aml->m_rc)));
+			throw TempFailure(SmtpSendFailure_FindMx(SmtpSendDetail::FindMx_CouldNotLookup, Str().Fun(DescribeWinErr, aml->m_rc)));
 
 		// Favor mail exchangers with domain match first. Then, try exchangers according to priority
 		Map<LookedUpAddr> const& mxMap = aml->m_mxLookup.m_results;
 		if (!mxMap.Any())
-			throw TempFailure(SmtpSendFailure_FindMx(SmtpSendErr::FindMx_LookupNoResults, Seq()));
+			throw TempFailure(SmtpSendFailure_FindMx(SmtpSendDetail::FindMx_LookupNoResults, Seq()));
 
 		// Make a list of domains an MX can match to be considered a domain match
 		Vec<Seq> matchDomains;
@@ -293,7 +293,7 @@ namespace At
 			};
 
 		if (!domainMatchMxs.Any() && msg.f_tlsRequirement == SmtpTlsAssurance::Tls_DomainMatch)
-			throw TempFailure(SmtpSendFailure_FindMx(SmtpSendErr::FindMx_DomainMatchRequired, describeNoMatchMxs()));
+			throw TempFailure(SmtpSendFailure_FindMx(SmtpSendDetail::FindMx_DomainMatchRequired, describeNoMatchMxs()));
 
 		// Loop through mail exchangers to send
 		SendAttempter sendAttempter;
@@ -382,7 +382,7 @@ namespace At
 			{
 				if (m_failDescSuffix.Any())
 					m_firstConnFailure.IfAny("\r\n").Add(m_failDescSuffix);
-				throw TempFailure(SmtpSendFailure_Connect(SmtpSendErr::Connect_Error, m_firstConnFailureMxa, m_firstConnFailure));
+				throw TempFailure(SmtpSendFailure_Connect(SmtpSendDetail::Connect, m_firstConnFailureMxa, m_firstConnFailure));
 			}
 			
 			EnsureThrow(!"Unexpected reason for unsatisfactory delivery result");
@@ -396,7 +396,7 @@ namespace At
 		void SendData(Writer& writer, LookedUpAddr const& mxa, SmtpSendStage::E stage, Seq data)
 		{
 			try { writer.Write(data); }
-			catch (CommunicationErr const& e) { throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Send_Error, e.S())); }
+			catch (CommunicationErr const& e) { throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Send, e.S())); }
 		}
 
 
@@ -415,14 +415,14 @@ namespace At
 							if (avail.n)
 							{
 								if (line.n < 3)
-									throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Reply_PrematureEndOfLine, Seq()));
+									throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Reply_PrematureEndOfLine, Seq()));
 								if (!Ascii::IsDecDigit(line.p[0]) || !Ascii::IsDecDigit(line.p[1]) || !Ascii::IsDecDigit(line.p[2]))
-									throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Reply_UnrecognizedCodeFormat, Seq()));
+									throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Reply_UnrecognizedCodeFormat, Seq()));
 
 								if (line.n == 3 || line.p[3] == ' ')
 									lastLine = true;
 								else if (line.p[3] != '-')
-									throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Reply_UnrecognizedLineSeparator, Seq()));
+									throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Reply_UnrecognizedLineSeparator, Seq()));
 
 								Seq lineReader = line;
 								uint32 code = lineReader.ReadNrUInt32Dec(999);
@@ -439,7 +439,7 @@ namespace At
 								else
 								{
 									if (reply.m_code.Value() != code)
-										throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Reply_InconsistentCode,
+										throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Reply_InconsistentCode,
 											Str("Code on first line: ").UInt(reply.m_code.Value()).Add(", subsequent line: ").UInt(code)));
 								}
 			
@@ -455,10 +455,10 @@ namespace At
 						break;
 			
 					if (replyBytes > Smtp_MaxServerReplyBytes)
-						throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Reply_MaximumLengthExceeded, Seq()));
+						throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Reply_MaximumLengthExceeded, Seq()));
 				}
 			}
-			catch (CommunicationErr const& e) { throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendErr::Reply_ReceiveError, e.S())); }
+			catch (CommunicationErr const& e) { throw TempFailure(SmtpSendFailure_NoCode(mxa, stage, SmtpSendDetail::Reply_CouldNotReceive, e.S())); }
 		}
 
 	} // anon
@@ -567,13 +567,13 @@ namespace At
 			if (!greeting.m_code.IsPositiveCompletion())
 			{
 				if (greeting.m_code.IsNegativeTransient())
-					throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Greeting, SmtpSendErr::Greeting_Unexpected, greeting, Seq()));
+					throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Greeting, SmtpSendDetail::Greeting_Unexpected, greeting, Seq()));
 
 				// The MX may be blocking our sending IP. Try another if we have more
 				if (localInterfaceIndex + 1 < localInterfaces.Len())
 					{ ++localInterfaceIndex; goto Reconnect; }
 
-				throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Greeting, SmtpSendErr::Greeting_SessionRefused, greeting, Seq()));
+				throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Greeting, SmtpSendDetail::Greeting_SessionRefused, greeting, Seq()));
 			}
 		}	
 
@@ -598,7 +598,7 @@ namespace At
 			SmtpServerReply ehloReply;
 			ReadReply(ehloReply, conn, mxa, SmtpSendStage::Cmd_Ehlo);
 			if (!ehloReply.m_code.IsPositiveCompletion())
-				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Ehlo, SmtpSendErr::Ehlo_UnexpectedReply, ehloReply, Seq()));
+				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Ehlo, SmtpSendDetail::Ehlo_UnexpectedReply, ehloReply, Seq()));
 
 			for (Str const& line : ehloReply.m_lines.GetSlice(1))
 			{
@@ -634,7 +634,7 @@ namespace At
 			if (!usingImplicitTls && !l_supports_startTls)
 			{
 				if (tlsAssuranceRqmt > SmtpTlsAssurance::NoTls)
-					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_NotAvailable, Seq()));
+					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_NotAvailable, Seq()));
 			}
 			else
 			{
@@ -657,13 +657,13 @@ namespace At
 					{
 						// TLS rejected by server
 						if (tlsAssuranceRqmt > SmtpTlsAssurance::NoTls)
-							throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_StartTlsRejected, startTlsReply, Seq()));
+							throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_StartTlsRejected, startTlsReply, Seq()));
 					}
 				}
 
 				if (okToBeginTls)
 				{
-					m_workPool->SmtpSender_AddSchannelCerts(conn);
+					m_workPool->SmtpSender_AddSchannelCerts(ourName, conn);
 					conn.InitCred(ProtoSide::Client);
 
 					if (tlsAssuranceGoal <= SmtpTlsAssurance::Tls_NoHostAuth)
@@ -687,7 +687,7 @@ namespace At
 						if (tlsAssuranceRqmt <= SmtpTlsAssurance::NoTls)
 							{ tlsAssuranceGoal = SmtpTlsAssurance::NoTls; goto Reconnect; }
 
-						throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_SspiErr_LikelyDh_TooManyRestarts, e.S()));
+						throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_Sspi_LikelyDh_TooManyRestarts, e.S()));
 					}
 					catch (Schannel::SspiErr const& e)
 					{
@@ -696,7 +696,7 @@ namespace At
 							if (tlsAssuranceRqmt <= SmtpTlsAssurance::NoTls)
 								{ tlsAssuranceGoal = SmtpTlsAssurance::NoTls; goto Reconnect; }
 
-							throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_SspiErr_InvalidToken_IllegalMsg, e.S()));
+							throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_Sspi_InvalidToken_IllegalMsg, e.S()));
 						}
 
 						if (e.m_code == SEC_E_WRONG_PRINCIPAL || e.m_code == SEC_E_UNTRUSTED_ROOT || e.m_code == SEC_E_CERT_EXPIRED || e.m_code == TRUST_E_CERT_SIGNATURE)
@@ -704,12 +704,12 @@ namespace At
 							if (tlsAssuranceRqmt <= SmtpTlsAssurance::Tls_NoHostAuth)
 								{ tlsAssuranceGoal = SmtpTlsAssurance::Tls_NoHostAuth; goto Reconnect; }
 
-							throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_SspiErr_ServerAuthRequired, e.S()));
+							throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_Sspi_ServerAuthRequired, e.S()));
 						}
 
-						throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_SspiErr_Other, e.S()));
+						throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_Sspi_Other, e.S()));
 					}
-					catch (CommunicationErr const& e) { throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_CommunicationErr, e.S())); }
+					catch (CommunicationErr const& e) { throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_Communication, e.S())); }
 
 					if (usingImplicitTls)
 						goto RestartAtGreetingAfterImplicitTls;
@@ -727,22 +727,22 @@ namespace At
 		else                          tlsAssuranceAchieved = SmtpTlsAssurance::Tls_ExactMatch;
 
 		if (tlsAssuranceAchieved < tlsAssuranceRqmt)
-			throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendErr::Tls_RequiredAssuranceNotAchieved, Seq()));
+			throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Tls, SmtpSendDetail::Tls_RequiredAssuranceNotAchieved, Seq()));
 
 		// Check capabilities here, after potentially negotiating TLS, rather than relying on capabilities received in plaintext
 		if (contains8bit && !l_supports_8BitMime)
-			throw PermFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Capabilities, SmtpSendErr::Capabilities_8BitMimeRequired, Seq()));
+			throw PermFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Capabilities, SmtpSendDetail::Capabilities_8BitMimeRequired, Seq()));
 
 		// SIZE supported? Is there a max size?
 		if (l_supports_size && l_size_max > 0 && content.Len() > l_size_max)
-			throw PermFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Capabilities, SmtpSendErr::Capabilities_Size,
+			throw PermFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Capabilities, SmtpSendDetail::Capabilities_Size,
 				Str("Destination MX message size limit: ").UInt(l_size_max).Add(" bytes, size of message: ").UInt(content.Len()).Add(" bytes")));
 
 		// Authenticate?
 		if (cfg.f_useRelay && cfg.f_relayAuthType != MailAuthType::None)
 		{
 			if (!l_supports_auth)
-				throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_AuthCommandNotSupported, Seq()));
+				throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_AuthCommandNotSupported, Seq()));
 
 			uint64 methodToUse = cfg.f_relayAuthType;
 			if (methodToUse == MailAuthType::UseSuitable)
@@ -752,33 +752,33 @@ namespace At
 				else if (l_supports_auth_crammd5)
 					methodToUse = MailAuthType::AuthCramMd5;
 				else
-					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_NoSuitableAuthMechanism, Seq()));
+					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_NoSuitableAuthMechanism, Seq()));
 			}
 				
 			if (methodToUse == MailAuthType::AuthPlain)
 			{
 				if (!l_supports_auth_plain)
-					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_CfgAuthMechNotSupported, Seq()));
+					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_CfgAuthMechNotSupported, Seq()));
 
 				PerformAuthPlain(cfg, timeouts, mxa, conn);
 			}
 			else if (methodToUse == MailAuthType::AuthCramMd5)
 			{
 				if (!l_supports_auth_crammd5)
-					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_CfgAuthMechNotSupported, Seq()));
+					throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_CfgAuthMechNotSupported, Seq()));
 
 				PerformAuthCramMd5(cfg, timeouts, mxa, conn);
 			}
 			else
-				throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_CfgAuthMechUnrecognized, Seq()));
+				throw TempFailure(SmtpSendFailure_NoCode(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_CfgAuthMechUnrecognized, Seq()));
 
 			SmtpServerReply authReply;
 			ReadReply(authReply, conn, mxa, SmtpSendStage::Cmd_Auth);
 			if (!authReply.m_code.IsPositiveCompletion())
 			{
-					 if (authReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_Rejected, authReply, Seq()));
-				else if (authReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_Rejected, authReply, Seq()));
-				else                                             throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_UnexpectedReply, authReply, Seq()));
+					 if (authReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_Rejected, authReply, Seq()));
+				else if (authReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_Rejected, authReply, Seq()));
+				else                                             throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_UnexpectedReply, authReply, Seq()));
 			}
 		}
 	
@@ -800,9 +800,9 @@ namespace At
 			ReadReply(mailReply, conn, mxa, SmtpSendStage::Cmd_MailFrom);
 			if (!mailReply.m_code.IsPositiveCompletion())
 			{
-					 if (mailReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_MailFrom, SmtpSendErr::MailFrom_Rejected, mailReply, Seq()));
-				else if (mailReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_MailFrom, SmtpSendErr::MailFrom_Rejected, mailReply, Seq()));
-				else                                             throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_MailFrom, SmtpSendErr::MailFrom_UnexpectedReply, mailReply, Seq()));
+					 if (mailReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_MailFrom, SmtpSendDetail::MailFrom_Rejected, mailReply, Seq()));
+				else if (mailReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_MailFrom, SmtpSendDetail::MailFrom_Rejected, mailReply, Seq()));
+				else                                             throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_MailFrom, SmtpSendDetail::MailFrom_UnexpectedReply, mailReply, Seq()));
 			}
 		}
 	
@@ -824,10 +824,10 @@ namespace At
 				MailboxResult_SetSuccess(mailboxResults.Add(), now, mailbox, Str::From(mxa));
 				anyRcptAccepted = true;
 			}
-			else if (rcptReply.m_code.IsNegativeTransient()) MailboxResult_SetTempFailure(mailboxResults.Add(), now, mailbox, SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendErr::RcptTo_Rejected, rcptReply, Seq()));
-			else if (rcptReply.m_code.IsNegativePermanent()) MailboxResult_SetPermFailure(mailboxResults.Add(), now, mailbox, SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendErr::RcptTo_Rejected, rcptReply, Seq()));
+			else if (rcptReply.m_code.IsNegativeTransient()) MailboxResult_SetTempFailure_Move(mailboxResults.Add(), now, mailbox, SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendDetail::RcptTo_Rejected, rcptReply, Seq()));
+			else if (rcptReply.m_code.IsNegativePermanent()) MailboxResult_SetPermFailure_Move(mailboxResults.Add(), now, mailbox, SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendDetail::RcptTo_Rejected, rcptReply, Seq()));
 			else
-				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendErr::RcptTo_UnexpectedReply, rcptReply, Seq()));
+				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_RcptTo, SmtpSendDetail::RcptTo_UnexpectedReply, rcptReply, Seq()));
 		}
 
 		if (anyRcptAccepted)
@@ -841,9 +841,9 @@ namespace At
 				ReadReply(dataReply, conn, mxa, SmtpSendStage::Cmd_Data);
 				if (!dataReply.m_code.IsPositiveIntermediate())
 				{
-					if (dataReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Data, SmtpSendErr::Data_Rejected, dataReply, Seq()));
-					if (dataReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Data, SmtpSendErr::Data_Rejected, dataReply, Seq()));
-					else                                        throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Data, SmtpSendErr::Data_UnexpectedReply, dataReply, Seq()));
+					if (dataReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Data, SmtpSendDetail::Data_Rejected, dataReply, Seq()));
+					if (dataReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Data, SmtpSendDetail::Data_Rejected, dataReply, Seq()));
+					else                                        throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Data, SmtpSendDetail::Data_UnexpectedReply, dataReply, Seq()));
 				}
 			}
 
@@ -912,9 +912,9 @@ namespace At
 				}
 				else
 				{
-						 if (contentReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Content, SmtpSendErr::Content_Rejected, contentReply, Seq()));
-					else if (contentReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Content, SmtpSendErr::Content_Rejected, contentReply, Seq()));
-					else                                                throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Content, SmtpSendErr::Content_UnexpectedReply, contentReply, Seq()));
+						 if (contentReply.m_code.IsNegativePermanent()) throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Content, SmtpSendDetail::Content_Rejected, contentReply, Seq()));
+					else if (contentReply.m_code.IsNegativeTransient()) throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Content, SmtpSendDetail::Content_Rejected, contentReply, Seq()));
+					else                                                throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Content, SmtpSendDetail::Content_UnexpectedReply, contentReply, Seq()));
 				}
 			}
 		}
@@ -972,9 +972,9 @@ namespace At
 		if (challengeReply.m_code.Value() != 334)
 		{
 			if (challengeReply.m_code.IsNegativePermanent())
-				throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_UnexpectedCramMd5ChallengeReply, challengeReply, Seq()));
+				throw PermFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_UnexpectedCramMd5ChallengeReply, challengeReply, Seq()));
 			else
-				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendErr::Auth_UnexpectedCramMd5ChallengeReply, challengeReply, Seq()));
+				throw TempFailure(SmtpSendFailure_Reply(mxa, SmtpSendStage::Cmd_Auth, SmtpSendDetail::Auth_UnexpectedCramMd5ChallengeReply, challengeReply, Seq()));
 		}
 
 		Str challengeData;

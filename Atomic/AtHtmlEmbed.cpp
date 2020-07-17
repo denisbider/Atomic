@@ -14,7 +14,7 @@ namespace At
 	{
 		// AttrInfo
 
-		namespace
+		namespace Internal
 		{
 			struct UnsafeChars { enum E { End, Encode }; };
 
@@ -841,7 +841,9 @@ namespace At
 					{ nullptr                                                                      },
 				};
 
-		} // anon
+		}
+
+		using namespace Internal;
 
 
 		// ElemInfo
@@ -998,9 +1000,10 @@ namespace At
 
 		AttrInfo const* ElemInfo::FindAttrInfo_ByTagExact(Seq tagLower) const
 		{
-			for (AttrInfo const* ai=m_attrs; ai->m_tag; ++ai)
-				if (tagLower.EqualExact(ai->m_tag))
-					return ai;
+			if (m_attrs)
+				for (AttrInfo const* ai=m_attrs; ai->m_tag; ++ai)
+					if (tagLower.EqualExact(ai->m_tag))
+						return ai;
 
 			for (AttrInfo const* ai=c_globalAttrInfo; ai->m_tag; ++ai)
 				if (tagLower.EqualExact(ai->m_tag))

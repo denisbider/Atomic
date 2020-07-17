@@ -176,8 +176,8 @@ namespace At
 						if (m_maxNrSteps < 4000)
 							m_maxNrSteps = 4000;
 
-						m_diagsFwd.Resize(m_nrDiags);
-						m_diagsBwd.Resize(m_nrDiags);
+						m_diagsFwd.ResizeExact(m_nrDiags);
+						m_diagsBwd.ResizeExact(m_nrDiags);
 					}
 				}
 

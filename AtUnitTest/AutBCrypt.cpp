@@ -2,11 +2,8 @@
 #include "AutMain.h"
 
 
-void BCryptTests(int argc, char** argv)
+void BCryptTests()
 {
-	(void) argc;
-	(void) argv;
-
 	try
 	{
 		BCrypt::Provider* pProvider = new BCrypt::Provider;	// Avoid VS 2015 false positive warning C4702: unreachable code

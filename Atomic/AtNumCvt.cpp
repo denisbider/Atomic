@@ -1,13 +1,15 @@
 #include "AtIncludes.h"
 #include "AtNumCvt.h"
 
+
 namespace At
 {
+
 	char const* const NumAlphabet::Upper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	char const* const NumAlphabet::Lower = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 
-	uint HexDigitValue(uint c)
+	uint HexDigitValue(uint c) noexcept
 	{
 		if (c >= '0' && c <= '9')	return c - '0';
 		if (c >= 'A' && c <= 'F')	return 10 + (c - 'A');
@@ -17,7 +19,7 @@ namespace At
 
 
 
-	sizet UInt2Buf(uint64 value, byte* buf, uint base, uint zeroPadWidth, CharCase charCase, uint spacePadWidth)
+	sizet UInt2Buf(uint64 value, byte* buf, uint base, uint zeroPadWidth, CharCase charCase, uint spacePadWidth) noexcept
 	{
 		byte const* const alphabet = (byte const*) NumAlphabet::Get(charCase);
 
@@ -52,7 +54,7 @@ namespace At
 
 
 
-	sizet SInt2Buf(int64 value, byte* buf, AddSign::E addSign, uint base, uint zeroPadWidth, CharCase charCase)
+	sizet SInt2Buf(int64 value, byte* buf, AddSign::E addSign, uint base, uint zeroPadWidth, CharCase charCase) noexcept
 	{
 		if (value >= 0)
 		{
@@ -81,7 +83,7 @@ namespace At
 	}
 
 
-	sizet Dbl2Buf(double value, byte* buf, uint prec)
+	sizet Dbl2Buf(double value, byte* buf, uint prec) noexcept
 	{
 		byte* bufOrig = buf;
 	
@@ -116,4 +118,5 @@ namespace At
 	
 		return (sizet) (buf - bufOrig);
 	}
+
 }

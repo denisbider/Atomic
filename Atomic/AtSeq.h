@@ -135,7 +135,7 @@ namespace At
 		uint16 ReadNrUInt16Dec              (uint16 max = UINT16_MAX)                       noexcept { return          ReadNrUInt16 (10,   max      ); }
 		byte   ReadNrByteDec                (byte   max = 255)                              noexcept { return          ReadNrByte   (10,   max      ); }
 		double ReadDouble                   () noexcept;
-		Time   ReadIsoStyleTimeStr          () noexcept;
+		bool   ReadIsoStyleTimeStr          (Time& t) noexcept;
 
 		// If onToken returns false, stops enumeration and returns false. Returns true if onToken is never called, or if it always returned true.
 		bool ForEachNonEmptyToken(char const* separatorBytes, std::function<bool(Seq)> onToken) const;
@@ -154,10 +154,21 @@ namespace At
 		Seq& DropToString                 (Seq str, CaseMatch cm = CaseMatch::Exact) noexcept { ReadToString(str, cm); return *this; }
 		Seq& DropLeadingNewLine           ()                                         noexcept { ReadLeadingNewLine(); return *this; }
 
-		uint ReadLastUtf8Char () noexcept;	// Returns UINT_MAX if not enough bytes left or invalid UTF-8. No bytes are consumed unless read is successful
-		Seq& DropLastUtf8Char () noexcept { ReadLastUtf8Char(); return *this; }
-		uint ReadLastByte     () noexcept { if (n) return p[--n]; return UINT_MAX; }
-		Seq& DropLastByte     () noexcept { if (n) --n; return *this; }
+		uint RevReadByte                     () noexcept { if (n) return p[--n]; return UINT_MAX; }
+		uint RevReadUtf8Char                 () noexcept;	// Returns UINT_MAX if not enough bytes left or invalid UTF-8. No bytes are consumed unless read is successful
+		Seq  RevReadToByte                   (uint b) noexcept;
+		Seq  RevReadToFirstByteOf            (char const* bytes) noexcept;
+		Seq  RevReadToFirstByteNotOf         (char const* bytes) noexcept;
+		Seq  RevReadToFirstUtf8CharOfType    (CharCriterion criterion) noexcept;
+		Seq  RevReadToFirstUtf8CharNotOfType (CharCriterion criterion) noexcept;
+
+		Seq& RevDropByte                     () noexcept                    { if (n) --n; return *this; }
+		Seq& RevDropUtf8Char                 () noexcept                    { RevReadUtf8Char(); return *this; }
+		Seq& RevDropToByte                   (uint b) noexcept              { RevReadToByte           (b);     return *this; }
+		Seq& RevDropToFirstByteOf            (char const* bytes) noexcept   { RevReadToFirstByteOf    (bytes); return *this; }
+		Seq& RevDropToFirstByteNotOf         (char const* bytes) noexcept   { RevReadToFirstByteNotOf (bytes); return *this; }
+		Seq& RevDropToFirstUtf8CharOfType    (CharCriterion crit)  noexcept { RevReadToFirstUtf8CharOfType(crit); return *this; }
+		Seq& RevDropToFirstUtf8CharNotOfType (CharCriterion crit)  noexcept { RevReadToFirstUtf8CharNotOfType(crit); return *this; }
 
 		bool ContainsByte                 (uint          b,         sizet m = SIZE_MAX) const { return Seq(*this).DropToByte(b, m).Any(); }
 		bool ContainsAnyByteOf            (char const*   bytes,     sizet m = SIZE_MAX) const { return Seq(*this).DropToFirstByteOf(bytes, m).Any(); }
@@ -190,22 +201,12 @@ namespace At
 		bool operator<  (Seq x) const noexcept { return Compare(x, CaseMatch::Exact) <  0; }
 		bool operator>  (Seq x) const noexcept { return Compare(x, CaseMatch::Exact) >  0; }
 
-		Seq ReadToAfterLastByte              (uint b) noexcept;						// Reads nothing if no match found
-		Seq ReadToAfterLastByteOf            (char const* bytes) noexcept;			// Reads nothing if no match found
-		Seq ReadToAfterLastByteNotOf         (char const* bytes) noexcept;			// Reads nothing if no match found
-		Seq ReadToAfterLastUtf8CharOfType    (CharCriterion criterion) noexcept;	// Reads nothing if no match found. Invalid UTF-8 counts as a match
-		Seq ReadToAfterLastUtf8CharNotOfType (CharCriterion criterion) noexcept;	// Reads nothing if no match found. Invalid UTF-8 counts as a match
-
-		Seq& DropToAfterLastByte      (uint b) noexcept            { ReadToAfterLastByte      (b);     return *this; }
-		Seq& DropToAfterLastByteOf    (char const* bytes) noexcept { ReadToAfterLastByteOf    (bytes); return *this; }
-		Seq& DropToAfterLastByteNotOf (char const* bytes) noexcept { ReadToAfterLastByteNotOf (bytes); return *this; }
-
-		Seq TrimLeft () const noexcept { return Seq(*this).DropToFirstUtf8CharNotOfType     (Unicode::IsWhitespace); }
-		Seq TrimRight() const noexcept { return Seq(*this).ReadToAfterLastUtf8CharNotOfType (Unicode::IsWhitespace); }
+		Seq TrimLeft () const noexcept { return Seq(*this).DropToFirstUtf8CharNotOfType    (Unicode::IsWhitespace); }
+		Seq TrimRight() const noexcept { return Seq(*this).RevDropToFirstUtf8CharNotOfType (Unicode::IsWhitespace); }
 		Seq Trim     () const noexcept { return TrimLeft().TrimRight(); }
 
-		Seq TrimBytesLeft (char const* bytes) const noexcept { return Seq(*this).DropToFirstByteNotOf     (bytes); }
-		Seq TrimBytesRight(char const* bytes) const noexcept { return Seq(*this).ReadToAfterLastByteNotOf (bytes); }
+		Seq TrimBytesLeft (char const* bytes) const noexcept { return Seq(*this).DropToFirstByteNotOf    (bytes); }
+		Seq TrimBytesRight(char const* bytes) const noexcept { return Seq(*this).RevDropToFirstByteNotOf (bytes); }
 		Seq TrimBytes     (char const* bytes) const noexcept { return TrimBytesLeft(bytes).TrimBytesRight(bytes); }
 
 		// Breaks lines on LF. Trims up to one trailing CR. Does not touch or act on other occurrences of CR
@@ -215,6 +216,7 @@ namespace At
 		Vec<SeqOrStr> SplitLines(uint splitFlags);
 
 	private:
+		Seq RevReadToPtr(byte const* r) noexcept;
 		static int MemCmpInsensitive(byte const* a, byte const* b, sizet n) noexcept;
 	};
 

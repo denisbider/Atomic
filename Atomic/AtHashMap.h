@@ -18,7 +18,7 @@ namespace At
 		using Key      = std::remove_const_t<std::remove_reference_t<KeyOrRef>>;
 
 	public:
-		HashMap<T>& SetNrBuckets(sizet nrBuckets) { EnsureThrow(m_v.Len() == 0); m_v.Resize(nrBuckets); return *this; }
+		HashMap<T>& SetNrBuckets(sizet nrBuckets) { EnsureThrow(m_v.Len() == 0); m_v.ResizeExact(nrBuckets); return *this; }
 		sizet NrBuckets() const { return m_v.Len(); }
 
 		T& Add(T const& x) { T c{x}; return Add(c.Key(), std::move(c)); }

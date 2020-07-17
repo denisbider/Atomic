@@ -15,14 +15,14 @@ namespace At
 	class RpAnchor
 	{
 	public:
-		Rp<T> Get()
+		Rp<T> Get() noexcept
 		{
 			ReadLocker readLocker { m_rwLock };
 			return m_sp;
 		}
 
 
-		void Set(Rp<T> const& sp)
+		void Set(Rp<T> const& sp) noexcept
 		{
 			WriteLocker writeLocker { m_rwLock };
 			m_sp = sp;

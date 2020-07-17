@@ -53,7 +53,7 @@ namespace At
 
 		DWORD Start            (int argc, wchar_t const* const* argv);
 		bool  StartedAsService () const { return m_startedAsService; }
-		void  SetState         (DWORD state);
+		void  SetState         (DWORD state) noexcept;
 		void  Stop             (Seq reason);
 	
 		void  LogEvent         (WORD eventType, Seq text);

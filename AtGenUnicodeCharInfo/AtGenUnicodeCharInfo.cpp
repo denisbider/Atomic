@@ -47,7 +47,7 @@ private:
 void CharInfoBuilder::Run()
 {
 	m_chars.Clear();
-	m_chars.Resize(Unicode::MaxAssignedCodePoint + 1);
+	m_chars.ResizeExact(Unicode::MaxAssignedCodePoint + 1);
 
 	Str unicodeDataFileName    { JoinPath(m_dir, "UnicodeData.txt"       ) };
 	Str eastAsianWidthFileName { JoinPath(m_dir, "EastAsianWidth.txt"    ) };

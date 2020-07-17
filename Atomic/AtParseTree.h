@@ -9,6 +9,8 @@ namespace At
 	class ParseTree : NoCopy
 	{
 	public:
+		enum { MaxDepth = 300 };
+
 		struct Bucket
 		{
 			enum { ElemsPerNode = (sizeof(ParseNode) + sizeof(sizet) - 1) / sizeof(sizet),
@@ -33,8 +35,8 @@ namespace At
 		{
 			Bucket* m_lastBucket {};
 
-			void Push(Bucket* b) noexcept { b->m_nodesUsed = 0; b->m_prevBucket = m_lastBucket; m_lastBucket = b; }
-			Bucket* Pop() noexcept { Bucket* b = m_lastBucket; if (b) { m_lastBucket = b->m_prevBucket; b->m_prevBucket = nullptr; } return b; }
+			void PushBucket(Bucket* b) noexcept { b->m_nodesUsed = 0; b->m_prevBucket = m_lastBucket; m_lastBucket = b; }
+			Bucket* PopBucket() noexcept { Bucket* b = m_lastBucket; if (b) { m_lastBucket = b->m_prevBucket; b->m_prevBucket = nullptr; } return b; }
 
 			~Storage() noexcept;
 		};
@@ -57,9 +59,10 @@ namespace At
 		enum EBestAttempt { BestAttempt };
 		void EncObj(Enc& enc, EBestAttempt) const;
 
-		Seq   BestRemaining () const { return m_bestRemaining; }
-		sizet BestToRow     () const { return m_bestToRow; }
-		sizet BestToCol     () const { return m_bestToCol; }
+		bool  MaxDepthExceeded () const { return m_maxDepthExceeded; }
+		Seq   BestRemaining    () const { return m_bestRemaining; }
+		sizet BestToRow        () const { return m_bestToRow; }
+		sizet BestToCol        () const { return m_bestToCol; }
 
 		bool HaveRoot() const { return m_firstBucket != nullptr && m_firstBucket->m_nodesUsed > 0; }
 
@@ -70,10 +73,12 @@ namespace At
 		uint             m_tabStop { 4 };
 		Vec<Ruid const*> m_flags;
 
+		Storage     m_instanceStorage;
 		Storage*    m_storage;
 		Bucket*     m_firstBucket;
 		Bucket*     m_lastBucket;
 
+		bool        m_maxDepthExceeded {};
 		Seq			m_bestRemaining;
 		sizet		m_bestToRow;
 		sizet		m_bestToCol;
@@ -88,12 +93,11 @@ namespace At
 		bool m_recordBestToStack;
 		Vec<BestToStackEntry> m_bestToStack;
 
-		ParseNode* NewNode(ParseNode& parent, Ruid const& type);
+		ParseNode* NewNode(ParseNode& parent, Ruid const& type);	// Returns nullptr if MaxDepth exceeded
 		void FailNode(ParseNode* p);
 		void DiscardNode(ParseNode* p);
 
 		Bucket* GetNewBucket();
-		void FreeBucket(Bucket* b) noexcept;
 
 		friend class ParseNode;
 	};

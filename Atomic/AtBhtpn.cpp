@@ -20,6 +20,6 @@ namespace At
 		if (dirAndBaseLower.EndsWithExact("admin"))
 			dirAndBaseLower.n -= 5;
 
-		return Hash::HexHashOf(dirAndBaseLower, CALG_SHA_256, CharCase::Lower).Resize(16);
+		return Hash::HexHashOf(dirAndBaseLower, CALG_SHA_256, CharCase::Lower).ResizeExact(16);
 	}
 }

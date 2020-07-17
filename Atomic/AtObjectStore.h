@@ -443,7 +443,7 @@ namespace At
 
 		struct FisPage
 		{
-			FisPage() { m_state.Resize(UInt64PerPage); }
+			FisPage() { m_state.ResizeExact(UInt64PerPage); }
 			FisPage(FisPage const&) = delete;
 
 			FisPage(FisPage&& x) noexcept

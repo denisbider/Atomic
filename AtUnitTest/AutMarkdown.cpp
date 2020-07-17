@@ -40,13 +40,13 @@ void MarkdownTest(Seq srcText)
 }
 
 
-void MarkdownTests(int argc, char** argv)
+void MarkdownTests(Slice<Seq> args)
 {
-	if (argc > 2)
+	if (args.Len() > 2)
 	{
 		Str mkdn;
 
-		WinStr filePath { argv[2] };
+		WinStr filePath { args[2] };
 		File().Open(filePath.Z(), File::OpenArgs::DefaultRead())
 			.ReadAllInto(mkdn);
 

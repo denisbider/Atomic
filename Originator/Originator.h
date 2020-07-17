@@ -200,23 +200,23 @@ ORIGINATOR_FUNC OgnResult   __cdecl OgnSendStage_Values    (OgnEnumValues& x);
 
 
 
-struct OgnSendErr { enum E : uint32_t {
+struct OgnSendDetail { enum E : uint32_t {
 	None									=         0,
 	Unknown									=      1000,
 	RelayLookup_LookupTimedOut				=   5001000,
-	RelayLookup_LookupError					=   5002000,
+	RelayLookup_CouldNotLookup				=   5002000,
 	FindMx_LookupTimedOut					=  10001000,
-	FindMx_LookupError						=  10002000,
+	FindMx_CouldNotLookup					=  10002000,
 	FindMx_LookupNoResults					=  10003000,
 	FindMx_DomainMatchRequired				=  10004000,
-	Connect_Error							=  20001000,
-	Send_Error								=  30001000,
+	Connect									=  20001000,
+	Send									=  30001000,
 	Reply_PrematureEndOfLine				=  40001000,
 	Reply_UnrecognizedCodeFormat			=  40002000,
 	Reply_UnrecognizedLineSeparator			=  40003000,
 	Reply_InconsistentCode					=  40004000,
 	Reply_MaximumLengthExceeded				=  40005000,
-	Reply_ReceiveError						=  40006000,
+	Reply_CouldNotReceive					=  40006000,
 	Greeting_SessionRefused					=  50001000,
 	Greeting_Unexpected						=  50002000,
 	Ehlo_UnexpectedReply					=  60001000,
@@ -224,11 +224,11 @@ struct OgnSendErr { enum E : uint32_t {
 	Capabilities_Size						=  70002000,
 	Tls_NotAvailable						=  80001000,
 	Tls_StartTlsRejected					=  80002000,
-	Tls_SspiErr_LikelyDh_TooManyRestarts	=  80003000,
-	Tls_SspiErr_InvalidToken_IllegalMsg		=  80004000,
-	Tls_SspiErr_ServerAuthRequired			=  80005000,
-	Tls_SspiErr_Other						=  80006000,
-	Tls_CommunicationErr					=  80007000,
+	Tls_Sspi_LikelyDh_TooManyRestarts		=  80003000,
+	Tls_Sspi_InvalidToken_IllegalMsg		=  80004000,
+	Tls_Sspi_ServerAuthRequired				=  80005000,
+	Tls_Sspi_Other							=  80006000,
+	Tls_Communication						=  80007000,
 	Tls_RequiredAssuranceNotAchieved		=  80008000,
 	Auth_AuthCommandNotSupported			=  85001000,
 	Auth_CfgAuthMechNotSupported			=  85002000,
@@ -247,10 +247,10 @@ struct OgnSendErr { enum E : uint32_t {
 	Content_UnexpectedReply					= 120002000,
 }; };
 
-ORIGINATOR_FUNC char const* __cdecl OgnSendErr_Name      (uint32_t v);
-ORIGINATOR_FUNC char const* __cdecl OgnSendErr_Desc      (uint32_t v);
-ORIGINATOR_FUNC bool        __cdecl OgnSendErr_NameToVal (OgnSeq, OgnSendErr::E& v);
-ORIGINATOR_FUNC OgnResult   __cdecl OgnSendErr_Values    (OgnEnumValues& x);
+ORIGINATOR_FUNC char const* __cdecl OgnSendDetail_Name      (uint32_t v);
+ORIGINATOR_FUNC char const* __cdecl OgnSendDetail_Desc      (uint32_t v);
+ORIGINATOR_FUNC bool        __cdecl OgnSendDetail_NameToVal (OgnSeq, OgnSendDetail::E& v);
+ORIGINATOR_FUNC OgnResult   __cdecl OgnSendDetail_Values    (OgnEnumValues& x);
 
 
 
@@ -346,7 +346,7 @@ struct OgnObjId
 struct OgnSendFailure
 {
 	OgnSendStage::E		m_stage     {};
-	OgnSendErr::E		m_err       {};
+	OgnSendDetail::E	m_detail    {};
 	OgnSeq				m_mx        {};
 	uint64_t			m_replyCode {};
 	uint64_t			m_enhStatus {};

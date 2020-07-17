@@ -57,6 +57,9 @@ namespace At
 		//   On delivery success or failure, the SmtpSender_OnDeliveryResult method is called.
 		void Send(Rp<SmtpMsgToSend> const& msg) { msg->Insert_ParentExists(); msg->GetStore().AddPostCommitAction( [this] () { m_pumpTrigger.Signal(); } ); }
 
+		// Signal SmtpSender to run its main loop if the message queue has changed - e.g. next attempt time for a message has been set to send now.
+		void SignalTrigger() { GetStore().AddPostCommitAction( [this] () { m_pumpTrigger.Signal(); } ); }
+
 		EntityStore& GetStore() { return SmtpSender_GetStorageParent().GetStore(); }
 
 	protected:
@@ -71,7 +74,7 @@ namespace At
 		virtual Str SmtpSender_SenderComputerName(Seq fromDomainName) const = 0;
 
 		// Called by sender threads each time TLS is started
-		virtual void SmtpSender_AddSchannelCerts(Schannel& conn) = 0;
+		virtual void SmtpSender_AddSchannelCerts(Seq ourName, Schannel&) = 0;
 
 		// Called before enqueueing the message if msg.f_moreContentContext is non-empty
 		virtual void SmtpSender_InTx_LoadMoreContent(SmtpMsgToSend const& msg, Enc& enc);

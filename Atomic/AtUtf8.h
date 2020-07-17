@@ -6,6 +6,12 @@ namespace At
 {
 	namespace Utf8
 	{
+		namespace Lit
+		{
+			extern Seq const BOM;
+			extern Seq const Ellipsis;
+		}
+
 		enum { MaxBytesPerChar = 4 };
 
 		// A UTF-8 character is encoded as one leading byte, followed by 1 - 3 trailing bytes
@@ -13,8 +19,8 @@ namespace At
 		inline bool IsTrailingByte(uint c) { return (c & 0xFFFFFFC0) == 0x80; }
 
 		struct ReadResult { enum E { OK, NeedMore, CharStartNotFound, InvalidLeadingByte, InvalidTrailingByte, Overlong, InvalidSurrogate, InvalidCodePoint }; };
-		ReadResult::E ReadCodePoint     (Seq& s, uint& v) noexcept;
-		ReadResult::E ReadLastCodePoint (Seq& s, uint& v) noexcept;
+		ReadResult::E ReadCodePoint    (Seq& s, uint& v) noexcept;
+		ReadResult::E RevReadCodePoint (Seq& s, uint& v) noexcept;
 
 		sizet CodePointEncodedBytes (uint c);
 		uint  WriteCodePoint        (byte* p, uint c);	// Returns number of bytes written

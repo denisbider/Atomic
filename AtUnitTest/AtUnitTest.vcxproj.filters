@@ -23,6 +23,7 @@
     <ClCompile Include="AutDiff.cpp" />
     <ClCompile Include="AutMap.cpp" />
     <ClCompile Include="AutUri.cpp" />
+    <ClCompile Include="AutHtmlEmbed.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutIncludes.h" />

@@ -182,6 +182,8 @@
     <ClCompile Include="AtBhtpnGrammar.cpp" />
     <ClCompile Include="AtBhtpnServer.cpp" />
     <ClCompile Include="AtBhtpnServerThread.cpp" />
+    <ClCompile Include="AtCert.cpp" />
+    <ClCompile Include="AtCertStore.cpp" />
     <ClCompile Include="AtCspBuilder.cpp" />
     <ClCompile Include="AtCssPack.cpp" />
     <ClCompile Include="AtDiff.cpp" />
@@ -193,9 +195,13 @@
     <ClCompile Include="AtEllipticCurve.cpp" />
     <ClCompile Include="AtEmailServer.cpp" />
     <ClCompile Include="AtEnc.cpp" />
+    <ClCompile Include="AtEnsureConvert.cpp" />
+    <ClCompile Include="AtEnsureFailDesc.cpp" />
+    <ClCompile Include="AtEnsureStackTrace.cpp" />
     <ClCompile Include="AtFormInputType.cpp" />
-    <ClCompile Include="AtHtmlField.cpp" />
+    <ClCompile Include="AtHtmlForm.cpp" />
     <ClCompile Include="AtImfDateTime.cpp" />
+    <ClCompile Include="AtInitWaitEvent.cpp" />
     <ClCompile Include="AtJsonBuilder.cpp" />
     <ClCompile Include="AtJsPack.cpp" />
     <ClCompile Include="AtJsPackGrammar.cpp" />
@@ -234,6 +240,7 @@
     <ClCompile Include="AtMarkdownGrammar.cpp" />
     <ClCompile Include="AtMem.cpp" />
     <ClCompile Include="AtDllKernel32.cpp" />
+    <ClCompile Include="AtUnits.cpp" />
     <ClCompile Include="AtOvlReader.cpp" />
     <ClCompile Include="AtOvlWriter.cpp" />
     <ClCompile Include="AtPinStore.cpp" />
@@ -348,6 +355,11 @@
     <ClInclude Include="AtAsn1.h" />
     <ClInclude Include="AtBCrypt.h" />
     <ClInclude Include="AtBgTask.h" />
+    <ClInclude Include="AtCert.h" />
+    <ClInclude Include="AtCertStore.h" />
+    <ClInclude Include="AtEnsureConvert.h" />
+    <ClInclude Include="AtEnsureFailDesc.h" />
+    <ClInclude Include="AtEnsureStackTrace.h" />
     <ClInclude Include="AtFormInputType.h" />
     <ClInclude Include="AtHeap.h" />
     <ClInclude Include="AtCspBuilder.h" />
@@ -362,8 +374,9 @@
     <ClInclude Include="AtEllipticCurve.h" />
     <ClInclude Include="AtEmailServer.h" />
     <ClInclude Include="AtEnc.h" />
-    <ClInclude Include="AtHtmlField.h" />
+    <ClInclude Include="AtHtmlForm.h" />
     <ClInclude Include="AtImfDateTime.h" />
+    <ClInclude Include="AtInitWaitEvent.h" />
     <ClInclude Include="AtJsonBuilder.h" />
     <ClInclude Include="AtJsPack.h" />
     <ClInclude Include="AtJsPackGrammar.h" />
@@ -387,6 +400,7 @@
     <ClInclude Include="AtLogEvent.h" />
     <ClInclude Include="AtMarkdownGrammar.h" />
     <ClInclude Include="AtDllKernel32.h" />
+    <ClInclude Include="AtUnits.h" />
     <ClInclude Include="AtOpt.h" />
     <ClInclude Include="AtParseTree.h" />
     <ClInclude Include="AtPop3ServerThread.h" />

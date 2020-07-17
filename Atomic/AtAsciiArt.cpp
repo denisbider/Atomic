@@ -194,7 +194,7 @@ namespace At
 				if (!reader.ReadLeadingNewLine().n)						throw DecodeErr(__FUNCTION__ ": color-definition: Expecting new line");
 			}
 
-			m_rows.Resize(m_height);
+			m_rows.ResizeExact(m_height);
 			Brush const& defaultBrush = GetBrush(32);
 
 			for (uint rowIndex=0; rowIndex!=m_height; ++rowIndex)
@@ -236,7 +236,7 @@ namespace At
 			if ((orig.m_width % 2) != 0)		throw DecodeErr(__FUNCTION__ ": Original image must have even width and height");
 
 			m_width = m_height = orig.m_width / 2;
-			m_rows.Resize(m_height);
+			m_rows.ResizeExact(m_height);
 
 			for (uint rowIndex=0; rowIndex!=m_height; ++rowIndex)
 			{

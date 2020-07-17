@@ -15,17 +15,14 @@ namespace At
 	public:
 		enum { MaxResponseParameterBytes = 1000 };
 
-		Recaptcha() : m_secure(false) {}
-
-		void ReInit(HttpRequest& req, Seq siteKey, Seq secret);
-		bool ProcessPost(HttpRequest& req);	
+		void Init(Seq siteKey, Seq secret);
+		bool ProcessPost(HttpRequest const& req);	
 		HtmlBuilder& Render(HtmlBuilder& html) const;
 
 	private:
-		bool m_secure;
-		Str m_siteKey;
-		Str m_secret;
-		Str m_verifyError;
+		Str  m_siteKey;
+		Str  m_secret;
+		Str  m_verifyError;
 	};
 
 }

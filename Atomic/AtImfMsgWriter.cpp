@@ -11,7 +11,7 @@ namespace At
 
 		MsgWriter::MsgWriter(Str& s, sizet maxLineLen) : m_s(s), m_maxLineLen(maxLineLen)
 		{
-			m_curLineLen = Seq(m_s).DropToAfterLastByte(10).n;
+			m_curLineLen = Seq(m_s).RevReadToByte(10).n;
 		}
 
 		
@@ -70,7 +70,7 @@ namespace At
 					{
 						EnsureThrow(text.StartsWithExact("\r\n"));
 						m_s.Add(text);
-						m_curLineLen = text.DropToAfterLastByte(10).n;
+						m_curLineLen = Seq(text).RevReadToByte(10).n;
 					}
 				}
 			}

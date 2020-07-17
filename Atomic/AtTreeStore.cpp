@@ -198,7 +198,7 @@ namespace At
 	void TreeStore::ChildBucket::ReplaceWithEntriesFrom(ChildBucket& x)
 	{
 		m_height = x.m_height;
-		m_entries.Resize(x.m_entries.Len());
+		m_entries.ResizeExact(x.m_entries.Len());
 		for (sizet i=0; i!=m_entries.Len(); ++i)
 			m_entries[i] = x.m_entries[i];
 		m_encodedSize = x.m_encodedSize;
@@ -236,7 +236,7 @@ namespace At
 			!DecodeUInt32(s, n))
 			return false;
 
-		m_entries.Resize(n);
+		m_entries.ResizeExact(n);
 		for (uint32 i=0; i!=n; ++i)
 			if (!m_entries[i].Decode(s))
 				return false;

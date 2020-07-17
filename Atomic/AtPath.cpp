@@ -181,7 +181,8 @@ namespace At
 
 		if (maxNrSubDirs)
 		{
-			Seq subDirs = fname.ReadToAfterLastByte('/');
+			Seq subDirs = fname;
+			fname = subDirs.RevReadToByte('/');
 			if (subDirs.n)
 			{
 				sizet subDirsCap = PickMin(maxNrSubDirs, (subDirs.n + 1) / 2);

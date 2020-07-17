@@ -2,26 +2,26 @@
 #include "AutMain.h"
 
 
-void DkimTest(int argc, char** argv)
+void DkimTest(Slice<Seq> args)
 {
 	try
 	{
-		if (argc < 3) throw "Missing DKIM command";
+		if (args.Len() < 3) throw "Missing DKIM command";
 
-		Seq cmd = argv[2];
+		Seq cmd = args[2];
 
-		auto loadFileByArg = [&] (int i)
+		auto loadFileByArg = [&] (sizet i)
 			{
-				if (argc <= i) throw "Missing file name";
-				Seq fileName = argv[i];
+				if (args.Len() <= i) throw "Missing file name";
+				Seq fileName = args[i];
 				Str content;
 				File().Open(fileName, File::OpenArgs::DefaultRead()).ReadAllInto(content);
 				return std::move(content);
 			};
 
-		auto loadKeyFileByArg = [&] (int i, RsaSigner* signer, RsaVerifier* verifier)
+		auto loadKeyFileByArg = [&] (sizet i, RsaSigner* signer, RsaVerifier* verifier)
 			{
-				if (argc <= i) throw "Missing key file name";
+				if (args.Len() <= i) throw "Missing key file name";
 				Str content = loadFileByArg(i);
 				Seq reader = content;
 				Seq privB64 = reader.ReadToByte(10).Trim();

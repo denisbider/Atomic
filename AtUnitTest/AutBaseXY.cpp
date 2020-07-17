@@ -17,7 +17,7 @@ sizet BaseXYTest(std::function<void(Seq, Enc&)> encode, std::function<void(Seq, 
 			encoded.Clear();
 			decoded.Clear();
 
-			src.Resize(len);
+			src.ResizeExact(len);
 			rng.GenRandom(src.Ptr(), src.Len());
 
 			encode(src, encoded);
@@ -33,11 +33,8 @@ sizet BaseXYTest(std::function<void(Seq, Enc&)> encode, std::function<void(Seq, 
 }
 
 
-void BaseXYTests(int argc, char** argv)
+void BaseXYTests()
 {
-	(void) argc;
-	(void) argv;
-
 	try
 	{
 		sizet n;

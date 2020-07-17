@@ -75,23 +75,23 @@ namespace At
 
 
 
-	DESCENUM_DECL_BEGIN(SmtpSendErr)
+	DESCENUM_DECL_BEGIN(SmtpSendDetail)
 	DESCENUM_DECL_VALUE(None,                                         0)
 	DESCENUM_DECL_VALUE(Unknown,                                   1000)		// Used when upgrading configuration and parsing failDesc where we can't conclusively categorize the error
 	DESCENUM_DECL_VALUE(RelayLookup_LookupTimedOut,             5001000)
-	DESCENUM_DECL_VALUE(RelayLookup_LookupError,                5002000)
+	DESCENUM_DECL_VALUE(RelayLookup_CouldNotLookup,             5002000)
 	DESCENUM_DECL_VALUE(FindMx_LookupTimedOut,                 10001000)
-	DESCENUM_DECL_VALUE(FindMx_LookupError,                    10002000)
+	DESCENUM_DECL_VALUE(FindMx_CouldNotLookup,                 10002000)
 	DESCENUM_DECL_VALUE(FindMx_LookupNoResults,                10003000)
 	DESCENUM_DECL_VALUE(FindMx_DomainMatchRequired,            10004000)
-	DESCENUM_DECL_VALUE(Connect_Error,                         20001000)
-	DESCENUM_DECL_VALUE(Send_Error,                            30001000)
+	DESCENUM_DECL_VALUE(Connect,                               20001000)
+	DESCENUM_DECL_VALUE(Send,                                  30001000)
 	DESCENUM_DECL_VALUE(Reply_PrematureEndOfLine,              40001000)
 	DESCENUM_DECL_VALUE(Reply_UnrecognizedCodeFormat,          40002000)
 	DESCENUM_DECL_VALUE(Reply_UnrecognizedLineSeparator,       40003000)
 	DESCENUM_DECL_VALUE(Reply_InconsistentCode,                40004000)
 	DESCENUM_DECL_VALUE(Reply_MaximumLengthExceeded,           40005000)
-	DESCENUM_DECL_VALUE(Reply_ReceiveError,                    40006000)
+	DESCENUM_DECL_VALUE(Reply_CouldNotReceive,                 40006000)
 	DESCENUM_DECL_VALUE(Greeting_SessionRefused,               50001000)
 	DESCENUM_DECL_VALUE(Greeting_Unexpected,                   50002000)
 	DESCENUM_DECL_VALUE(Ehlo_UnexpectedReply,                  60001000)
@@ -99,11 +99,11 @@ namespace At
 	DESCENUM_DECL_VALUE(Capabilities_Size,                     70002000)
 	DESCENUM_DECL_VALUE(Tls_NotAvailable,                      80001000)
 	DESCENUM_DECL_VALUE(Tls_StartTlsRejected,                  80002000)
-	DESCENUM_DECL_VALUE(Tls_SspiErr_LikelyDh_TooManyRestarts,  80003000)
-	DESCENUM_DECL_VALUE(Tls_SspiErr_InvalidToken_IllegalMsg,   80004000)
-	DESCENUM_DECL_VALUE(Tls_SspiErr_ServerAuthRequired,        80005000)
-	DESCENUM_DECL_VALUE(Tls_SspiErr_Other,                     80006000)
-	DESCENUM_DECL_VALUE(Tls_CommunicationErr,                  80007000)
+	DESCENUM_DECL_VALUE(Tls_Sspi_LikelyDh_TooManyRestarts,     80003000)
+	DESCENUM_DECL_VALUE(Tls_Sspi_InvalidToken_IllegalMsg,      80004000)
+	DESCENUM_DECL_VALUE(Tls_Sspi_ServerAuthRequired,           80005000)
+	DESCENUM_DECL_VALUE(Tls_Sspi_Other,                        80006000)
+	DESCENUM_DECL_VALUE(Tls_Communication,                     80007000)
 	DESCENUM_DECL_VALUE(Tls_RequiredAssuranceNotAchieved,      80008000)
 	DESCENUM_DECL_VALUE(Auth_AuthCommandNotSupported,          85001000)
 	DESCENUM_DECL_VALUE(Auth_CfgAuthMechNotSupported,          85002000)
@@ -125,7 +125,7 @@ namespace At
 
 
 	ENTITY_DECL_BEGIN(SmtpSenderCfg)
-	ENTITY_DECL_FIELD(uint64,			memUsageLimitBytes)			// Message content is kept in memory when sending. If non-zero, avoid enqueueing messages until in-memory content is below this size
+	ENTITY_DECL_FIELD(uint64,			memUsageLimitKb)			// Message content is kept in memory when sending. If non-zero, avoid enqueueing messages until in-memory content is below this size
 	ENTITY_DECL_FLD_E(IpVerPreference,	ipVerPreference)			// When making outgoing SMTP connections, whether to prefer IPv4, IPv6, or neither. Dominates destination domain MX preference
 	ENTITY_DECL_FIELD(Vec<Str>,         localInterfacesIp4)			// First send attempt uses first interface; if MX disconnects, binds next one and retries. If empty, does not bind socket
 	ENTITY_DECL_FIELD(Vec<Str>,         localInterfacesIp6)			// First send attempt uses first interface; if MX disconnects, binds next one and retries. If empty, does not bind socket
@@ -213,32 +213,32 @@ namespace At
 
 
 	ENTITY_DECL_BEGIN(SmtpSendFailure)
-	ENTITY_DECL_FLD_E(SmtpSendStage, stage)
-	ENTITY_DECL_FLD_E(SmtpSendErr,   err)
-	ENTITY_DECL_FIELD(Str,           mx)
-	ENTITY_DECL_FIELD(uint64,        replyCode)
-	ENTITY_DECL_FIELD(uint64,        enhStatus)
-	ENTITY_DECL_FIELD(Str,           desc)
-	ENTITY_DECL_FIELD(Vec<Str>,      lines)			// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
+	ENTITY_DECL_FLD_E(SmtpSendStage,  stage)
+	ENTITY_DECL_FLD_E(SmtpSendDetail, detail)
+	ENTITY_DECL_FIELD(Str,            mx)
+	ENTITY_DECL_FIELD(uint64,         replyCode)
+	ENTITY_DECL_FIELD(uint64,         enhStatus)
+	ENTITY_DECL_FIELD(Str,            desc)
+	ENTITY_DECL_FIELD(Vec<Str>,       lines)			// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
 	ENTITY_DECL_CLOSE();
 	
-	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendErr::E err, LookedUpAddr const* mx,
+	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx,
 		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines);
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_RelayLookup(SmtpSendErr::E err, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::RelayLookup, err, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_RelayLookup(SmtpSendDetail::E detail, Seq desc)
+		{ return SmtpSendFailure_New(SmtpSendStage::RelayLookup, detail, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_FindMx(SmtpSendErr::E err, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::FindMx, err, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_FindMx(SmtpSendDetail::E detail, Seq desc)
+		{ return SmtpSendFailure_New(SmtpSendStage::FindMx, detail, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_Connect(SmtpSendErr::E err, LookedUpAddr const& mx, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::Connect, err, &mx, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_Connect(SmtpSendDetail::E detail, LookedUpAddr const& mx, Seq desc)
+		{ return SmtpSendFailure_New(SmtpSendStage::Connect, detail, &mx, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_NoCode(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendErr::E err, Seq desc)
-		{ return SmtpSendFailure_New(stage, err, &mx, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_NoCode(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendDetail::E detail, Seq desc)
+		{ return SmtpSendFailure_New(stage, detail, &mx, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendErr::E err, SmtpServerReply const& reply, Seq desc)
-		{ return SmtpSendFailure_New(stage, err, &mx, reply.m_code, reply.m_enhStatus, desc, &reply.m_lines); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpServerReply const& reply, Seq desc)
+		{ return SmtpSendFailure_New(stage, detail, &mx, reply.m_code, reply.m_enhStatus, desc, &reply.m_lines); }
 
 	// Encodes an SmtpSendFailure as one or more plain text lines compliant with the message/delivery-status (DSN) field "Diagnostic-Code" of type "smtp".
 	// Since the DSN format does not define escaping, this function uses HTML entities to encode non-ASCII characters, invalid bytes, parentheses and ampersands.
@@ -256,15 +256,21 @@ namespace At
 	ENTITY_DECL_CLOSE();
 
 	inline void MailboxResult_SetSuccess(MailboxResult& x, Time t, Seq mbx, Seq successMx)
-		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::Success;     x.f_successMx = successMx; x.f_failure.Clear(); }
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::Success; x.f_successMx = successMx; x.f_failure.Clear(); }
 
 	// SmtpSendFailure is moved, not copied
-	inline void MailboxResult_SetTempFailure(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure>&& f)
+	inline void MailboxResult_SetTempFailure_Move(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure>&& f)
 		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::TempFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
+
+	inline void MailboxResult_SetTempFailure_Copy(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure> const& f)
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::TempFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) x.f_failure.Init(f.Ref()); }
 	
 	// SmtpSendFailure is moved, not copied
-	inline void MailboxResult_SetPermFailure(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure>&& f)
+	inline void MailboxResult_SetPermFailure_Move(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure>&& f)
 		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
+
+	inline void MailboxResult_SetPermFailure_Copy(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure> const& f)
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) x.f_failure.Init(f.Ref()); }
 
 
 	struct MailboxResultCount
@@ -312,7 +318,7 @@ namespace At
 	ENTITY_DECL_FIELD(uint64,                  port)				// Port number on which to listen, 1 - 65535
 	ENTITY_DECL_FIELD(bool,                    ipv6Only)			// If interface is IPv6 (e.g. "::"), whether to allow only IPv6 connections, or IPv4 as well
 	ENTITY_DECL_FIELD(bool,                    implicitTls)			// If true, the server will expect immediate TLS for connections through this binding
-	ENTITY_DECL_FIELD(Str,                     computerName)		// For SMTP only: If non-empty, overrides computerName in SmtpReceiverCfg
+	ENTITY_DECL_FIELD(Str,                     computerName)		// If non-empty, overrides computerName in SmtpReceiverCfg
 	ENTITY_DECL_FIELD(uint64,                  maxInMsgKb)			// For SMTP only: If non-zero, overrides maxInMsgKb in SmtpReceiverCfg
 	ENTITY_DECL_FIELD(Str,                     desc)				// Arbitrary description of the binding entry for the administrator's use
 	ENTITY_DECL_CLOSE();
@@ -328,16 +334,21 @@ namespace At
 	void EmailSrvBinding_ReadFromPostRequest(EmailSrvBinding& binding, HttpRequest const& req, EmailSrvBindingProto proto, Vec<Str>& errs);
 
 	HtmlBuilder& EmailSrvBindings_RenderTable(HtmlBuilder& html, EntVec<EmailSrvBinding> const& bindings, EmailSrvBindingProto proto, Seq editBindingBaseUrl, Seq removeBindingBaseCmd);
+	bool EmailSrvBindings_HaveRemoveBindingCmd(HttpRequest const& req, Seq removeBindingBaseCmd, Seq& removeBindingToken);
 
 
 
 	// Pop3ServerCfg
 
 	ENTITY_DECL_BEGIN(Pop3ServerCfg)
+	ENTITY_DECL_FIELD(Str,                     computerName)		// A fully-qualified computer name to find TLS certificate. Can override in a binding
 	ENTITY_DECL_FIELD(EntVec<EmailSrvBinding>, bindings)			// Interfaces and ports on which to accept POP3 connections
 	ENTITY_DECL_CLOSE()
 
 	void Pop3ServerCfg_SetDefaultBindings(Pop3ServerCfg& cfg);
+
+	HtmlBuilder& Pop3ServerCfg_RenderRows(HtmlBuilder& html, Pop3ServerCfg const& cfg);
+	void Pop3ServerCfg_ReadFromPostRequest(Pop3ServerCfg& cfg, HttpRequest const& req, Vec<Str>& errs);
 
 
 

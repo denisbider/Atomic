@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AtActv.h"
+#include "AtArgs.h"
 #include "AtBaseXY.h"
 #include "AtBCrypt.h"
 #include "AtCrc32.h"
@@ -10,9 +11,11 @@
 #include "AtDkim.h"
 #include "AtDllNtDll.h"
 #include "AtEllipticCurve.h"
+#include "AtEnsureFailDesc.h"
 #include "AtEntityStore.h"
 #include "AtFile.h"
 #include "AtHeap.h"
+#include "AtHtmlTransform.h"
 #include "AtImfReadWrite.h"
 #include "AtMap.h"
 #include "AtMarkdownTransform.h"

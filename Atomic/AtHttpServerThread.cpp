@@ -56,7 +56,7 @@ namespace At
 		{
 			while (true)
 			{
-				m_ioBuf.Resize(BodyChunkSize);
+				m_ioBuf.ResizeExact(BodyChunkSize);
 
 				ZeroMemory(&m_ovl, sizeof(m_ovl));
 				m_ovl.hEvent = m_httpEvent.Handle();
@@ -82,7 +82,7 @@ namespace At
 				if (bytesReceived != 0)
 				{
 					moreBodyChunks.Add().Swap(m_ioBuf);
-					moreBodyChunks.Last().Resize(bytesReceived);
+					moreBodyChunks.Last().ResizeExact(bytesReceived);
 				
 					totalBodySize += bytesReceived;
 					++nrChunks;
@@ -119,7 +119,7 @@ namespace At
 			}
 			else
 			{
-				bodyBuf.Resize(totalBodySize);
+				bodyBuf.ResizeExact(totalBodySize);
 				sizet bytesCopied = 0;
 				for (sizet i=0; i!=req->EntityChunkCount; ++i)
 				{
