@@ -10,6 +10,8 @@ namespace At
 		{
 			Continue						= 100,
 			SwitchingProtocols				= 101,
+			Processing						= 102,
+			EarlyHints						= 103,
 
 			OK								= 200,
 			Created							= 201,
@@ -18,6 +20,9 @@ namespace At
 			NoContent						= 204,
 			ResetContent					= 205,
 			PartialContent					= 206,
+			MultiStatus						= 207,
+			AlreadyReported					= 208,
+			IMUsed							= 226,
 		
 			MultipleChoices					= 300,
 			MovedPermanently				= 301,
@@ -26,9 +31,11 @@ namespace At
 			NotModified						= 304,
 			UseProxy						= 305,
 			TemporaryRedirect				= 307,
+			PermanentRedirect				= 308,
 		
 			BadRequest						= 400,
 			Unauthorized					= 401,
+			PaymentRequired					= 402,
 			Forbidden						= 403,
 			NotFound						= 404,
 			MethodNotAllowed				= 405,
@@ -39,12 +46,21 @@ namespace At
 			Gone							= 410,
 			LengthRequired					= 411,
 			PreconditionFailed				= 412,
-			RequestEntityTooLarge			= 413,
-			RequestUriTooLong				= 414,
+			PayloadTooLarge					= 413,
+			UriTooLong						= 414,
 			UnsupportedMediaType			= 415,
-			RequestedRangeNotSatisfiable	= 416,
+			RangeNotSatisfiable				= 416,
 			ExpectationFailed				= 417,
+			MisdirectedRequest				= 421,
+			UnprocessableEntity				= 422,
+			Locked							= 423,
+			FailedDependency				= 424,
+			TooEarly						= 425,
+			UpgradeRequired					= 426,
+			PreconditionRequired			= 428,
 			TooManyRequests					= 429,
+			RequestHeaderFieldsTooLarge		= 431,
+			UnavailableForLegalReasons		= 451,
 		
 			InternalServerError				= 500,
 			NotImplemented					= 501,
@@ -52,6 +68,11 @@ namespace At
 			ServiceUnavailable				= 503,
 			GatewayTimeout					= 504,
 			HttpVersionNotSupported			= 505,
+			VariantAlsoNegotiates			= 506,
+			InsufficientStorage				= 507,
+			LoopDetected					= 508,
+			NotExtended						= 510,
+			NetworkAuthenticationRequired	= 511,
 		};
 	
 		static Seq Describe(uint64 n);

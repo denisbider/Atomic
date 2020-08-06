@@ -293,7 +293,7 @@ namespace At
 
 	void WebRequestHandler::SetRedirectResponse(uint statusCode, Seq uri)
 	{
-		m_response.StatusCode = (USHORT) statusCode;
+		SetResponseStatus(statusCode);
 		SetResponseHeader_Location(uri);
 	}
 
@@ -317,7 +317,7 @@ namespace At
 			AddResponseHandle(hFile);
 			AddResponseBodyChunk(hFile);
 
-			m_response.StatusCode = HttpStatus::OK;
+			SetResponseStatus(HttpStatus::OK);
 			SetResponseContentType(contentType);
 		}
 	}

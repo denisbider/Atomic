@@ -337,6 +337,21 @@ namespace At
 
 
 
+	// HtmlFieldSelectBase
+
+	void HtmlFieldSelectBase::RenderInput(HtmlBuilder& html) const
+	{
+		html.Select().Id(FieldId()).Name(m_fieldName);
+		if (m_autoFocus) html.AutoFocus();
+		if (m_disabled) html.Disabled();
+
+		RenderOptions(html);
+
+		html.EndSelect();
+	}
+
+
+
 	// HtmlFieldSelect
 
 	HtmlFieldSelect& HtmlFieldSelect::SetOptions(Slice<SelectOptInfo> opts, sizet selectedIndex = SIZE_MAX)
@@ -350,10 +365,13 @@ namespace At
 
 	HtmlFieldSelect& HtmlFieldSelect::SetOptions(Slice<SelectOptInfo> opts, SelectOptInfo const* selectedPtr)
 	{
-		m_renderOptions = [opts, selectedPtr] (HtmlBuilder& html)
+		if (selectedPtr)
+			m_value = selectedPtr->m_value;
+
+		m_renderOptions = [this, opts] (HtmlBuilder& html)
 			{
 				for (SelectOptInfo const& opt : opts)
-					html.Option(opt.m_label, opt.m_value, &opt == selectedPtr);
+					html.Option(opt.m_label, opt.m_value, opt.m_value.EqualExact(m_value));
 			};
 
 		m_verifyValue = [opts] (Seq value) -> bool
@@ -377,16 +395,10 @@ namespace At
 	}
 
 
-	void HtmlFieldSelect::RenderInput(HtmlBuilder& html) const
+	void HtmlFieldSelect::RenderOptions(HtmlBuilder& html) const
 	{
-		html.Select().Id(FieldId()).Name(m_fieldName);
-		if (m_autoFocus) html.AutoFocus();
-		if (m_disabled) html.Disabled();
-
 		if (!!m_renderOptions)
 			m_renderOptions(html);
-
-		html.EndSelect();
 	}
 
 

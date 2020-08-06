@@ -96,7 +96,7 @@ namespace At
 
 			EnsureConvert_WtoA m_moduleNameA;
 
-		#ifdef _DEBUG
+		#ifdef ATOMIC_DBGHELP
 			struct SymInitializer : NoCopy
 			{
 				enum class State { None, Inited, Failed };
@@ -143,7 +143,7 @@ namespace At
 
 		StackFrameDescriber::CritSect StackFrameDescriber::s_cs;
 
-	#ifdef _DEBUG
+	#ifdef ATOMIC_DBGHELP
 		StackFrameDescriber::SymInitializer StackFrameDescriber::s_symInitializer;
 
 		bool StackFrameDescriber::IsKnownSystemModule(char const* z)
@@ -163,7 +163,7 @@ namespace At
 			EnterCriticalSection(&s_cs);
 			m_hProcess = GetCurrentProcess();
 
-		#ifndef _DEBUG
+		#ifndef ATOMIC_DBGHELP
 			(void) efdRef;
 		#else
 			if (!s_symInitializer.Init(m_hProcess))
@@ -226,7 +226,7 @@ namespace At
 				sizet relAddr = ((sizet) stackFramePtr) - moduleBase;
 				efdRef.Add(m_moduleNameA.Z()).Add("!").UIntHex(relAddr);
 
-			#ifdef _DEBUG
+			#ifdef ATOMIC_DBGHELP
 				if (m_haveModuleName && s_symInitializer.Inited() && !IsKnownSystemModule(m_moduleNameA.Z()))
 				{
 					bool found {};

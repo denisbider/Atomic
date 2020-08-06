@@ -8,6 +8,7 @@ void ActvTests          ();
 void BaseXYTests        ();
 void BCryptTests        ();
 void BootTime           ();
+void CharInfoTest       (Args& args);
 void DiffTests          (Slice<Seq> args);
 void DkimTest           (Slice<Seq> args);
 void EmailAddressTest   (Slice<Seq> args);

@@ -43,7 +43,7 @@ namespace At
 	class HttpRequest;
 
 	AccessRecord* AccessRecords_FindByAddr(EntVec<AccessRecord>& records, Seq remoteAddrOnly);
-	bool AccessRecords_RegisterAccess(EntVec<AccessRecord>& records, HttpRequest& req, uint64 onlyUpdateAfterMinutes);
+	bool AccessRecords_RegisterAccess(EntVec<AccessRecord>& records, HttpRequest& req, bool alwaysUpdate, uint64 onlyUpdateAfterMinutes);
 
 
 	// LoginSession
@@ -52,6 +52,7 @@ namespace At
 	ENTITY_DECL_BEGIN(LoginSession)
 	ENTITY_DECL_FIELD(Str,						token)
 	ENTITY_DECL_FIELD(Time,						createTime)
+	ENTITY_DECL_FIELD(Time,						recentReqTime)
 	ENTITY_DECL_FIELD(Str,						createRemoteAddrOnly)		// "Only" meaning just address, no port
 	ENTITY_DECL_FIELD(uint64,					createRemotePort)
 	ENTITY_DECL_FIELD(EntVec<AccessRecord>,		accessRecords)

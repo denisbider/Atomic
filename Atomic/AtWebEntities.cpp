@@ -29,15 +29,14 @@ namespace At
 	}
 
 
-	bool AccessRecords_RegisterAccess(EntVec<AccessRecord>& records, HttpRequest& req, uint64 onlyUpdateAfterMinutes)
+	bool AccessRecords_RegisterAccess(EntVec<AccessRecord>& records, HttpRequest& req, bool alwaysUpdate, uint64 onlyUpdateAfterMinutes)
 	{
-		Time onlyUpdateAfterPeriod = Time::FromMinutes(onlyUpdateAfterMinutes);
-
 		AccessRecord* ar = AccessRecords_FindByAddr(records, req.RemoteAddrOnly());
 		if (ar)
 		{
-			if (req.RequestTime() - ar->f_recentReqTime < onlyUpdateAfterPeriod)
-				return false;
+			if (!alwaysUpdate)
+				if (req.RequestTime() < ar->f_recentReqTime + Time::FromMinutes(onlyUpdateAfterMinutes))
+					return false;
 
 			ar->f_recentReqTime    = req.RequestTime();
 			ar->f_recentRemotePort = req.RemoteAddr().GetPort();
@@ -61,6 +60,7 @@ namespace At
 	ENTITY_DEF_BEGIN(LoginSession)
 	ENTITY_DEF_FIELD(LoginSession, token)
 	ENTITY_DEF_FIELD(LoginSession, createTime)
+	ENTITY_DEF_FLD_V(LoginSession, recentReqTime, 1)
 	ENTITY_DEF_FIELD(LoginSession, createRemoteAddrOnly)
 	ENTITY_DEF_FIELD(LoginSession, createRemotePort)
 	ENTITY_DEF_FIELD(LoginSession, accessRecords)

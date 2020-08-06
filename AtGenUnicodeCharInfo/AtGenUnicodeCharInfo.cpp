@@ -1,3 +1,19 @@
+// Changes 2020-07-22, by db:
+//
+// - This code was originally written in 2015, largely inspired by: https://github.com/JuliaStrings/utf8proc/blob/master/data/charwidths.jl
+//   At the time, it used Unifont as one of the main sources of character widths: https://unifoundry.com/unifont.html
+//   Relevant comment in the current version of charwidths.jl:
+//   "We used to also use data from GNU Unifont, but that has proven unreliable and unlikely to match widths assumed by terminals."
+//   This is confirmed in my experience (e.g. Bitvise case 44368), therefore I'm following Julia and removing Unifont as a source input.
+//
+// - Removed the following Unicode categories from those initialized to zero-width:
+//   Symbol_Modifier: "These are not combining diacriticals, but are 'spacing characters' [...] They are what you use if you want a bare
+//       diaresis or acute" https://github.com/JuliaStrings/utf8proc/issues/167
+//   Other_NotAssigned, Other_PrivateUse, Other_Surrogate: "if they are printed as the replacement character U+FFFD they will have width 1"
+//
+// - Arabic characters U+0601, U+0602, U+0603 and U+06DD are no longer exceptions and are set to zero-width as per category Other_Format.
+//   From charwidths.jl: "some of these, like U+0601, can have a width in some cases but normally act like prepended combining marks"
+
 #include "AtConsole.h"
 #include "AtCsv.h"
 #include "AtFile.h"
@@ -27,7 +43,6 @@ private:
 	{
 		Unicode::CharInfo m_ci;
 		bool              m_haveCategory       {};
-		bool              m_haveUnifontWidth   {};
 		bool              m_haveEastAsianWidth {};
 	};
 	
@@ -36,7 +51,6 @@ private:
 
 	void ReadCharCategories  (Seq fileName);
 	void SetDefaultWidths    ();
-	void ReadUnifontWidths   (Seq fileName);
 	void ReadEastAsianWidths (Seq fileName);
 	void Sanitize            ();
 	void WriteCharInfo       (Seq fileName);
@@ -51,14 +65,10 @@ void CharInfoBuilder::Run()
 
 	Str unicodeDataFileName    { JoinPath(m_dir, "UnicodeData.txt"       ) };
 	Str eastAsianWidthFileName { JoinPath(m_dir, "EastAsianWidth.txt"    ) };
-	Str unifontFileName        { JoinPath(m_dir, "unifont.sfd"           ) };
-	Str unifontUpperFileName   { JoinPath(m_dir, "unifont_upper.sfd"     ) };
 	Str outputFileName         { JoinPath(m_dir, "AtUnicodeCharInfo.cpp" ) };
 
 	ReadCharCategories  (unicodeDataFileName);
 	SetDefaultWidths    ();
-	ReadUnifontWidths   (unifontFileName);
-	ReadUnifontWidths   (unifontUpperFileName);
 	ReadEastAsianWidths (eastAsianWidthFileName);
 	Sanitize            ();
 
@@ -176,13 +186,9 @@ void CharInfoBuilder::SetDefaultWidths()
 		{
 		case Unicode::Category::Other_Control:
 		case Unicode::Category::Other_Format:
-		case Unicode::Category::Other_NotAssigned:
-		case Unicode::Category::Other_PrivateUse:
-		case Unicode::Category::Other_Surrogate:
 		case Unicode::Category::Mark_SpacingCombining:
 		case Unicode::Category::Mark_Enclosing:
 		case Unicode::Category::Mark_Nonspacing:
-		case Unicode::Category::Symbol_Modifier:
 		case Unicode::Category::Separator_Line:
 		case Unicode::Category::Separator_Paragraph:
 		case Unicode::Category::Separator_Space:
@@ -201,106 +207,18 @@ void CharInfoBuilder::SetDefaultWidths()
 }
 
 
-void CharInfoBuilder::ReadUnifontWidths(Seq fileName)
-{
-	Console::Out(Str("\r\n"
-					 "Reading Unifont character widths from ").Add(fileName).Add("\r\n"));
-
-	sizet nrProcessed {};
-	sizet nrNarrow    {};
-	sizet nrWide      {};
-	sizet nrIgnored   {};
-	sizet nrNoCat     {};
-	sizet nrErrors    {};
-
-	FileLoader fileLoader { fileName };
-	LineReader lineReader { fileLoader };
-	Str        lineStr;
-	bool       inChar     {};
-	uint       codePoint  { UINT_MAX };
-	uint       width      { UINT_MAX };
-
-	auto onError = [&] (Seq msg)
-		{ ++nrErrors; Console::Out(Str("Error at line ").UInt(lineReader.LineNr()).Add(", code point ").Fun(FormatCodePoint, codePoint).Add(": ").Add(msg).Add("\r\n")); };
-
-	while (lineReader.ReadLine(lineStr))
-	{
-		Seq line { lineStr };
-		if (line.StartsWithExact("StartChar:"))
-		{
-			inChar = true;
-			codePoint = UINT_MAX;
-			width = UINT_MAX;
-		}
-		else if (inChar)
-		{
-			if (line.StripPrefixExact("Encoding: "))
-				codePoint = line.ReadNrUInt32Dec();
-			else if (line.StripPrefixExact("Width: "))
-				width = line.ReadNrUInt32Dec();
-
-			if (codePoint != UINT_MAX && width != UINT_MAX)
-			{
-				inChar = false;
-
-				if (codePoint >= m_chars.Len())
-					++nrIgnored;
-				else
-				{
-					CharEntry& entry { m_chars[codePoint] };
-
-					if (!entry.m_haveCategory)
-						++nrNoCat;
-
-					uint w { UINT_MAX };
-					     if (width ==    0) w = 0;
-					else if (width ==  512) w = 1;
-					else if (width == 1024) w = 2;
-					else
-						onError(Str("Unexpected width ").UInt(width));
-
-					if (w != UINT_MAX)
-					{
-						if (entry.m_haveUnifontWidth)
-						{
-							if (w != entry.m_ci.m_width)
-								onError(Str("Duplicate code point with conflicting width: ").UInt(w).Add(" instead of ").UInt(entry.m_ci.m_width));
-						}
-						else
-						{
-							if (w == 1)
-								++nrNarrow;
-							else if (w == 2)
-								++nrWide;
-
-							++nrProcessed;
-							entry.m_ci.m_width = w;
-							entry.m_haveUnifontWidth = true;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	Console::Out(Str().UInt(nrProcessed).Add(" processed, ").UInt(nrNarrow).Add(" narrow, ").UInt(nrWide).Add(" wide, ")
-				.UInt(nrErrors).Add(" errors, ").UInt(nrNoCat).Add(" without category, ").UInt(nrIgnored).Add(" ignored\r\n"));
-}
-
-
 void CharInfoBuilder::ReadEastAsianWidths(Seq fileName)
 {
 	Console::Out(Str("\r\n"
 					 "Reading East Asian widths from ").Add(fileName).Add("\r\n"));
 
-	sizet nrProcessed    {};
-	sizet nrNarrow       {};
-	sizet nrWide         {};
-	sizet nrErrors       {};
-	sizet nrNoCat        {};
-	sizet nrIgnored      {};
-	sizet nrNoUnifontW   {};
-	sizet nrDiffUnifontW {};
+	sizet nrProcessed {};
+	sizet nrNarrow    {};
+	sizet nrWide      {};
+	sizet nrErrors    {};
+	sizet nrNoCat     {};
+	sizet nrIgnored   {};
+	sizet nrChanged   {};
 
 	FileLoader fileLoader { fileName };
 	CsvReader  csvReader  { fileLoader, ';', '#' };
@@ -339,8 +257,8 @@ void CharInfoBuilder::ReadEastAsianWidths(Seq fileName)
 					{
 						CharEntry& entry { m_chars[codePoint] };
 
-						if (!entry.m_haveCategory)     ++nrNoCat;
-						if (!entry.m_haveUnifontWidth) ++nrNoUnifontW;
+						if (!entry.m_haveCategory)
+							++nrNoCat;
 
 						if (entry.m_haveEastAsianWidth)
 						{
@@ -354,12 +272,8 @@ void CharInfoBuilder::ReadEastAsianWidths(Seq fileName)
 							else if (w == 2)
 								++nrWide;
 
-							if (entry.m_haveUnifontWidth && w != entry.m_ci.m_width)
-							{
-								++nrDiffUnifontW;
-								Console::Out(Str("Line ").UInt(csvReader.LineNr()).Add(", code point ").Fun(FormatCodePoint, codePoint)
-											.Add(": Overriding Unifont width: ").UInt(w).Add(" instead of ").UInt(entry.m_ci.m_width).Add("\r\n"));
-							}
+							if (w != entry.m_ci.m_width)
+								++nrChanged;
 
 							++nrProcessed;
 							entry.m_ci.m_width = w;
@@ -371,54 +285,47 @@ void CharInfoBuilder::ReadEastAsianWidths(Seq fileName)
 		}
 	}
 
-	uint nrKeepUnifontW {};
-	for (CharEntry const& entry : m_chars)
-		if (entry.m_haveUnifontWidth && !entry.m_haveEastAsianWidth)
-			++nrKeepUnifontW;
-
 	Console::Out(Str().UInt(nrProcessed).Add(" processed, ").UInt(nrNarrow).Add(" narrow, ").UInt(nrWide).Add(" wide, ").UInt(nrErrors).Add(" errors, ")
-				.UInt(nrNoCat).Add(" without category, ").UInt(nrIgnored).Add(" ignored\r\n").UInt(nrNoUnifontW).Add(" did not have Unifont width, ")
-				.UInt(nrDiffUnifontW).Add(" with Unifont width overridden, ").UInt(nrKeepUnifontW).Add(" keep Unifont width\r\n"));
+				.UInt(nrNoCat).Add(" without category, ").UInt(nrIgnored).Add(" ignored, ").UInt(nrChanged).Add(" changed\r\n"));
 }
 
 
 void CharInfoBuilder::Sanitize()
 {
-	// We perform similar sanitizations as charwidths.jl from utf8proc:
-	// 
-	// https://github.com/JuliaLang/utf8proc/blob/master/data/charwidths.jl
-	//
-	// However, we do not set zero widths for categories Other_NotAssigned (Cn) and Other_PrivateUse (Co).
+	bool anySanitized {};
+	auto sanitize = [&anySanitized] (uint codePoint, Unicode::CharInfo& ci, uint width)
+		{
+			if (ci.m_width != width)
+			{
+				Console::Out(Str("Sanitize: ").UInt(codePoint).Add(" U+").UInt(codePoint, 16, 4).Add(" ").Add(Unicode::Category::ValueToName(ci.m_cat))
+					.Add(" changed from width ").UInt(ci.m_width).Add(" to ").UInt(width).Add("\r\n"));
 
-	sizet nrSanitized {};
+				ci.m_width = width;
+				anySanitized = true;
+			}
+		};
+
+	Console::Out("\r\n");
 
 	for (uint codePoint=0; codePoint!=m_chars.Len(); ++codePoint)
 	{
 		CharEntry& entry { m_chars[codePoint] };
-		bool setZeroWidth {};
 
 		if (entry.m_ci.m_cat == Unicode::Category::Mark_Nonspacing ||
-		    entry.m_ci.m_cat == Unicode::Category::Other_Control)
+		    entry.m_ci.m_cat == Unicode::Category::Other_Control ||
+			entry.m_ci.m_cat == Unicode::Category::Other_Format)
 		{
-			// Unifont has width 2 glyphs for ASCII control characters
-			setZeroWidth = true;
+			sanitize(codePoint, entry.m_ci, 0);
 		}
-		else if (entry.m_ci.m_cat == Unicode::Category::Other_Format)
+		else if (entry.m_ci.m_cat == Unicode::Category::Other_PrivateUse ||
+				 entry.m_ci.m_cat == Unicode::Category::Other_NotAssigned)
 		{
-			// Characters in category Cf (Other_Format) have width zero, except these Arabic characters
-			if (codePoint != 0x0601 && codePoint != 0x0602 && codePoint != 0x0603 && codePoint != 0x06DD)
-				setZeroWidth = true;
-		}
-
-		if (setZeroWidth && entry.m_ci.m_width != 0)
-		{
-			++nrSanitized;
-			entry.m_ci.m_width = 0;
+			sanitize(codePoint, entry.m_ci, 1);
 		}
 	}
 
-	Console::Out(Str("\r\n")
-				.UInt(nrSanitized).Add(" sanitized (non-zero width set to zero)\r\n"));
+	if (!anySanitized)
+		Console::Out("No character widths found to sanitize\r\n");
 }
 
 
@@ -492,6 +399,7 @@ void CharInfoBuilder::CompareToBuiltIn()
 	sizet nrChangedCat   {};
 	sizet nrChangedWidth {};
 	sizet nrSame         {};
+	sizet changeMatrix[3][3] = {};
 
 	for (uint codePoint=0; codePoint!=m_chars.Len(); ++codePoint)
 	{
@@ -506,10 +414,27 @@ void CharInfoBuilder::CompareToBuiltIn()
 			++nrChangedWidth;
 		else
 			++nrSame;
+
+		EnsureThrow(ci.m_width <= 2);
+		EnsureThrow(entry.m_ci.m_width <= 2);
+		++(changeMatrix[ci.m_width][entry.m_ci.m_width]);
 	}
 
-	Console::Out(Str().UInt(nrChangedBoth).Add(" change category and width, ").UInt(nrChangedCat).Add(" change category only, ")
-				.UInt(nrChangedWidth).Add(" change width only, ").UInt(nrSame).Add(" stay the same\r\n"));
+	Str msg;
+	msg.UInt(nrChangedBoth).Add(" change category and width, ").UInt(nrChangedCat).Add(" change category only, ")
+				.UInt(nrChangedWidth).Add(" change width only, ").UInt(nrSame).Add(" stay the same\r\n"
+				"\r\n"
+				"           To 0:   To 1:   To 2:\r\n");
+
+	for (uint fromWidth=0; fromWidth!=3; ++fromWidth)
+	{
+		msg.Add("From ").UInt(fromWidth).Add(": ");
+		for (uint toWidth=0; toWidth!=3; ++toWidth)
+			msg.UInt(changeMatrix[fromWidth][toWidth], 10, 0, CharCase::Upper, 8);
+		msg.Add("\r\n");
+	}
+
+	Console::Out(msg);
 }
 
 
@@ -524,22 +449,12 @@ int main(int argc, char** argv)
 					 "Generates Unicode character category and monospace display width information\r\n"
 					 "for inclusion in the Atomic library.\r\n"
 					 "\r\n"
+					 "'dataDirectory' must contain these files from the Unicode Character Database:\r\n"
 					 "\r\n"
-					 "Requires the following files in the specified data directory:\r\n"
+					 "  UnicodeData.txt\r\n"
+					 "  EastAsianWidth.txt\r\n"
 					 "\r\n"
-					 "\r\n"
-					 "- UnicodeData.txt and EastAsianWidth.txt from the Unicode Character Database:\r\n"
-					 "\r\n"
-					 "  http://www.unicode.org/Public/UCD/latest/ucd/ \r\n"
-					 "\r\n"
-					 "\r\n"
-					 "- unifont.sfd and unifont_upper.sfd generated from the latest Unifont TTFs at:\r\n"
-					 "\r\n"
-					 "  http://unifoundry.com/unifont.html \r\n"
-					 "\r\n"
-					 "  To convert TTF to SFD, install FontForge as part of Cygwin, and run in bash:\r\n"
-					 "\r\n"
-					 "  fontforge -lang=ff -c \"Open(\\\"<file>.ttf\\\");Save(\\\"<file>.sfd\\\");Quit(0);\"\r\n"
+					 "  https://www.unicode.org/Public/UCD/latest/ucd/ \r\n"
 					 "\r\n");
 
 		return 2;

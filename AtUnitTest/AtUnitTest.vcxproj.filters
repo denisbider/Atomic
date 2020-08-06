@@ -24,6 +24,7 @@
     <ClCompile Include="AutMap.cpp" />
     <ClCompile Include="AutUri.cpp" />
     <ClCompile Include="AutHtmlEmbed.cpp" />
+    <ClCompile Include="AutCharInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutIncludes.h" />

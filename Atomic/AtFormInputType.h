@@ -18,7 +18,10 @@ namespace At
 			: mc_zMaxLen(zMaxLen), mc_nMaxLen(nMaxLen) {}
 
 		virtual void EncObj(Enc& s) const;
-		virtual bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const;
+		virtual bool IsValidEx(Seq value, Vec<Str>* errs, Seq friendlyName) const;
+
+		bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const { return IsValidEx(value, &errs, friendlyName); }
+		bool IsValid(Seq value) const { return IsValidEx(value, nullptr, Seq()); }
 	};
 
 
@@ -65,7 +68,7 @@ namespace At
 			: FormInputType(zMaxLen, nMaxLen, zWidth), mc_zMinLen(zMinLen), mc_nMinLen(nMinLen) {}
 
 		void EncObj(Enc& s) const override;
-		bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const override;
+		bool IsValidEx(Seq value, Vec<Str>* errs, Seq friendlyName) const override;
 	};
 
 
@@ -81,7 +84,7 @@ namespace At
 		char const*   const mc_charDesc;
 
 		void EncObj(Enc& s) const override;
-		bool IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const override;
+		bool IsValidEx(Seq value, Vec<Str>* errs, Seq friendlyName) const override;
 	};
 
 

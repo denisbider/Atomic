@@ -199,6 +199,17 @@ namespace At
 
 
 
+	// HtmlFieldSelectBase
+
+	struct HtmlFieldSelectBase : HtmlField
+	{
+		void RenderInput(HtmlBuilder& html) const override;
+
+		virtual void RenderOptions(HtmlBuilder& html) const = 0;
+	};
+
+
+
 	// HtmlFieldSelect
 
 	struct SelectOptInfo
@@ -211,7 +222,7 @@ namespace At
 	};
 
 
-	struct HtmlFieldSelect : HtmlField
+	struct HtmlFieldSelect : HtmlFieldSelectBase
 	{
 		typedef void FnRenderOptions(HtmlBuilder&);
 		typedef bool FnVerifyValue(Seq);
@@ -234,10 +245,44 @@ namespace At
 		// Renders no options, accepts all values. The page must implement JavaScript to render the options.
 		HtmlFieldSelect& SetOptions_Dynamic();
 
-		HtmlFieldSelect& SetValue(uint64 v) { m_value = v; return *this; }
-
-		void RenderInput(HtmlBuilder& html) const override;
+		void RenderOptions(HtmlBuilder& html) const override;
 		bool ReadFromRequest(HttpRequest const& req, InsensitiveNameValuePairsWithStore const& nvp) override;
+	};
+
+
+
+	// HtmlFieldSelectEnum
+
+	template <class T>
+	struct HtmlFieldSelectEnum : HtmlFieldSelectBase
+	{
+		Opt<typename T::E> m_oldValue;
+		typename T::E      m_value {};
+		uint64             m_hideValuesEqualOrGreaterThan { UINT_MAX };
+
+		HtmlFieldSelectEnum<T>& SetValue(typename T::E v) { m_value = v; return *this; }
+		HtmlFieldSelectEnum<T>& HideValuesEqualOrGreaterThan(uint64 n) { m_hideValuesEqualOrGreaterThan = n; return *this; }
+
+		void RenderOptions(HtmlBuilder& html) const override
+			{ DescEnum_RenderOptions(html, T::sc_values, m_value, m_hideValuesEqualOrGreaterThan); }
+
+		bool ReadFromRequest(HttpRequest const&, InsensitiveNameValuePairsWithStore const& nvp) override
+		{
+			Seq reader = nvp.Get(m_fieldName);
+			if (reader.n)
+			{
+				uint32 v = reader.ReadNrUInt32Dec();
+				if (!reader.n && v < m_hideValuesEqualOrGreaterThan && DescEnum_IsValid(T::sc_values, v))
+				{
+					m_oldValue.Init(m_value);
+					m_value = (typename T::E) v;
+					return true;
+				}
+			}
+
+			m_fieldErrs.Add(Str::Join(m_friendlyName, ": invalid select field value"));
+			return false;
+		}
 	};
 
 }

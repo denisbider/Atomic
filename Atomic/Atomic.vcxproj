@@ -92,7 +92,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;AT_MEM_LARGE_PAGES=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ATOMIC_DBGHELP;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -113,7 +113,7 @@
     <Midl />
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;AT_MEM_LARGE_PAGES=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ATOMIC_DBGHELP;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -266,6 +266,7 @@
     <ClCompile Include="AtTxScheduler.cpp" />
     <ClCompile Include="AtUnicodeCharInfo.cpp" />
     <ClCompile Include="AtUtf8.cpp" />
+    <ClCompile Include="AtUtf8Lit.cpp" />
     <ClCompile Include="AtWait.cpp" />
     <ClCompile Include="AtWaitEsc.cpp" />
     <ClCompile Include="AtWebHtmlPage.cpp" />
@@ -417,6 +418,7 @@
     <ClInclude Include="AtTextLog.h" />
     <ClInclude Include="AtToolhelp.h" />
     <ClInclude Include="AtTxScheduler.h" />
+    <ClInclude Include="AtUtf8Lit.h" />
     <ClInclude Include="AtVecBaseFixed.h" />
     <ClInclude Include="AtHtmlGrammar.h" />
     <ClInclude Include="AtImfMsgWriter.h" />

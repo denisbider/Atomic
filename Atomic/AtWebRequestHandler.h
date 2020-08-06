@@ -92,8 +92,9 @@ namespace At
 			AddCookie(name, "", domain, path, CookieSecure::No,  CookieHttpOnly::No,  -1);
 		}
 
+		void SetResponseStatus(uint statusCode) { m_response.StatusCode = (USHORT) statusCode; }
 		void SetResponseContentType(Seq s);
-	
+		
 		void SetRedirectResponse (uint statusCode, Seq uri);
 		void SetFileResponse     (Seq fullPath, Seq contentType);
 	

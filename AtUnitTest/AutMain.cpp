@@ -17,6 +17,7 @@ int wmain(int argc, wchar_t const* const* argv)
 				"  base - BaseXY\r\n"
 				"  bcrp - BCrypt\r\n"
 				"  boot - BootTime\r\n"
+				"  chri - CharInfo\r\n"
 				"  diff - Diff\r\n"
 				"  dkim - Dkim\r\n"
 				"  addr - EmailAddress\r\n"
@@ -49,6 +50,7 @@ int wmain(int argc, wchar_t const* const* argv)
 			else if (cmd.EqualInsensitive("base")) { BaseXYTests        ();                              }
 			else if (cmd.EqualInsensitive("bcrp")) { BCryptTests        ();                              }
 			else if (cmd.EqualInsensitive("boot")) { BootTime           ();                              }
+			else if (cmd.EqualInsensitive("chri")) { CharInfoTest       (args);                          }
 			else if (cmd.EqualInsensitive("diff")) { DiffTests          (args.ConvertAll().Converted()); }
 			else if (cmd.EqualInsensitive("dkim")) { DkimTest           (args.ConvertAll().Converted()); }
 			else if (cmd.EqualInsensitive("addr")) { EmailAddressTest   (args.ConvertAll().Converted()); }

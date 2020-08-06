@@ -152,7 +152,6 @@ namespace At
 			new (pi) Val(std::move(*pk));
 			pk->~Val();
 			new (pk) Val(std::move(temp));
-			Mem::Zero<Val>(&temp, 1);
 
 			return *this; 
 		}

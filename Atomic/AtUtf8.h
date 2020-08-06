@@ -1,17 +1,13 @@
 #pragma once
 
 #include "AtStr.h"
+#include "AtUtf8Lit.h"
+
 
 namespace At
 {
 	namespace Utf8
 	{
-		namespace Lit
-		{
-			extern Seq const BOM;
-			extern Seq const Ellipsis;
-		}
-
 		enum { MaxBytesPerChar = 4 };
 
 		// A UTF-8 character is encoded as one leading byte, followed by 1 - 3 trailing bytes

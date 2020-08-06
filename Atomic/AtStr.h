@@ -2,6 +2,7 @@
 
 #include "AtEnc.h"
 #include "AtRp.h"
+#include "AtUtf8Lit.h"
 
 
 namespace At
@@ -78,11 +79,11 @@ namespace At
 		Str& SetEndExact       (Seq x)               { if (!Seq(*this).EndsWithExact      (x    )) Add(x); return *this; }
 		Str& SetEndInsensitive (Seq x)               { if (!Seq(*this).EndsWithInsensitive(x    )) Add(x); return *this; }
 
-		Str& TruncUtf8_MaxBytes (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) ResizeExact(t.n).Add(ellipsis); return *this; }
-		Str& TruncUtf8_MaxChars (sizet n, Seq ellipsis = "...") { Seq r{*this}; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) ResizeExact(t.n).Add(ellipsis); return *this; }
+		Str& TruncUtf8_MaxBytes (sizet n, Seq ellipsis = Utf8::Lit::Ellipsis) { Seq r{*this}; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) ResizeExact(t.n).Add(ellipsis); return *this; }
+		Str& TruncUtf8_MaxChars (sizet n, Seq ellipsis = Utf8::Lit::Ellipsis) { Seq r{*this}; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) ResizeExact(t.n).Add(ellipsis); return *this; }
 
-		Str& Set_TruncUtf8_MaxBytes (Seq x, sizet n, Seq ellipsis = "...") { Seq r=x; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
-		Str& Set_TruncUtf8_MaxChars (Seq x, sizet n, Seq ellipsis = "...") { Seq r=x; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
+		Str& Set_TruncUtf8_MaxBytes (Seq x, sizet n, Seq ellipsis = Utf8::Lit::Ellipsis) { Seq r=x; Seq t=r.ReadUtf8_MaxBytes(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
+		Str& Set_TruncUtf8_MaxChars (Seq x, sizet n, Seq ellipsis = Utf8::Lit::Ellipsis) { Seq r=x; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
 
 		// CLEAR
 		Str& Clear() { Vec<byte>::Clear(); return *this; }

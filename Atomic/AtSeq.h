@@ -209,7 +209,8 @@ namespace At
 		Seq TrimBytesRight(char const* bytes) const noexcept { return Seq(*this).RevDropToFirstByteNotOf (bytes); }
 		Seq TrimBytes     (char const* bytes) const noexcept { return TrimBytesLeft(bytes).TrimBytesRight(bytes); }
 
-		// Breaks lines on LF. Trims up to one trailing CR. Does not touch or act on other occurrences of CR
+		// Breaks lines on LF. Trims up to one trailing CR. Does not touch or act on other occurrences of CR.
+		// Stops if "onLine" returns false.
 		void ForEachLine(std::function<bool (Seq)> onLine) const;
 
 		template <typename SeqOrStr>

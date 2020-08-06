@@ -9,16 +9,16 @@ namespace At
 
 	void MaxLenField::EncObj(Enc& s) const
 	{
-		s.Add("Must be no more than ").UInt(mc_nMaxLen).Add(" characters in length");
+		s.Add("Must be no more than ").UIntDecGrp(mc_nMaxLen).Add(" characters in length.");
 	}
 
 
-	bool MaxLenField::IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const
+	bool MaxLenField::IsValidEx(Seq value, Vec<Str>* errs, Seq friendlyName) const
 	{
 		bool success = true;
 
 		if (Seq(value).DropUtf8_MaxChars(mc_nMaxLen).n)
-			{ success = false; errs.Add().SetAdd(friendlyName, " must be no more than ", mc_zMaxLen, " characters in length"); }
+			{ success = false; if (errs) errs->Add().SetAdd(friendlyName, " must be no more than ", mc_zMaxLen, " characters in length"); }
 
 		return success;
 	}
@@ -51,19 +51,19 @@ namespace At
 
 	void FormInputTypeWithMin::EncObj(Enc& s) const
 	{
-		s.Add("Must be at least ").UInt(mc_nMinLen).Add(" and no more than ").UInt(mc_nMaxLen).Add(" characters in length.");
+		s.Add("Must be at least ").UIntDecGrp(mc_nMinLen).Add(" and no more than ").UIntDecGrp(mc_nMaxLen).Add(" characters in length.");
 	}
 
 
-	bool FormInputTypeWithMin::IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const
+	bool FormInputTypeWithMin::IsValidEx(Seq value, Vec<Str>* errs, Seq friendlyName) const
 	{
 		bool success = true;
 
 		Seq reader = value;
 		if (mc_nMinLen && reader.DropUtf8_MaxChars(mc_nMinLen-1).ReadUtf8Char() == UINT_MAX)
-			{ success = false; errs.Add().SetAdd(friendlyName, " must be at least ", mc_zMinLen, " characters in length."); }
+			{ success = false; if (errs) errs->Add().SetAdd(friendlyName, " must be at least ", mc_zMinLen, " characters in length."); }
 		else if (mc_nMaxLen < mc_nMinLen || reader.DropUtf8_MaxChars(mc_nMaxLen - mc_nMinLen).n)
-			{ success = false; errs.Add().SetAdd(friendlyName, " must be no more than ", mc_zMaxLen, " characters in length."); }
+			{ success = false; if (errs) errs->Add().SetAdd(friendlyName, " must be no more than ", mc_zMaxLen, " characters in length."); }
 
 		return success;
 	}
@@ -79,12 +79,12 @@ namespace At
 	}
 
 
-	bool FormInputTypeWithChars::IsValid(Seq value, Vec<Str>& errs, Seq friendlyName) const
+	bool FormInputTypeWithChars::IsValidEx(Seq value, Vec<Str>* errs, Seq friendlyName) const
 	{
-		bool success = __super::IsValid(value, errs, friendlyName);
+		bool success = __super::IsValidEx(value, errs, friendlyName);
 
 		if (value.ContainsAnyUtf8CharNotOfType(mc_charCrit, mc_nMaxLen))
-			{ success = false; errs.Add().SetAdd(friendlyName, " may contain only ", mc_charDesc, "."); }
+			{ success = false; if (errs) errs->Add().SetAdd(friendlyName, " may contain only ", mc_charDesc, "."); }
 
 		return success;
 	}
@@ -93,7 +93,7 @@ namespace At
 
 	// TextAreaDims
 
-	TextAreaDims const tad_policy      {  "10000",  10000,  "5", "100" };
-	TextAreaDims const tad_centerpiece { "100000", 100000, "30", "120" };
+	TextAreaDims const tad_policy      {   "10000",   10000,  "5", "100" };
+	TextAreaDims const tad_centerpiece { "1000000", 1000000, "30", "120" };
 
 }

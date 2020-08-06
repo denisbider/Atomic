@@ -201,8 +201,8 @@ namespace At
 					loginSession.f_createTime           = req.RequestTime();
 					loginSession.f_createRemoteAddrOnly = req.RemoteAddrOnly();
 					loginSession.f_createRemotePort     = req.RemoteAddr().GetPort();
-					AccessRecords_RegisterAccess(      loginSession.f_accessRecords, req, 0);
-					AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, 0);
+					AccessRecords_RegisterAccess(      loginSession.f_accessRecords, req, true, 0);
+					AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, true, 0);
 					m_login.m_appUser->Update();
 
 					m_login.m_sessionIndex = m_login.m_appUser->f_loginSessions.Len() - 1;
@@ -265,13 +265,13 @@ namespace At
 				if (m_login.m_sessionIndex != SIZE_MAX &&
 					WP_ValidateAppUser(store, req, m_login.m_expiry))
 				{
-					Str remoteAddrOnly = Str::From(req.RemoteAddr(), SockAddr::AddrOnly);
-
 					Time expiryAnchorTime;
 					uint expiryMinutes {};
+					bool update {};
 
 					if (loginType == PageLogin::Require_Strict)
 					{
+						Str remoteAddrOnly = Str::From(req.RemoteAddr(), SockAddr::AddrOnly);
 						if (Seq(loginSession->f_createRemoteAddrOnly).EqualInsensitive(remoteAddrOnly))
 						{
 							expiryAnchorTime = loginSession->f_createTime;
@@ -280,12 +280,17 @@ namespace At
 					}
 					else
 					{
-						AccessRecord* accessRecord = AccessRecords_FindByAddr(loginSession->f_accessRecords, remoteAddrOnly);
-						if (accessRecord)
-							expiryAnchorTime = accessRecord->f_recentReqTime;
-						else
-							expiryAnchorTime = loginSession->f_createTime;
+						if (!loginSession->f_recentReqTime)
+						{
+							// This field is a new addition and may be null. In this case, initialize it from access records
+							for (AccessRecord const& ar : loginSession->f_accessRecords)
+								if (loginSession->f_recentReqTime < ar.f_recentReqTime)
+									loginSession->f_recentReqTime = ar.f_recentReqTime;
 
+							update = true;
+						}
+
+						expiryAnchorTime = loginSession->f_recentReqTime;
 						expiryMinutes = m_login.m_expiry.m_relaxedExpiryMinutes;
 					}
 
@@ -301,15 +306,13 @@ namespace At
 						m_login.m_state = Login::State::LoggedIn;
 
 						// Do we need to update any session-related records?
-						uint64 reqTimeUpdateMinutes { WP_AccessUpdateMinutes() };
-						bool update {};
-
-						bool auarUpdated { AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, reqTimeUpdateMinutes) };
-						bool lsarUpdated { AccessRecords_RegisterAccess(     loginSession->f_accessRecords, req, reqTimeUpdateMinutes) };
-						if (auarUpdated || lsarUpdated)
+						uint64 reqTimeUpdateMinutes = WP_AccessUpdateMinutes();
+						if (AccessRecords_RegisterAccess (m_login.m_appUser->f_accessRecords, req, update, reqTimeUpdateMinutes)) update = true;
+						if (AccessRecords_RegisterAccess (     loginSession->f_accessRecords, req, update, reqTimeUpdateMinutes)) update = true;
+						if (update)
 						{
 							// Place login session at end to maintain sort order (most stale -> most new)
-							sizet lastSessionIndex = m_login.m_appUser->f_loginSessions.Len() - 1;
+							sizet const lastSessionIndex = m_login.m_appUser->f_loginSessions.Len() - 1;
 							if (m_login.m_sessionIndex != lastSessionIndex)
 							{
 								m_login.m_appUser->f_loginSessions.Add();						// Make room at end
@@ -321,13 +324,8 @@ namespace At
 								loginSession = &m_login.m_appUser->f_loginSessions.Last();
 							}
 
-							update = true;
-						}
-
-						if (req.RequestTime() > m_login.m_appUser->f_recentReqTime + Time::FromMinutes(reqTimeUpdateMinutes))
-						{
+							loginSession->f_recentReqTime = req.RequestTime();
 							m_login.m_appUser->f_recentReqTime = req.RequestTime();
-							update = true;
 						}
 
 						WP_OnLoggedIn(store, req);
@@ -401,7 +399,7 @@ namespace At
 		if (m_login.m_state != Login::State::LoggedIn || changeAppUser.m_entityId != m_login.m_appUser->m_entityId)
 		{
 			// Changed another user's password, or not logged in
-			AccessRecords_RegisterAccess(changeAppUser.f_accessRecords, req, 0);
+			AccessRecords_RegisterAccess(changeAppUser.f_accessRecords, req, true, 0);
 			changeAppUser.Update();
 		}
 		else
@@ -410,8 +408,8 @@ namespace At
 			LoginSession& loginSession = m_login.m_appUser->f_loginSessions.Add();
 			loginSession.f_token.Set(Token::Generate());
 			loginSession.f_createTime = req.RequestTime();
-			AccessRecords_RegisterAccess(      loginSession.f_accessRecords, req, 0);
-			AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, 0);
+			AccessRecords_RegisterAccess(      loginSession.f_accessRecords, req, true, 0);
+			AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, true, 0);
 			m_login.m_appUser->Update();
 
 			EnsureThrow(m_login.m_appUser->f_loginSessions.Len() == 1);

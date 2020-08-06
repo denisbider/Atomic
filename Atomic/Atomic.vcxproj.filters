@@ -511,6 +511,9 @@
     <ClCompile Include="AtCert.cpp">
       <Filter>Windows</Filter>
     </ClCompile>
+    <ClCompile Include="AtUtf8Lit.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1100,6 +1103,9 @@
     </ClInclude>
     <ClInclude Include="AtCert.h">
       <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="AtUtf8Lit.h">
+      <Filter>Foundation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

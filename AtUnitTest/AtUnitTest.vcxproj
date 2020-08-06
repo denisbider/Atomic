@@ -192,6 +192,7 @@
     <ClCompile Include="AutBaseXY.cpp" />
     <ClCompile Include="AutBCrypt.cpp" />
     <ClCompile Include="AutBootTime.cpp" />
+    <ClCompile Include="AutCharInfo.cpp" />
     <ClCompile Include="AutCore.cpp" />
     <ClCompile Include="AutDiff.cpp" />
     <ClCompile Include="AutDkim.cpp" />
