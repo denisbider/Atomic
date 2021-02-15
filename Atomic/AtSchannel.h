@@ -21,15 +21,16 @@ namespace At
 		~SecBufs();
 
 		void SetBufAt(sizet i, void* p, unsigned long n) { SecBuffer& sb = m_bufs[i]; sb.pvBuffer = p; sb.cbBuffer = n; }
-		SecBuffer const* FindBuf(unsigned long t) const { for (SecBuffer const& sb : m_bufs) { if (sb.BufferType == t) return &sb; } return nullptr; }
+		SecBuffer const* FindNonFirstBuf(unsigned long t) const { for (SecBuffer const& sb : m_bufs.GetSlice(1)) { if (sb.BufferType == t) return &sb; } return nullptr; }
 		sizet FindExtraBuf_CalcBytesRead(Seq orig) const;
+		Seq FindAlertContent() const;
 
 		Owner::E m_owner;
 		SecBufferDesc m_sbd;
 		Vec<SecBuffer> m_bufs;
 
 	private:
-		void SetSize(unsigned long n) { m_bufs.ResizeExact(n); m_sbd.cBuffers = n; m_sbd.pBuffers = m_bufs.Ptr(); }
+		void SetSize(unsigned long n) { m_bufs.ResizeExact(n); m_sbd.ulVersion = SECBUFFER_VERSION; m_sbd.cBuffers = n; m_sbd.pBuffers = m_bufs.Ptr(); }
 		void InitBufAt(sizet i, unsigned long t) { SecBuffer& sb { m_bufs[i] }; sb.BufferType = t; sb.cbBuffer = 0; sb.pvBuffer = nullptr; }
 	};
 
@@ -48,9 +49,31 @@ namespace At
 	{
 	public:
 		struct Err : CommunicationErr { Err(Seq msg) : CommunicationErr(msg) {} };
-		struct SspiErr : WinErr<Err> { SspiErr(int64 rc, Seq msg) : WinErr<Err>(rc, Str("Schannel: ").Add(msg)) {} };
-		struct SspiErr_Acquire : SspiErr { SspiErr_Acquire(int64 rc, Seq msg) : SspiErr(rc, msg) {} };
-		struct SspiErr_LikelyDhIssue_TryRestart : SspiErr { SspiErr_LikelyDhIssue_TryRestart(int64 rc, Seq msg) : SspiErr(rc, Str(msg).Add(" - likely DH issue, try restart")) {} };
+
+		enum class ErrLoc { ACH, ISC_Init, IASC_Cont, IASC_Reneg, IASC_Shutdown, QCA, Decrypt, Encrypt, ACT };
+
+		struct SspiErr : WinErr<Err>
+		{
+			ErrLoc m_errLoc;
+			Str    m_alertSent;
+
+			SspiErr(int64 rc, ErrLoc errLoc, Seq alertSent, Seq msg)
+				: WinErr<Err>(rc, Str("Schannel: ").Add(msg))
+				, m_errLoc(errLoc)
+				, m_alertSent(alertSent) {}
+		};
+
+		struct SspiErr_Acquire : SspiErr
+		{
+			SspiErr_Acquire(int64 rc, ErrLoc errLoc, Seq alertSent, Seq msg)
+				: SspiErr(rc, errLoc, alertSent, msg) {}
+		};
+		
+		struct SspiErr_LikelyDhIssue_TryRestart : SspiErr
+		{
+			SspiErr_LikelyDhIssue_TryRestart(int64 rc, ErrLoc errLoc, Seq alertSent, Seq msg)
+				: SspiErr(rc, errLoc, alertSent, Str(msg).Add(" - likely DH issue, try restart")) {}
+		};
 
 		Schannel(Reader* reader = 0, Writer* writer = 0) : m_reader(reader), m_writer(writer) {} 
 		~Schannel();
@@ -66,7 +89,7 @@ namespace At
 		void SetExpireTickCount (uint64 tc) override final { EnsureThrow(m_reader); EnsureThrow(m_writer); m_reader->SetExpireTickCount(tc);    m_writer->SetExpireTickCount(tc); }
 
 		// Acts as a transparent Reader/Writer until StartTls is called
-		void Read(std::function<Instr::E(Seq&)> process) override final;
+		void Read(std::function<ReadInstr(Seq&)> process) override final;
 		void Write(Seq data) override final;
 		void Shutdown() override final;
 
@@ -74,7 +97,9 @@ namespace At
 
 		void AddCert(Cert const& cert);
 		void InitCred(ProtoSide side);
-		void ValidateServerName(Seq serverName);		// For client use. If not called, or if an empty name is provided, server certificate is not validated
+		void SetServerName(Seq serverName);		// For client use
+		void SetManualCredValidation(bool v);
+		void SetWeakCiphersOk(bool v);
 		void StartTls();
 
 		void GetTlsInfo(TlsInfo& tlsInfo);
@@ -96,6 +121,8 @@ namespace At
 		Str                       m_serverName;
 		WinStr                    m_wsServerName;
 		wchar_t*                  m_wzServerName   {};
+		bool                      m_manualCredVal  {};
+		bool                      m_weakCiphersOk  {};
 		unsigned long             m_reqFlags       {};
 		bool                      m_haveCtxt       {};
 		CtxtHandle                m_ctxt;

@@ -17,11 +17,12 @@ namespace At
 	}
 
 
-	void TextLog::Init(Seq baseName)
+	void TextLog::Init(Seq baseName, uint flags)
 	{
 		EnsureThrow(m_h == INVALID_HANDLE_VALUE);
 		
-		Str modulePath(GetModulePath());
+		Str modulePath = GetModulePath();
+		m_flags = flags;
 		m_baseName = baseName;
 		m_logDir = JoinPath(GetDirectoryOfFileName(modulePath), baseName);
 
@@ -53,16 +54,34 @@ namespace At
 	{
 		EnsureThrow(m_h == INVALID_HANDLE_VALUE);
 
-		m_curLogPath.Set(JoinPath(m_logDir, m_baseName)).Ch('-').UInt(datePart, 10, 8).Ch('-').UInt(timePart, 10, 6).Ch('-').Obj(tzBias, "PM").Add(".xml");
 		m_curLogTzBias = tzBias;
 		m_curLogDatePart = datePart;
 
 		CreateDirectoryIfNotExists(m_logDir, DirSecurity::Restricted_AddFilesOnly);
 
-		m_h = CreateFileW(WinStr(m_curLogPath).Z(), FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, FILE_FLAG_WRITE_THROUGH, 0);
-		if (m_h == INVALID_HANDLE_VALUE)
+		DWORD createDisp = OPEN_ALWAYS;
+		if (0 != (m_flags & Flags::CreateUnique))
+			createDisp = CREATE_NEW;
+
+		uint attemptNr {};
+		while (true)
 		{
+			m_curLogPath.Set(JoinPath(m_logDir, m_baseName)).Ch('-').UInt(datePart, 10, 8).Ch('-').UInt(timePart, 10, 6).Ch('-').Obj(tzBias, "PM");
+			if (attemptNr)
+				m_curLogPath.Ch('_').UInt(attemptNr, 10, 3);
+			m_curLogPath.Add(".xml");
+
+			m_h = CreateFileW(WinStr(m_curLogPath).Z(), FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_DELETE, 0, createDisp, FILE_FLAG_WRITE_THROUGH, 0);
+			if (m_h != INVALID_HANDLE_VALUE)
+				break;
+
 			DWORD rc = GetLastError();
+			if (rc == ERROR_FILE_EXISTS && createDisp == CREATE_NEW)
+			{
+				++attemptNr;
+				continue;
+			}
+
 			throw WinErr<>(rc, Str("Error in CreateFile for ").Add(m_curLogPath));
 		}
 	}
@@ -74,16 +93,19 @@ namespace At
 
 		EnsureThrow(m_h != INVALID_HANDLE_VALUE);
 
-		uint datePart, timePart;
-		GetLocalTimeRep(now, tzi, datePart, timePart);
-
-		TzBias tzBias { tzi };
-		if (tzBias != m_curLogTzBias || datePart != m_curLogDatePart)
+		if (0 != (m_flags & Flags::AutoRollover))
 		{
-			CloseHandle(m_h);
-			m_h = INVALID_HANDLE_VALUE;
+			uint datePart, timePart;
+			GetLocalTimeRep(now, tzi, datePart, timePart);
 
-			OpenLog(tzBias, datePart, timePart);
+			TzBias tzBias { tzi };
+			if (tzBias != m_curLogTzBias || datePart != m_curLogDatePart)
+			{
+				CloseHandle(m_h);
+				m_h = INVALID_HANDLE_VALUE;
+
+				OpenLog(tzBias, datePart, timePart);
+			}
 		}
 
 		DWORD bytesWritten;

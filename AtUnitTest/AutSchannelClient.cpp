@@ -13,15 +13,32 @@ void SchannelClientTest(Slice<Seq> args)
 	ServerType::E serverType  { ServerType::Http };
 	uint          defaultPort { 443 };
 	bool          serverAuth  { true };
+	bool          weakCiphers {};
 	Seq           hostPort    { args[2] };
 	Seq           host        { Seq(hostPort).ReadToByte(':') };
+	Seq           originHost;
 
 	for (sizet i=3; i!=args.Len(); ++i)
 	{
 		Seq arg { args[i] };
-		     if (arg.EqualInsensitive("-smtp"))         { serverType = ServerType::Smtp; defaultPort = 25; }
-		else if (arg.EqualInsensitive("-noserverauth")) { serverAuth = false; }
-		else throw "Unrecognized switch or parameter";
+		if (arg.EqualInsensitive("-noserverauth"))
+			serverAuth = false;
+		else if (arg.EqualInsensitive("-weak"))
+			weakCiphers = true;
+		else if (arg.EqualInsensitive("-smtp"))
+		{
+			if (++i == args.Len())
+				throw "Missing SMTP origin host name";
+
+			originHost = args[i];
+			if (!originHost.n || originHost.StartsWithExact("-"))
+				throw "Invalid SMTP origin host name";
+				
+			serverType = ServerType::Smtp;
+			defaultPort = 25;
+		}
+		else
+			throw "Unrecognized switch or parameter";
 	}
 
 	try
@@ -49,8 +66,11 @@ void SchannelClientTest(Slice<Seq> args)
 		{
 			sch.InitCred(ProtoSide::Client);
 
-			if (serverAuth)
-				sch.ValidateServerName(host);
+			sch.SetServerName(host);
+			if (!serverAuth)
+				sch.SetManualCredValidation(true);
+			if (weakCiphers)
+				sch.SetWeakCiphersOk(true);
 
 			sch.StartTls();
 
@@ -64,10 +84,10 @@ void SchannelClientTest(Slice<Seq> args)
 
 			while (true)
 			{
-				sch.Read( [] (Seq& data) -> Reader::Instr::E
+				sch.Read( [] (Seq& data) -> Reader::ReadInstr
 					{
 						Console::Out(Str("\r\n").HexDump(data.ReadBytes(SIZE_MAX), 0, 24));
-						return Reader::Instr::Done;
+						return Reader::ReadInstr::Done;
 					} );
 			}
 		}
@@ -76,7 +96,7 @@ void SchannelClientTest(Slice<Seq> args)
 			uint replyCode {};
 			bool replyDone {};
 
-			auto readReply = [&] (Seq& data) -> Reader::Instr::E
+			auto readReply = [&] (Seq& data) -> Reader::ReadInstr
 				{
 					Seq line { data.ReadToString("\r\n") };
 					if (data.n)
@@ -85,9 +105,9 @@ void SchannelClientTest(Slice<Seq> args)
 						replyCode = line.ReadNrUInt32Dec();
 						replyDone = !line.StartsWithExact("-");
 						data.DropBytes(2);
-						return Reader::Instr::Done;
+						return Reader::ReadInstr::Done;
 					}
-					return Reader::Instr::NeedMore;
+					return Reader::ReadInstr::NeedMore;
 				};
 
 			auto sendLineWaitReply = [&] (Seq line)
@@ -105,13 +125,15 @@ void SchannelClientTest(Slice<Seq> args)
 			while (!replyDone)
 				sch.Read(readReply);
 
-			sendLineWaitReply("ehlo test");
+			Str ehloLine = Str::Join("ehlo ", originHost);
+			sendLineWaitReply(ehloLine);
 			sendLineWaitReply("starttls");
 
 			sch.InitCred(ProtoSide::Client);
 
-			if (serverAuth)
-				sch.ValidateServerName(host);
+			sch.SetServerName(host);
+			if (!serverAuth)
+				sch.SetManualCredValidation(true);
 
 			sch.StartTls();
 

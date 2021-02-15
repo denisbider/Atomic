@@ -60,12 +60,24 @@ namespace At
 	ENTITY_DEF_BEGIN(LoginSession)
 	ENTITY_DEF_FIELD(LoginSession, token)
 	ENTITY_DEF_FIELD(LoginSession, createTime)
-	ENTITY_DEF_FLD_V(LoginSession, recentReqTime, 1)
+	ENTITY_DEF_FLD_V(LoginSession, recentReqTime,        1)
+	ENTITY_DEF_FLD_V(LoginSession, recentUserAgent,      2)
 	ENTITY_DEF_FIELD(LoginSession, createRemoteAddrOnly)
 	ENTITY_DEF_FIELD(LoginSession, createRemotePort)
 	ENTITY_DEF_FIELD(LoginSession, accessRecords)
 	ENTITY_DEF_FIELD(LoginSession, extInfo)
 	ENTITY_DEF_CLOSE(LoginSession);
+
+	
+	void LoginSession_InitNew(LoginSession& ls, HttpRequest& req)
+	{
+		ls.f_token.Set(Token::Generate());
+		ls.f_createTime           = req.RequestTime();
+		ls.f_createRemoteAddrOnly = req.RemoteAddrOnly();
+		ls.f_createRemotePort     = req.RemoteAddr().GetPort();
+		ls.f_recentReqTime        = req.RequestTime();
+		ls.f_recentUserAgent      = req.UserAgent();
+	}
 
 
 

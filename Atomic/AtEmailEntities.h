@@ -99,7 +99,7 @@ namespace At
 	DESCENUM_DECL_VALUE(Capabilities_Size,                     70002000)
 	DESCENUM_DECL_VALUE(Tls_NotAvailable,                      80001000)
 	DESCENUM_DECL_VALUE(Tls_StartTlsRejected,                  80002000)
-	DESCENUM_DECL_VALUE(Tls_Sspi_LikelyDh_TooManyRestarts,     80003000)
+	DESCENUM_DECL_VALUE(Tls_Sspi_LikelyDhIssue,                80003000)
 	DESCENUM_DECL_VALUE(Tls_Sspi_InvalidToken_IllegalMsg,      80004000)
 	DESCENUM_DECL_VALUE(Tls_Sspi_ServerAuthRequired,           80005000)
 	DESCENUM_DECL_VALUE(Tls_Sspi_Other,                        80006000)
@@ -129,6 +129,8 @@ namespace At
 	ENTITY_DECL_FLD_E(IpVerPreference,	ipVerPreference)			// When making outgoing SMTP connections, whether to prefer IPv4, IPv6, or neither. Dominates destination domain MX preference
 	ENTITY_DECL_FIELD(Vec<Str>,         localInterfacesIp4)			// First send attempt uses first interface; if MX disconnects, binds next one and retries. If empty, does not bind socket
 	ENTITY_DECL_FIELD(Vec<Str>,         localInterfacesIp6)			// First send attempt uses first interface; if MX disconnects, binds next one and retries. If empty, does not bind socket
+	ENTITY_DECL_FIELD(bool,             respectNo8BitMime)			// If true, and a message contains 8-bit bytes, and server does not advertise 8BITMIME, fail permanently. If false, try send anyway
+	ENTITY_DECL_FIELD(Vec<Str>,         transcriptToDomains)		// If the destination domain matches one of these, the SMTP sender will generate debug output for the connection
 	ENTITY_DECL_FIELD(bool,				useRelay)					// If false, remaining fields do not matter: SmtpSender will look up destination mail exchangers and send directly
 	ENTITY_DECL_FIELD(Str,				relayHost)					// DNS name, IPv4 address or IPv6 address. Should be DNS name for TLS
 	ENTITY_DECL_FIELD(uint64,			relayPort)
@@ -213,32 +215,35 @@ namespace At
 
 
 	ENTITY_DECL_BEGIN(SmtpSendFailure)
+	ENTITY_DECL_FIELD(Time,           time)
 	ENTITY_DECL_FLD_E(SmtpSendStage,  stage)
 	ENTITY_DECL_FLD_E(SmtpSendDetail, detail)
 	ENTITY_DECL_FIELD(Str,            mx)
+	ENTITY_DECL_FIELD(Str,            localAddr)
 	ENTITY_DECL_FIELD(uint64,         replyCode)
 	ENTITY_DECL_FIELD(uint64,         enhStatus)
 	ENTITY_DECL_FIELD(Str,            desc)
 	ENTITY_DECL_FIELD(Vec<Str>,       lines)			// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
+	ENTITY_DECL_FIELD(Rp<Entity>,     prevFailure)		// A send attempt can be immediately retried, e.g. to connect from a different interface. In this case there are chained failures
 	ENTITY_DECL_CLOSE();
 	
-	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx,
-		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines);
+	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx, Socket const* sk, Seq localAddr,
+		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines, Rp<SmtpSendFailure> const& prevFailure);
 
 	inline Rp<SmtpSendFailure> SmtpSendFailure_RelayLookup(SmtpSendDetail::E detail, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::RelayLookup, detail, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+		{ return SmtpSendFailure_New(SmtpSendStage::RelayLookup, detail, nullptr, nullptr, Seq(), SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, nullptr); }
 
 	inline Rp<SmtpSendFailure> SmtpSendFailure_FindMx(SmtpSendDetail::E detail, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::FindMx, detail, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+		{ return SmtpSendFailure_New(SmtpSendStage::FindMx, detail, nullptr, nullptr, Seq(), SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, nullptr); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_Connect(SmtpSendDetail::E detail, LookedUpAddr const& mx, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::Connect, detail, &mx, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_Connect(SmtpSendDetail::E detail, LookedUpAddr const& mx, Seq localAddr, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
+		{ return SmtpSendFailure_New(SmtpSendStage::Connect, detail, &mx, nullptr, localAddr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, prevFailure); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_NoCode(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendDetail::E detail, Seq desc)
-		{ return SmtpSendFailure_New(stage, detail, &mx, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_NoCode(LookedUpAddr const& mx, Socket const& sk, SmtpSendStage::E stage, SmtpSendDetail::E detail, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
+		{ return SmtpSendFailure_New(stage, detail, &mx, &sk, Seq(), SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, prevFailure); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(LookedUpAddr const& mx, SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpServerReply const& reply, Seq desc)
-		{ return SmtpSendFailure_New(stage, detail, &mx, reply.m_code, reply.m_enhStatus, desc, &reply.m_lines); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(LookedUpAddr const& mx, Socket const& sk, SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpServerReply const& reply, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
+		{ return SmtpSendFailure_New(stage, detail, &mx, &sk, Seq(), reply.m_code, reply.m_enhStatus, desc, &reply.m_lines, prevFailure); }
 
 	// Encodes an SmtpSendFailure as one or more plain text lines compliant with the message/delivery-status (DSN) field "Diagnostic-Code" of type "smtp".
 	// Since the DSN format does not define escaping, this function uses HTML entities to encode non-ASCII characters, invalid bytes, parentheses and ampersands.
@@ -252,25 +257,26 @@ namespace At
 	ENTITY_DECL_FIELD(Str,						mailbox)
 	ENTITY_DECL_FLD_E(SmtpDeliveryState,		state)
 	ENTITY_DECL_FIELD(Str,						successMx)
+	ENTITY_DECL_FIELD(Str,						successLocalAddr)
 	ENTITY_DECL_FIELD(EntOpt<SmtpSendFailure>,	failure)
 	ENTITY_DECL_CLOSE();
 
-	inline void MailboxResult_SetSuccess(MailboxResult& x, Time t, Seq mbx, Seq successMx)
-		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::Success; x.f_successMx = successMx; x.f_failure.Clear(); }
+	inline void MailboxResult_SetSuccess(MailboxResult& x, Time t, Seq mbx, Seq mx, SockAddr const& localAddr)
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::Success; x.f_successMx = mx; x.f_successLocalAddr.Clear().Obj(localAddr, SockAddr::AddrOnly); x.f_failure.Clear(); }
 
 	// SmtpSendFailure is moved, not copied
 	inline void MailboxResult_SetTempFailure_Move(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure>&& f)
-		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::TempFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::TempFailure; x.f_successMx.Clear(); x.f_successLocalAddr.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
 
 	inline void MailboxResult_SetTempFailure_Copy(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure> const& f)
-		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::TempFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) x.f_failure.Init(f.Ref()); }
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::TempFailure; x.f_successMx.Clear(); x.f_successLocalAddr.Clear(); x.f_failure.Clear(); if (f.Any()) x.f_failure.Init(f.Ref()); }
 	
 	// SmtpSendFailure is moved, not copied
 	inline void MailboxResult_SetPermFailure_Move(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure>&& f)
-		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_successLocalAddr.Clear(); x.f_failure.Clear(); if (f.Any()) { x.f_failure.Init(std::move(f.Ref())); f.Clear(); } }
 
 	inline void MailboxResult_SetPermFailure_Copy(MailboxResult& x, Time t, Seq mbx, Rp<SmtpSendFailure> const& f)
-		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_failure.Clear(); if (f.Any()) x.f_failure.Init(f.Ref()); }
+		{ x.f_time = t; x.f_mailbox = mbx; x.f_state = SmtpDeliveryState::PermFailure; x.f_successMx.Clear(); x.f_successLocalAddr.Clear(); x.f_failure.Clear(); if (f.Any()) x.f_failure.Init(f.Ref()); }
 
 
 	struct MailboxResultCount
@@ -355,9 +361,10 @@ namespace At
 	// SmtpReceiverCfg
 
 	ENTITY_DECL_BEGIN(SmtpReceiverCfg)
-	ENTITY_DECL_FIELD(EntVec<EmailSrvBinding>, bindings)			// Interfaces and ports on which to accept SMTP connections
-	ENTITY_DECL_FIELD(Str,                     computerName)		// A fully-qualified receiver computer name to send as part of the SMTP greeting. Can override in a binding
-	ENTITY_DECL_FIELD(uint64,                  maxInMsgKb)			// The absolute maximum message size permitted. Can restrict further in SmtpReceiver_OnMailFrom, SmtpReceiver_OnRcptTo
+	ENTITY_DECL_FIELD(EntVec<EmailSrvBinding>, bindings)				// Interfaces and ports on which to accept SMTP connections
+	ENTITY_DECL_FIELD(Str,                     computerName)			// A fully-qualified receiver computer name to send as part of the SMTP greeting. Can override in a binding
+	ENTITY_DECL_FIELD(uint64,                  maxInMsgKb)				// The absolute maximum message size permitted. Can restrict further in SmtpReceiver_OnMailFrom, SmtpReceiver_OnRcptTo
+	ENTITY_DECL_FIELD(Vec<Str>,                transcriptRemoteAddrs)	// If the remote address matches one of these, the SMTP receiver will generate debug output for the connection
 	ENTITY_DECL_CLOSE();
 
 	void SmtpReceiverCfg_SetDefaultBindings(SmtpReceiverCfg& cfg);

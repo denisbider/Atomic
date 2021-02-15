@@ -9,7 +9,6 @@
 #include "AtMutex.h"
 #include "AtNumCvt.h"
 #include "AtPath.h"
-#include "AtSeTranslate.h"
 #include "AtThread.h"
 #include "AtWaitEsc.h"
 #include "AtWinErr.h"
@@ -76,7 +75,6 @@ namespace At
 	void Service::Main(int argc, wchar_t const* const* argv)
 	{
 		UINT exitCode = 0;
-		_set_se_translator(SeTranslator);
 	
 		try
 		{
@@ -93,6 +91,7 @@ namespace At
 
 				     if (cmd.EqualInsensitive("register"   )) { if (args.Any()) throw UsageErr("Unexpected additional parameters for 'register'"   ); command = Command::Register;   }
 				else if (cmd.EqualInsensitive("unregister" )) { if (args.Any()) throw UsageErr("Unexpected additional parameters for 'unregister'" ); command = Command::Unregister; }
+				else throw UsageErr("Unrecognized command");
 			}
 		
 			if (command == Command::Register)
@@ -451,12 +450,28 @@ namespace At
 	void Service::WaitServiceStop(Seq initInfo)
 	{
 		SetState(SERVICE_RUNNING);
-		LogInfo(Str("Service running. ").Add(initInfo));
+		LogInfo(Str::Join("Service running. ", initInfo));
 
 		Wait1(m_stopCtl->StopEvent().Handle(), INFINITE);
-		LogInfo(Str("Service stopping: ").Add(m_stopCtl->StopReason()));
+		LogInfo(Str::Join("Service stopping: ", m_stopCtl->StopReason()));
 
 		m_stopCtl->WaitAll();
+		Str msg = Str::Join("Service stopped: ", m_stopCtl->StopReason());
+
+		bool anyThreadsAborted {};
+		EnumThreadsAborted([&] (ptrdiff n, Seq desc)
+			{
+				if (n)
+				{
+					anyThreadsAborted = true;
+					msg.Add("\r\n").SInt(n).Ch(' ').Add(desc).Add(" threads aborted");
+				}
+			} );
+
+		if (!anyThreadsAborted)
+			msg.Add("\r\nNo threads aborted");
+
+		LogInfo(msg);
 	}
 
 }

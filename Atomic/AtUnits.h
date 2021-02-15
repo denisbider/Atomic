@@ -25,5 +25,24 @@ namespace At
 		enum { kB_NrUnits = 4 };
 		extern Unit kB[kB_NrUnits];
 
+		enum { Duration_NrUnits = 7 };
+		extern Unit Duration[Duration_NrUnits];
+				
 	}
+
+
+	// ValueInUnits
+
+	struct ValueInUnits
+	{
+		uint64 m_whole     {};
+		uint   m_frac      {};
+		uint   m_fracWidth {};
+
+		static ValueInUnits Make(uint64 v, Slice<Units::Unit> units, Units::Unit const*& largestFitUnit);
+
+	private:
+		ValueInUnits(uint64 whole, uint frac = 0, uint fracWidth = 0) : m_whole(whole), m_frac(frac), m_fracWidth(fracWidth) {}
+	};
+
 }

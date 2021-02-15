@@ -21,6 +21,8 @@ namespace At
 	public:
 		using Val = typename B::Val;
 
+		static constexpr sizet ValSize() { return sizeof(typename Val); }	// allows vec.ValSize() instead of sizeof(Vec<Complicated<Type>*>::Val)
+
 		VecCore() = default;
 		VecCore(VecCore<B>&& x) noexcept : B(std::move(x)) {}
 		VecCore(VecCore<B> const& x) { AddSlice(x); }
@@ -44,8 +46,8 @@ namespace At
 		Slice<Val> GetSlice(sizet i, sizet n = SIZE_MAX) const noexcept
 			{ if (i > m_len) i = m_len; if (n > m_len - i) n = m_len - i; return Slice<Val>(Ptr()+i, Ptr()+i+n); }
 		
-		Val&       operator[] (sizet i)       { EnsureThrowWithNr(i < m_len, (int64) i); return Ptr()[i]; }
-		Val const& operator[] (sizet i) const { EnsureThrowWithNr(i < m_len, (int64) i); return Ptr()[i]; }
+		Val&       operator[] (sizet i)       { EnsureThrowWithNr(i < m_len, i); return Ptr()[i]; }
+		Val const& operator[] (sizet i) const { EnsureThrowWithNr(i < m_len, i); return Ptr()[i]; }
 
 		Val&       First()       { EnsureThrow(m_len >= 1); return Ptr()[0]; }
 		Val const& First() const { EnsureThrow(m_len >= 1); return Ptr()[0]; }
@@ -132,14 +134,14 @@ namespace At
 			return *this;
 		}
 
-		VecCore<B>& FixCap (sizet fix)              { this->B::FixCap(fix); return *this; }
+		VecCore<B>& FixCap (sizet fix)     noexcept { this->B::FixCap(fix); return *this; }
 		VecCore<B>& Free   ()              noexcept { NoExcept(Clear()); NoExcept(this->B::FreeMem()); return *this; }
 		VecCore<B>& Swap   (VecCore<B>& x) noexcept { NoExcept(this->B::Swap(x)); return *this; }
 
 		VecCore<B>& SwapAt(sizet i, sizet k)
 		{
-			EnsureThrowWithNr(i < m_len, (int64) i);
-			EnsureThrowWithNr(k < m_len, (int64) k);
+			EnsureThrowWithNr(i < m_len, i);
+			EnsureThrowWithNr(k < m_len, k);
 
 			static_assert(std::is_nothrow_move_constructible<Val>::value, "Cannot provide basic exception safety if move constructor can throw");
 			static_assert(std::is_nothrow_destructible<Val>::value, "Cannot provide basic exception safety if destructor can throw");
@@ -367,7 +369,7 @@ namespace At
 
 		Val& Insert(sizet i, Val&& x)
 		{
-			EnsureThrowWithNr(i <= m_len, (int64) i);
+			EnsureThrowWithNr(i <= m_len, i);
 			ReserveAtLeast(m_len + 1);
 
 			static_assert(std::is_nothrow_move_constructible<Val>::value, "Basic exception safety cannot be provided if move constructor throws.");
@@ -387,7 +389,7 @@ namespace At
 
 		VecCore<B>& InsertN(sizet i, sizet n)
 		{
-			EnsureThrowWithNr(i <= m_len, (int64) i);
+			EnsureThrowWithNr(i <= m_len, i);
 			if (n != 0)
 			{
 				EnsureThrow(n < SIZE_MAX - m_len);
@@ -410,8 +412,8 @@ namespace At
 
 		VecCore<B>& Erase(sizet i, sizet n)
 		{
-			EnsureThrowWithNr(i <= m_len, (int64) i);
-			EnsureThrowWithNr(n <= m_len - i, (int64) n);
+			EnsureThrowWithNr(i <= m_len, i);
+			EnsureThrowWithNr(n <= m_len - i, n);
 			if (n)
 			{
 				static_assert(std::is_nothrow_move_constructible<Val>::value, "Basic exception safety cannot be provided if move constructor throws.");

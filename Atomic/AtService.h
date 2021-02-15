@@ -77,6 +77,9 @@ namespace At
 		// Should call WaitServiceStop() to enter ready state.
 		virtual DWORD Run(int argc, wchar_t const* const* argv) = 0;
 
+		// Called by WaitServiceStop to enumerate any threads that may have been aborted while stopping
+		virtual void EnumThreadsAborted(std::function<void(ptrdiff, Seq)> f) = 0;
+
 	private:
 		bool                  m_startedAsService {};
 		SERVICE_STATUS_HANDLE m_serviceStatusHandle {};

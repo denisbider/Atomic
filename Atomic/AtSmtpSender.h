@@ -50,12 +50,16 @@ namespace At
 		Rp<SmtpMsgToSend> CreateMsg();
 
 		// Sends a message, using SMTP, to the specified address.
-		// - Must be called from within an active Db transaction.
+		// - Must be called from within an active EntityStore transaction.
 		// - Single delivery domain per call, but multiple mailboxes OK.
 		// - Message is sent as-is, all headers must already be part of content, no headers are added.
 		// - The method returns immediately after enqueueing the message for delivery.
 		//   On delivery success or failure, the SmtpSender_OnDeliveryResult method is called.
 		void Send(Rp<SmtpMsgToSend> const& msg) { msg->Insert_ParentExists(); msg->GetStore().AddPostCommitAction( [this] () { m_pumpTrigger.Signal(); } ); }
+
+		// Finds the next queued message that's scheduled for sending at a future time, and causes it to be sent now.
+		// Returns true if a queued message was found and scheduled for sending. Returns false if no queued message was found.
+		bool SendNextQueuedMessageNow();
 
 		// Signal SmtpSender to run its main loop if the message queue has changed - e.g. next attempt time for a message has been set to send now.
 		void SignalTrigger() { GetStore().AddPostCommitAction( [this] () { m_pumpTrigger.Signal(); } ); }
@@ -93,6 +97,8 @@ namespace At
 		virtual void SmtpSender_InTx_OnMsgRemoved(SmtpMsgToSend const& msg) = 0;
 
 	private:
+		enum { InitResumeSend_DelayMins = 3, InitResumeSend_DefaultPerMsgDelayMs = 1000, InitResumeSend_MaxLastMsgDelayMins = 5 };
+
 		enum { AtMemUsageLimit_PumpDelayMs = 100 };
 		Event m_pumpTrigger { Event::CreateAuto };
 		Rp<SmtpSenderMemUsage> m_memUsage;

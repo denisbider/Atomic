@@ -2,7 +2,6 @@
 
 #include "AtAbortable.h"
 #include "AtException.h"
-#include "AtSeTranslate.h"
 #include "AtStopCtl.h"
 #include "AtStr.h"
 #include "AtEvent.h"

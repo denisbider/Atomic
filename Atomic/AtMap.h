@@ -197,7 +197,7 @@ namespace At
 		MapCore(MapCore&& x) noexcept : m_len(x.m_len), m_root(x.m_root) { x.m_version = SIZE_MAX; x.m_len = 0; x.m_root = nullptr; }
 		~MapCore() noexcept { m_version = SIZE_MAX; NoExcept(delete m_root); m_root = nullptr; }
 
-		void Clear()
+		void Clear() noexcept
 		{
 			++m_version;
 			if (m_root)
@@ -272,7 +272,7 @@ namespace At
 
 		It FindOrAdd(bool& added, Val&& value)
 		{
-			if (!m_root)
+			if (!m_root || (m_root->IsLeaf() && !m_root->u_leaf.m_entries.Any()))
 			{
 				added = true;
 				return Add(std::move(value));
@@ -379,7 +379,7 @@ namespace At
 				sizet const retNodeLen = retNode->Leaf().m_entries.Len();
 				if (retIndex >= retNodeLen)
 				{
-					EnsureThrowWithNr2(retIndex == retNodeLen, (int64) retIndex, (int64) retNodeLen);
+					EnsureThrowWithNr2(retIndex == retNodeLen, retIndex, retNodeLen);
 					retNode = retNode->NextSibling();	// If this is null, we removed the last entry and return a past-end iterator
 					retIndex = 0;
 				}
@@ -423,7 +423,7 @@ namespace At
 				, m_parent(x.m_parent)
 				, m_entries(std::move(x.m_entries)) {}
 
-			~NodeBase() { m_indexInParent = UINT_MAX; m_parent = nullptr; }
+			~NodeBase() noexcept { m_indexInParent = UINT_MAX; m_parent = nullptr; }
 
 			typename FindKeyResult::E FindLastKeyLessThan(KeyOrRef key, sizet& index)
 			{
@@ -519,7 +519,7 @@ namespace At
 			Node(Node&& x, typename UpdateChildren::E updateChildren) noexcept { MoveFrom_Uninitialized(std::forward<Node>(x), updateChildren); }
 			~Node() noexcept { Destroy(); }
 
-			void Clear()
+			void Clear() noexcept
 			{
 				EnsureAbort(!Parent());
 				Destroy();

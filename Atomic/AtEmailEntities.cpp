@@ -90,13 +90,13 @@ namespace At
 	DESCENUM_DEF_VAL_X(Ehlo_UnexpectedReply,                  "The destination mail exchanger sent an unexpected EHLO reply code")
 	DESCENUM_DEF_VAL_X(Capabilities_8BitMimeRequired,         "The message requires 8BITMIME, but the destination mail exchanger does not support it")
 	DESCENUM_DEF_VAL_X(Capabilities_Size,                     "The message exceeds the destination mail exchanger's size limit")
-	DESCENUM_DEF_VAL_X(Tls_NotAvailable,                      "The message requires TLS, but the destination mail exchanger does not appear to support it")
-	DESCENUM_DEF_VAL_X(Tls_StartTlsRejected,                  "The message requires TLS, but the destination mail exchanger rejected the STARTTLS command")
-	DESCENUM_DEF_VAL_X(Tls_Sspi_LikelyDh_TooManyRestarts,     "The message requires TLS, but TLS could not be started after connecting multiple times due to a likely DH issue")
-	DESCENUM_DEF_VAL_X(Tls_Sspi_InvalidToken_IllegalMsg,      "The message requires TLS, but TLS could not be started due to SEC_E_INVALID_TOKEN or SEC_E_ILLEGAL_MESSAGE")
-	DESCENUM_DEF_VAL_X(Tls_Sspi_ServerAuthRequired,           "The message requires TLS server authentication, but the destination mail exchanger's identity could not be verified")
-	DESCENUM_DEF_VAL_X(Tls_Sspi_Other,                        "The message requires TLS, but TLS could not be started due to an SSPI condition")
-	DESCENUM_DEF_VAL_X(Tls_Communication,                     "The message requires TLS, but TLS could not be started due to a communication condition")
+	DESCENUM_DEF_VAL_X(Tls_NotAvailable,                      "The destination mail exchanger does not appear to support TLS")
+	DESCENUM_DEF_VAL_X(Tls_StartTlsRejected,                  "The destination mail exchanger rejected the STARTTLS command")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_LikelyDhIssue,                "TLS could not be started due to a likely DH issue")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_InvalidToken_IllegalMsg,      "TLS could not be started due to SEC_E_INVALID_TOKEN or SEC_E_ILLEGAL_MESSAGE")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_ServerAuthRequired,           "The destination mail exchanger's identity could not be verified")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_Other,                        "TLS could not be started due to an SSPI condition")
+	DESCENUM_DEF_VAL_X(Tls_Communication,                     "TLS could not be started due to a communication condition")
 	DESCENUM_DEF_VAL_X(Tls_RequiredAssuranceNotAchieved,      "The TLS assurance level required to send message was not achieved")
 	DESCENUM_DEF_VAL_X(Auth_AuthCommandNotSupported,          "Authentication is configured but the mail exchanger does not support the AUTH command")
 	DESCENUM_DEF_VAL_X(Auth_CfgAuthMechNotSupported,          "Authentication is configured but the mail exchanger does not support the configured authentication mechanism")
@@ -118,10 +118,12 @@ namespace At
 
 
 	ENTITY_DEF_BEGIN(SmtpSenderCfg)
-	ENTITY_DEF_FLD_V(SmtpSenderCfg, memUsageLimitKb,    2)
-	ENTITY_DEF_F_E_V(SmtpSenderCfg, ipVerPreference,    1)
-	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp4, 1)
-	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp6, 1)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, memUsageLimitKb,     2)
+	ENTITY_DEF_F_E_V(SmtpSenderCfg, ipVerPreference,     1)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp4,  1)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, localInterfacesIp6,  1)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, respectNo8BitMime,   3)
+	ENTITY_DEF_FLD_V(SmtpSenderCfg, transcriptToDomains, 4)
 	ENTITY_DEF_FIELD(SmtpSenderCfg, useRelay)
 	ENTITY_DEF_FIELD(SmtpSenderCfg, relayHost)
 	ENTITY_DEF_FIELD(SmtpSenderCfg, relayPort)
@@ -138,23 +140,23 @@ namespace At
 	HtmlBuilder& SmtpSenderCfg_RenderRows(HtmlBuilder& html, SmtpSenderCfg const& cfg)
 	{
 		html.Tr()
-				.Td().P().Label("smtpSender_memUsageLimitKb", "SMTP sender memory usage limit (kB)").EndP().EndTd()
+				.Td().Label("smtpSender_memUsageLimitKb", "SMTP sender memory usage limit (kB)").EndTd()
 				.Td()
-					.P().InputNumber().IdAndName("smtpSender_memUsageLimitKb").Value(Str().UInt(cfg.f_memUsageLimitKb)).EndP()
+					.InputNumeric().IdAndName("smtpSender_memUsageLimitKb").Value(Str().UInt(cfg.f_memUsageLimitKb))
 					.P().Class("help").T("Message content is kept in memory when sending. If non-zero, the SMTP sender will avoid enqueueing messages "
 						"when in-memory content is above this size.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_ipVerPreference", "SMTP sender IPv4/6 preference").EndP().EndTd()
+				.Td().Label("smtpSender_ipVerPreference", "SMTP sender IPv4/6 preference").EndTd()
 				.Td()
-					.P().Select().IdAndName("smtpSender_ipVerPreference").Fun(IpVerPreference::RenderOptions, cfg.f_ipVerPreference).EndSelect().EndP()
+					.Select().IdAndName("smtpSender_ipVerPreference").Fun(IpVerPreference::RenderOptions, cfg.f_ipVerPreference).EndSelect()
 					.P().Class("help").T("When making outgoing SMTP connections, whether to prefer IPv4, IPv6, or neither. "
 						"If a preference is configured, it dominates MX preferences configured in DNS for destination domains.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().Class("alignWithTextArea").P().Label("smtpSender_localInterfacesIp4", "Local interfaces - IPv4").EndP().EndTd()
+				.Td().Class("alignWithTextArea").Label("smtpSender_localInterfacesIp4", "Local interfaces - IPv4").EndTd()
 				.Td()
 					.TextArea().IdAndName("smtpSender_localInterfacesIp4").Rows("5").Cols("25")
 						.T(Str().AddN(cfg.f_localInterfacesIp4, "\r\n"))
@@ -165,7 +167,7 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().Class("alignWithTextArea").P().Label("smtpSender_localInterfacesIp6", "Local interfaces - IPv6").EndP().EndTd()
+				.Td().Class("alignWithTextArea").Label("smtpSender_localInterfacesIp6", "Local interfaces - IPv6").EndTd()
 				.Td()
 					.TextArea().IdAndName("smtpSender_localInterfacesIp6").Rows("5").Cols("50")
 						.T(Str().AddN(cfg.f_localInterfacesIp6, "\r\n"))
@@ -176,54 +178,74 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSenderCfg_useRelay", "Use SMTP relay").EndP().EndTd()
+				.Td().Label("smtpSender_respectNo8BitMime", "Respect no 8BITMIME").EndTd()
 				.Td()
-					.P().InputCheckbox().IdAndName("smtpSender_useRelay").CheckedIf(cfg.f_useRelay).EndP()
+					.InputCheckbox().IdAndName("smtpSender_respectNo8BitMime").CheckedIf(cfg.f_respectNo8BitMime)
+					.P().Class("help").T("If enabled, then when an outgoing message contains 8-bit characters, but the destination mail exchanger does not advertise the "
+						"8BITMIME extension, the SMTP sender will respect the requirement in RFC 6152, Section 3, and abort sending with a permanent delivery failure.").EndP()
+					.P().Class("help").T("In practice, when a mail exchanger does not advertise 8BITMIME, this does not mean it won't accept 8-bit data. In such cases, "
+						"the message can be sent without issue. On the other hand, getting the originator to avoid sending 8-bit data can be highly impractical.").EndP()
+				.EndTd()
+			.EndTr()
+			.Tr()
+				.Td().Class("alignWithTextArea").Label("smtpSender_transcriptToDomains", "Transcript To: domains").EndTd()
+				.Td()
+					.TextArea().IdAndName("smtpSender_transcriptToDomains").Rows("5").Cols("25")
+						.T(Str().AddN(cfg.f_transcriptToDomains, "\r\n"))
+					.EndTextArea()
+					.P().Class("help").T("Enter one domain name per line, or * to match all domains. When sending a message to any of these domains, "
+						"the SMTP sender will generate connection I/O transcripts.").EndP()
+				.EndTd()
+			.EndTr()
+			.Tr()
+				.Td().Label("smtpSender_useRelay", "Use SMTP relay").EndTd()
+				.Td()
+					.InputCheckbox().IdAndName("smtpSender_useRelay").CheckedIf(cfg.f_useRelay)
 					.P().Class("help").T("If enabled, outgoing messages will be sent through the specified SMTP server. "
 						"If disabled, messages will be delivered to individual mail exchangers for each destination address.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayHost", "SMTP relay host").EndP().EndTd()
+				.Td().Label("smtpSender_relayHost", "SMTP relay host").EndTd()
 				.Td()
-					.P().InputDnsName("mx.example.com").IdAndName("smtpSender_relayHost").Value(cfg.f_relayHost).EndP()
+					.InputDnsName("mx.example.com").IdAndName("smtpSender_relayHost").Value(cfg.f_relayHost)
 					.P().Class("help").T("The DNS name, IPv4 address, or IPv6 address of the SMTP relay. Use a ").B("DNS name").T(" for TLS security.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayPort", "SMTP relay port").EndP().EndTd()
+				.Td().Label("smtpSender_relayPort", "SMTP relay port").EndTd()
 				.Td()
-					.P().InputNumber().IdAndName("smtpSender_relayPort").Value(Str().UInt(cfg.f_relayPort)).EndP()
+					.InputNumeric().IdAndName("smtpSender_relayPort").Value(Str().UInt(cfg.f_relayPort))
 					.P().Class("help").T("Usual SMTP port numbers are ").B("25").T(" when using STARTTLS, ").B("465").T(" when using implicit TLS.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayImplicitTls", "Implicit TLS").EndP().EndTd()
+				.Td().Label("smtpSender_relayImplicitTls", "Implicit TLS").EndTd()
 				.Td()
-					.P().InputCheckbox().IdAndName("smtpSender_relayImplicitTls").CheckedIf(cfg.f_relayImplicitTls).EndP()
+					.InputCheckbox().IdAndName("smtpSender_relayImplicitTls").CheckedIf(cfg.f_relayImplicitTls)
 					.P().Class("help").T("If enabled, assume TLS from the start of the connection. Otherwise, start plaintext SMTP and use STARTTLS later.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayTlsRequirement", "SMTP relay TLS requirement").EndP().EndTd()
+				.Td().Label("smtpSender_relayTlsRequirement", "SMTP relay TLS requirement").EndTd()
 				.Td()
-					.P().Select().IdAndName("smtpSender_relayTlsRequirement").Fun(SmtpTlsAssurance::RenderOptions, cfg.f_relayTlsRequirement).EndSelect().EndP()
+					.Select().IdAndName("smtpSender_relayTlsRequirement").Fun(SmtpTlsAssurance::RenderOptions, cfg.f_relayTlsRequirement).EndSelect()
 					.P().Class("help").T("Minimum TLS assurance that must be achieved before authenticating and/or sending messages through the relay. "
 						"The host name authenticated via TLS is matched against relay host name configured in this section.").EndP()
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayAuthType", "SMTP relay authentication type").EndP().EndTd()
-				.Td().P().Select().IdAndName("smtpSender_relayAuthType").Fun(MailAuthType::RenderOptions, cfg.f_relayAuthType).EndSelect().EndP().EndTd()
+				.Td().Label("smtpSender_relayAuthType", "SMTP relay authentication type").EndTd()
+				.Td().Select().IdAndName("smtpSender_relayAuthType").Fun(MailAuthType::RenderOptions, cfg.f_relayAuthType).EndSelect().EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayUsername", "SMTP relay username").EndP().EndTd()
-				.Td().P().InputName().IdAndName("smtpSender_relayUsername").Value(cfg.f_relayUsername).EndP().EndTd()
+				.Td().Label("smtpSender_relayUsername", "SMTP relay username").EndTd()
+				.Td().InputName().IdAndName("smtpSender_relayUsername").Value(cfg.f_relayUsername).EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpSender_relayPassword", "SMTP relay password").EndP().EndTd()
-				.Td().P().InputPassword(fit_pw_noMinLen).IdAndName("smtpSender_relayPassword")
-					.Value(cfg.f_relayPassword.Any() ? c_zSmtpRelayPwValueNoChange : "").EndP().EndTd()
+				.Td().Label("smtpSender_relayPassword", "SMTP relay password").EndTd()
+				.Td().InputPassword(fit_pw_noMinLen).IdAndName("smtpSender_relayPassword")
+					.Value(cfg.f_relayPassword.Any() ? c_zSmtpRelayPwValueNoChange : "").EndTd()
 			.EndTr();
 
 		html.AddJs(c_js_AtSmtpEntities_SenderCfg);
@@ -238,6 +260,8 @@ namespace At
 		Seq ipVerPreferenceStr     =  req.PostNvp("smtpSender_ipVerPreference"    );
 		Seq localInterfacesIp4Str  =  req.PostNvp("smtpSender_localInterfacesIp4" );
 		Seq localInterfacesIp6Str  =  req.PostNvp("smtpSender_localInterfacesIp6" );
+		cfg.f_respectNo8BitMime    = (req.PostNvp("smtpSender_respectNo8BitMime"  ) == "1");
+		Seq transcriptToDomains    =  req.PostNvp("smtpSender_transcriptToDomains");
 		cfg.f_useRelay             = (req.PostNvp("smtpSender_useRelay"           ) == "1");
 		cfg.f_relayHost            =  req.PostNvp("smtpSender_relayHost"          ).Trim().ReadUtf8_MaxChars(SmtpSenderCfg_RelayHost_MaxChars);
 		uint64 relayPort           =  req.PostNvp("smtpSender_relayPort"          ).Trim().ReadNrUInt64Dec();
@@ -253,8 +277,9 @@ namespace At
 		else
 			cfg.f_ipVerPreference = ipVerPreference;
 
-		cfg.f_localInterfacesIp4 = localInterfacesIp4Str.SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
-		cfg.f_localInterfacesIp6 = localInterfacesIp6Str.SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
+		cfg.f_localInterfacesIp4  = localInterfacesIp4Str .SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
+		cfg.f_localInterfacesIp6  = localInterfacesIp6Str .SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
+		cfg.f_transcriptToDomains = transcriptToDomains   .SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
 
 		if (cfg.f_useRelay)
 		{
@@ -288,28 +313,37 @@ namespace At
 
 
 	ENTITY_DEF_BEGIN(SmtpSendFailure)
+	ENTITY_DEF_FLD_V(SmtpSendFailure, time,        1)
 	ENTITY_DEF_FLD_E(SmtpSendFailure, stage)
 	ENTITY_DEF_FIELD(SmtpSendFailure, mx)
+	ENTITY_DEF_FLD_V(SmtpSendFailure, localAddr,   1)
 	ENTITY_DEF_FIELD(SmtpSendFailure, replyCode)
 	ENTITY_DEF_FIELD(SmtpSendFailure, enhStatus)
 	ENTITY_DEF_FIELD(SmtpSendFailure, desc)
 	ENTITY_DEF_FIELD(SmtpSendFailure, lines)
+	ENTITY_DEF_FLD_V(SmtpSendFailure, prevFailure, 1)
 	ENTITY_DEF_CLOSE(SmtpSendFailure);
 
 
-	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx,
-		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines)
+	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx, Socket const* sk, Seq localAddr,
+		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines, Rp<SmtpSendFailure> const& prevFailure)
 	{
 		Rp<SmtpSendFailure> f = new SmtpSendFailure(Entity::Contained);
+		f->f_time = Time::NonStrictNow();
 		f->f_stage = stage;
 		f->f_detail = detail;
 		if (mx)
 			mx->EncObj(f->f_mx);
+		if (sk && sk->IsValid())
+			sk->LocalAddr().EncObj(f->f_localAddr, SockAddr::AddrOnly);
+		else if (localAddr.n)
+			f->f_localAddr = localAddr;
 		f->f_replyCode = code.Value();
 		f->f_enhStatus = enhStatus.ToUint();
 		f->f_desc      = desc;
 		if (lines)
 			f->f_lines = *lines;
+		f->f_prevFailure = prevFailure;
 		return f;
 	}
 
@@ -333,13 +367,14 @@ namespace At
 						else if (c == '(')											s.Add("&lpar;");
 						else if (c == ')')											s.Add("&rpar;");
 						else if (c < 32 || c > 126)									s.Add("&#").UInt(c).Ch(';');
+						else														s.Utf8Char(c);
 					}
 				}
 			};
 
 		auto beginComment = [&needNewLine, &s] ()
 			{
-				if (needNewLine) s.Add("\r\n "); else needNewLine = true;
+				if (needNewLine) { s.Add("\r\n "); needNewLine = false; }
 				s.Ch('(');
 			};
 
@@ -408,6 +443,7 @@ namespace At
 	ENTITY_DEF_FIELD(MailboxResult, mailbox)
 	ENTITY_DEF_FLD_E(MailboxResult, state)
 	ENTITY_DEF_FIELD(MailboxResult, successMx)
+	ENTITY_DEF_FLD_V(MailboxResult, successLocalAddr, 1)
 	ENTITY_DEF_FIELD(MailboxResult, failure)
 	ENTITY_DEF_CLOSE(MailboxResult);
 
@@ -490,7 +526,7 @@ namespace At
 			.Tr()
 				.Td().P().Label("emailSrvBinding_port", "Port").EndP().EndTd()
 				.Td()
-					.P().InputNumber().IdAndName("emailSrvBinding_port").MinAttr("1").MaxAttr("65535").Value(Str().UInt(binding.f_port)).EndP()
+					.P().InputNumeric().IdAndName("emailSrvBinding_port").MinAttr("1").MaxAttr("65535").Value(Str().UInt(binding.f_port)).EndP()
 					.P().Class("help").T("The port number on which to accept connections.").EndP();
 
 		if (EmailSrvBindingProto::SMTP == proto)
@@ -531,7 +567,7 @@ namespace At
 			html.Tr()
 					.Td().P().Label("emailSrvBinding_maxInMsgKb", "Maximum incoming message size (kB)").EndP().EndTd()
 					.Td()
-						.P().InputNumber().IdAndName("emailSrvBinding_maxInMsgKb").Value(Str().UInt(binding.f_maxInMsgKb)).EndP()
+						.P().InputNumeric().IdAndName("emailSrvBinding_maxInMsgKb").Value(Str().UInt(binding.f_maxInMsgKb)).EndP()
 						.P().Class("help").T("The maximum incoming message size that will be accepted. "
 							"If not configured (set to zero), the global SMTP receiver setting is used.").EndP()
 					.EndTd()
@@ -698,6 +734,7 @@ namespace At
 	ENTITY_DEF_FIELD(SmtpReceiverCfg, bindings)
 	ENTITY_DEF_FIELD(SmtpReceiverCfg, computerName)
 	ENTITY_DEF_FIELD(SmtpReceiverCfg, maxInMsgKb)
+	ENTITY_DEF_FIELD(SmtpReceiverCfg, transcriptRemoteAddrs)
 	ENTITY_DEF_CLOSE(SmtpReceiverCfg);
 
 	
@@ -721,7 +758,7 @@ namespace At
 	HtmlBuilder& SmtpReceiverCfg_RenderRows(HtmlBuilder& html, SmtpReceiverCfg const& cfg)
 	{
 		html.Tr()
-				.Td().P().Label("smtpReceiverCfg_computerName", "Computer name").EndP().EndTd()
+				.Td().Label("smtpReceiverCfg_computerName", "Computer name").EndTd()
 				.Td()
 					.P().InputDnsName().IdAndName("smtpReceiverCfg_computerName").Value(cfg.f_computerName).EndP()
 					.P().Class("help").T("A fully-qualified DNS name of this computer. This will be sent to SMTP senders as part of the SMTP greeting, "
@@ -729,11 +766,21 @@ namespace At
 				.EndTd()
 			.EndTr()
 			.Tr()
-				.Td().P().Label("smtpReceiverCfg_maxInMsgKb", "Maximum incoming message size (kB)").EndP().EndTd()
+				.Td().Label("smtpReceiverCfg_maxInMsgKb", "Maximum incoming message size (kB)").EndTd()
 				.Td()
-					.P().InputNumber().IdAndName("smtpReceiverCfg_maxInMsgKb").Value(Str().UInt(cfg.f_maxInMsgKb)).EndP()
+					.P().InputNumeric().IdAndName("smtpReceiverCfg_maxInMsgKb").Value(Str().UInt(cfg.f_maxInMsgKb)).EndP()
 					.P().Class("help").T("The maximum incoming message size that will be accepted. "
 						"Can be overridden in settings for an individual binding.").EndP()
+				.EndTd()
+			.EndTr()
+			.Tr()
+				.Td().Class("alignWithTextArea").Label("smtpReceiverCfg_transcriptRemoteAddrs", "Transcript remote addresses").EndTd()
+				.Td()
+					.TextArea().IdAndName("smtpReceiverCfg_transcriptRemoteAddrs").Rows("5").Cols("25")
+						.T(Str().AddN(cfg.f_transcriptRemoteAddrs, "\r\n"))
+					.EndTextArea()
+					.P().Class("help").T("Enter one IPv4 or IPv6 address per line, or * to match any address. "
+						"When handling connections from any of these addresses, the SMTP receiver will generate connection I/O transcripts.").EndP()
 				.EndTd()
 			.EndTr();
 
@@ -743,13 +790,16 @@ namespace At
 
 	void SmtpReceiverCfg_ReadFromPostRequest(SmtpReceiverCfg& cfg, HttpRequest const& req, Vec<Str>& errs)
 	{
-		cfg.f_computerName = req.PostNvp("smtpReceiverCfg_computerName" ).Trim();
-		uint64 maxInMsgKb  = req.PostNvp("smtpReceiverCfg_maxInMsgKb"   ).Trim().ReadNrUInt64Dec();
+		cfg.f_computerName        = req.PostNvp("smtpReceiverCfg_computerName"          ).Trim();
+		uint64 maxInMsgKb         = req.PostNvp("smtpReceiverCfg_maxInMsgKb"            ).Trim().ReadNrUInt64Dec();
+		Seq transcriptRemoteAddrs = req.PostNvp("smtpReceiverCfg_transcriptRemoteAddrs" );
 
 		if (!maxInMsgKb)
 			errs.Add("Invalid maximum incoming message size");
 		else
 			cfg.f_maxInMsgKb = maxInMsgKb;
+
+		cfg.f_transcriptRemoteAddrs = transcriptRemoteAddrs.SplitLines<Str>(SplitFlags::Trim | SplitFlags::DiscardEmpty);
 	}
 
 }

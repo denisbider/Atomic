@@ -361,30 +361,38 @@ namespace At
 		uint64 v = 0;
 		while (n)
 		{
-			uint digit;
-			if (*p >= '0' && *p <= '9')
-				digit = (uint) (*p - '0');
-			else if (*p >= 'A' && *p <= 'Z')
-				digit = (uint) ((*p - 'A') + 10);
-			else if (*p >= 'a' && *p <= 'z')
-				digit = (uint) ((*p - 'a') + 10);
+			if (*p == ',')
+			{
+				if (base != 10 || n < 2 || p[1] < '0' || p[1] > '9')
+					break;
+
+				// In decimal base, accept digits grouped using ","
+				++p;
+				--n;
+			}
 			else
-				break;
+			{
+				uint digit;
+					 if (*p >= '0' && *p <= '9') digit = (uint)  (*p - '0');
+				else if (*p >= 'A' && *p <= 'Z') digit = (uint) ((*p - 'A') + 10);
+				else if (*p >= 'a' && *p <= 'z') digit = (uint) ((*p - 'a') + 10);
+				else break;
 		
-			if (digit >= base)
-				break;
+				if (digit >= base)
+					break;
 
-			++p;
-			--n;
+				++p;
+				--n;
 
-			if (digit >= max)
-				return max;
+				if (digit >= max)
+					return max;
 		
-			uint64 limit = (max - digit) / base;
-			if (v > limit)
-				return max;
+				uint64 limit = (max - digit) / base;
+				if (v > limit)
+					return max;
 
-			v = v*base + digit;
+				v = v*base + digit;
+			}
 		}
 	
 		return v;
@@ -667,6 +675,16 @@ namespace At
 
 	template Vec<Seq> Seq::SplitLines<Seq>(uint);
 	template Vec<Str> Seq::SplitLines<Str>(uint);
+
+
+	uint64 Seq::FnvHash64(uint64 const seed) const
+	{
+		uint64 const FnvPrime64 = 1099511628211ull;
+		uint64 v = (seed ^ n) * FnvPrime64;
+		for (sizet i=0; i!=n; ++i)
+			v = (v ^ (uint64) p[i]) * FnvPrime64;
+		return v;
+	}
 
 
 	int Seq::MemCmpInsensitive(byte const* a, byte const* b, sizet n) noexcept

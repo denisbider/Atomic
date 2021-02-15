@@ -27,18 +27,18 @@ void MapTests()
 	Rp<DataWithIntKey> spDwik { new DataWithIntKey };
 	Rp<DataWithStrKey> spDwsk { new DataWithStrKey };
 
-	{ Map<    DataWithIntKey>  m; m.Add(dwik);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ Map<    DataWithStrKey>  m; m.Add(dwsk);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ Map< Rp<DataWithIntKey>> m; m.Add(spDwik); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ Map< Rp<DataWithStrKey>> m; m.Add(spDwsk); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<   DataWithIntKey>  m; m.Add(dwik);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<   DataWithStrKey>  m; m.Add(dwsk);   for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<Rp<DataWithIntKey>> m; m.Add(spDwik); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ MapR<Rp<DataWithStrKey>> m; m.Add(spDwsk); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSet<int>  m; int x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSet<Str>  m; Str x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSetR<int> m; int x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
-	{ OrderedSetR<Str> m; Str x; m.Add(x); for (auto val : m) { m.Find(m.GetKey(val)); } }
+	{ Map<    DataWithIntKey>  m; m.Add(dwik);   for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(dwik);   }
+	{ Map<    DataWithStrKey>  m; m.Add(dwsk);   for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(dwsk);   }
+	{ Map< Rp<DataWithIntKey>> m; m.Add(spDwik); for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(spDwik); }
+	{ Map< Rp<DataWithStrKey>> m; m.Add(spDwsk); for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(spDwsk); }
+	{ MapR<   DataWithIntKey>  m; m.Add(dwik);   for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(dwik);   }
+	{ MapR<   DataWithStrKey>  m; m.Add(dwsk);   for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(dwsk);   }
+	{ MapR<Rp<DataWithIntKey>> m; m.Add(spDwik); for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(spDwik); }
+	{ MapR<Rp<DataWithStrKey>> m; m.Add(spDwsk); for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(spDwsk); }
+	{ OrderedSet<int>  m; int x {}; m.Add(x);    for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(x);      }
+	{ OrderedSet<Str>  m; Str x;    m.Add(x);    for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(x);      }
+	{ OrderedSetR<int> m; int x {}; m.Add(x);    for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(x);      }
+	{ OrderedSetR<Str> m; Str x;    m.Add(x);    for (auto val : m) { m.Find(m.GetKey(val)); } m.Clear(); m.Add(x);      }
 
 	enum { CrcMask = 0xFFFFF, AddEnd = (CrcMask*3)/2, EraseEnd = 3*CrcMask };
 	auto crcMasked = [] (uint x) -> uint { return Crc32(Seq(&x, sizeof(uint))) & CrcMask; };

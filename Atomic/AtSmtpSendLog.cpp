@@ -143,16 +143,40 @@ namespace At
 				 .Add("\" state=\"").Add(SmtpDeliveryState::Name(result.f_state));
 
 			if (result.f_state == SmtpDeliveryState::Success)
-				entry.Add("\" mx=\"").HtmlAttrValue(result.f_successMx, Html::CharRefs::Escape);
+				entry.Add("\" mx=\"").HtmlAttrValue(result.f_successMx, Html::CharRefs::Escape)
+					 .Add("\" localAddr=\"").HtmlAttrValue(result.f_successLocalAddr, Html::CharRefs::Escape)
+					 .Add("\" />\r\n");
 			else
-				entry.Add("\" stage=\"").Add(SmtpSendStage::Name(result.f_failure->f_stage))
-					 .Add("\" detail=\"").Add(SmtpSendDetail::Name(result.f_failure->f_detail))
-					 .Add("\" mx=\"").Add(result.f_failure->f_mx)
-					 .Add("\" replyCode=\"").Obj(SmtpReplyCode(result.f_failure->f_replyCode))
-					 .Add("\" enhStatus=\"").Obj(SmtpEnhStatus::FromUint(result.f_failure->f_enhStatus))
-					 .Add("\" desc=\"").HtmlAttrValue(result.f_failure->f_desc, Html::CharRefs::Escape);
+			{
+				entry.Add("\">\r\n");
 
-			entry.Add("\" />\r\n");
+				SmtpSendFailure const* failure = result.f_failure.Ptr();
+				while (failure)
+				{
+					entry.Add("  <failure time=\"").Fun(Enc_EntryTime, failure->f_time, tzi)
+						 .Add("\" stage=\"").Add(SmtpSendStage::Name(failure->f_stage))
+						 .Add("\" detail=\"").Add(SmtpSendDetail::Name(failure->f_detail))
+						 .Add("\" mx=\"").Add(failure->f_mx)
+						 .Add("\" localAddr=\"").Add(failure->f_localAddr)
+						 .Add("\" replyCode=\"").Obj(SmtpReplyCode(failure->f_replyCode))
+						 .Add("\" enhStatus=\"").Obj(SmtpEnhStatus::FromUint(failure->f_enhStatus))
+						 .Add("\" desc=\"").HtmlAttrValue(Seq(failure->f_desc).Trim(), Html::CharRefs::Escape);
+
+					if (!failure->f_lines.Any())
+						entry.Add("\" />\r\n");
+					else
+					{
+						entry.Add("\">\r\n");
+						for (Seq line : failure->f_lines)
+							entry.Add("   <replyLine>").HtmlElemText(line, Html::CharRefs::Escape).Add("</replyLine>\r\n");
+						entry.Add("  </failure>\r\n");
+					}
+
+					failure = failure->f_prevFailure.DynamicCast<SmtpSendFailure>();
+				}
+
+				entry.Add(" </mbox>\r\n");
+			}
 		}
 
 		entry.Add("</result>\r\n");

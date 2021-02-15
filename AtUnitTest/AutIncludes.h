@@ -1,6 +1,8 @@
 #pragma once
 
 #include "AtActv.h"
+#include "AtAfsMemStorage.h"
+#include "AtAfsFileStorage.h"
 #include "AtArgs.h"
 #include "AtBaseXY.h"
 #include "AtBCrypt.h"

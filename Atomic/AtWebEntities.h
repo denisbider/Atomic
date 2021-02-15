@@ -53,6 +53,7 @@ namespace At
 	ENTITY_DECL_FIELD(Str,						token)
 	ENTITY_DECL_FIELD(Time,						createTime)
 	ENTITY_DECL_FIELD(Time,						recentReqTime)
+	ENTITY_DECL_FIELD(Str,						recentUserAgent)
 	ENTITY_DECL_FIELD(Str,						createRemoteAddrOnly)		// "Only" meaning just address, no port
 	ENTITY_DECL_FIELD(uint64,					createRemotePort)
 	ENTITY_DECL_FIELD(EntVec<AccessRecord>,		accessRecords)
@@ -62,6 +63,8 @@ namespace At
 	template <class T> T*       LoginSession_GetExtInfo(LoginSession&           x) { return Entity_GetExtInfo       <LoginSession, T>(x); }
 	template <class T> T const* LoginSession_GetExtInfo(LoginSession const&     x) { return Entity_GetExtInfo_Const <LoginSession, T>(x); }
 	template <class T> T*       LoginSession_GetExtInfo(Rp<LoginSession> const& x) { if (!x.Any()) return nullptr; return LoginSession_GetExtInfo<T>(x.Ref()); }
+
+	void LoginSession_InitNew(LoginSession& ls, HttpRequest& req);
 
 
 

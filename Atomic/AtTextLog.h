@@ -11,9 +11,11 @@ namespace At
 	class TextLog : NoCopy
 	{
 	public:
-		~TextLog();
+		virtual ~TextLog();
 
-		void Init(Seq baseName);
+		struct Flags { enum E : uint { AutoRollover = 1, CreateUnique = 2 }; };
+
+		void Init(Seq baseName, uint flags);
 
 	protected:
 		void WriteEntry(Time now, TzInfo const& tzi, Seq entry);
@@ -22,6 +24,7 @@ namespace At
 	private:
 		Mutex  m_mx;
 
+		uint   m_flags {};
 		Str    m_baseName;
 		Str    m_logDir;
 		TzBias m_curLogTzBias;

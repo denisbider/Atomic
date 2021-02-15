@@ -442,11 +442,6 @@ void CoreTests_Exceptions()
 		"Cc Ss Zz: \xC4\x8C\xC4\x8D \xC5\xA0\xC5\xA1 \xC5\xBD\xC5\xBE\r\n");
 	Console::Out("-end-\r\n");
 
-	_set_se_translator(SeTranslator);
-
-	try { ((byte*) nullptr)[0] = 0; }
-	catch (std::exception const& e) { Console::Out(Str("\r\nNull pointer write test - verify output visually:\r\n-begin-\r\n").Add(e.what()).Add("-end-\r\n")); }
-
 	{
 		bool ok = (EnsureFailDesc::s_nrAllocated == EnsureFailDesc::s_nrFreed);
 		char const* okOrFail = (ok ? " - ok\r\n" : " - FAIL\r\n");

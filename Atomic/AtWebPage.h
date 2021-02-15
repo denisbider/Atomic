@@ -18,6 +18,9 @@ namespace At
 	//   It does not accept access from a remote address other than that used to perform the login.
 	enum class PageLogin { Ignore, IsLoginPage, IsLogoutPage, Accept, Require_Relaxed, Require_Strict };
 
+	inline bool PageLogin_ShowLoggedInElements(PageLogin loginType)
+		{ return (loginType != PageLogin::Ignore) && (loginType != PageLogin::IsLoginPage); }
+
 	struct WebLoginResult
 	{
 		enum E { None, Success, AttemptsTooFrequent, InvalidCredentials };
@@ -26,8 +29,8 @@ namespace At
 
 	struct WebSessionExpiry
 	{
-		uint m_relaxedExpiryMinutes {};
-		uint m_strictExpiryMinutes  {};
+		Time m_relaxedExpiry;
+		Time m_strictExpiry;
 	};
 
 

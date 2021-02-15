@@ -138,10 +138,11 @@ namespace At
 		Enc& ErrCode(int64 v);
 		Enc& TzOffset(int64 v) { return SInt(v, AddSign::Always, 10, 4); }
 
-		Enc& UIntDecGrp(uint64 v);
-		Enc& UIntUnits (uint64 v, Slice<Units::Unit> units);
-		Enc& UIntBytes (uint64 v) { return UIntUnits(v, Units::Bytes); }
-		Enc& UIntKb    (uint64 v) { return UIntUnits(v, Units::kB); }
+		Enc& UIntDecGrp  (uint64 v);
+		Enc& UIntUnitsEx (uint64 v, Slice<Units::Unit> units, Units::Unit const*& largestFitUnit);	// Does not append unit, instead returns it
+		Enc& UIntUnits   (uint64 v, Slice<Units::Unit> units);										// Appends unit
+		Enc& UIntBytes   (uint64 v) { return UIntUnits(v, Units::Bytes); }
+		Enc& UIntKb      (uint64 v) { return UIntUnits(v, Units::kB); }
 
 		Enc& Lower(Seq source);
 		Enc& Upper(Seq source);
@@ -153,6 +154,7 @@ namespace At
 		Enc& HtmlElemText(Seq text, Html::CharRefs charRefs);
 		Enc& JsStrEncode(Seq text);
 		Enc& CsvStrEncode(Seq text);
+		Enc& CDataEncode(Seq text);
 
 		template <class T, typename... Args>
 		Enc& Obj(T const& x, Args&&... args)

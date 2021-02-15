@@ -1,12 +1,13 @@
 #pragma once
 
 #include "AtAbortable.h"
+#include "AtTranscriber.h"
 
 
 namespace At
 {
 
-	class Reader : virtual public IAbortable
+	class Reader : virtual public IAbortable, virtual public Transcribable
 	{
 	public:
 		struct Err : CommunicationErr { Err(Seq msg) : CommunicationErr(msg) {} };
@@ -23,22 +24,41 @@ namespace At
 		void SwapOutProcessed(Str& dest);
 		void DiscardProcessed() { Str dummy; SwapOutProcessed(dummy); }
 
-		struct Instr { enum E { Done, NeedMore }; };
-		virtual void Read(std::function<Instr::E(Seq&)> process) = 0;
+		enum class ReadInstr { Done, NeedMore, RequiresAlternateProcessing };
+
+		// The implementation should:
+		// - Call BeginRead to make room for an incoming read.
+		// - Call CompleteRead when any bytes have been read.
+		// - Call TryProcessData, passing the "process" parameter, to try process some of the data.
+		// - Repeat the above steps, accumulating data, as long as TryProcessData returns KeepReading::Yes.
+		// - Return when TryProcessData returns KeepReading::No.
+		// - If end of stream has been reached, throw Reader::ReachedEnd.
+		// - On error, throw an implementation-specific exception that derives from CommunicationErr.
+		virtual void Read(std::function<ReadInstr(Seq&)> process) = 0;
 
 		void ReadVarStr(Seq& s, sizet maxLen = SIZE_MAX);
 		void ReadVarSInt64(int64& n);
 		void ReadVarUInt64(uint64& n);
 
-	protected:
-		bool m_bufferPinned         {};
-		Str m_buf;
-		sizet m_bytesInBuf          {};
-		sizet m_bytesInBufProcessed {};
-		bool m_haveNewDataToProcess {};
+	private:
+		bool  m_bufferPinned         {};
+		Str   m_buf;
+		sizet m_bytesInBuf           {};
+		sizet m_bytesInBufProcessed  {};
+		bool  m_haveNewDataToProcess {};
 
-		bool ProcessData(std::function<Instr::E(Seq&)> process);
-		sizet PrepareToRead(sizet desiredReadSize, sizet minReadSize);
+	protected:
+		enum class KeepReading { No, Yes };
+		KeepReading TryProcessData(std::function<ReadInstr(Seq&)> process);
+
+		struct ReadDest
+		{
+			byte* m_destPtr  {};
+			sizet m_maxBytes {};
+		};
+
+		ReadDest BeginRead(sizet desiredReadSize, sizet minReadSize);
+		void CompleteRead(sizet bytesRead);
 	};
 
 }

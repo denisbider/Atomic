@@ -111,6 +111,7 @@ namespace At
 		uint   ReadByte                     () noexcept;	// Returns UINT_MAX if no bytes left
 		uint   ReadHexEncodedByte           () noexcept;	// Returns UINT_MAX if not enough bytes left or the next 2 bytes aren't hexadecimal digits. No bytes are skipped unless read is successful
 		uint   ReadUtf8Char                 () noexcept;	// Returns UINT_MAX if not enough bytes left or invalid UTF-8. No bytes are consumed unless read is successful
+		Seq    ReadAll                      () noexcept { Seq ret = *this; p += n; n = 0; return ret; }
 		Seq    ReadBytes                    (sizet m)        noexcept;
 		bool   ReadBytesInto                (void* pRead, sizet m) noexcept;
 		Seq    ReadUtf8_MaxBytes            (sizet maxBytes) noexcept;
@@ -215,6 +216,8 @@ namespace At
 
 		template <typename SeqOrStr>
 		Vec<SeqOrStr> SplitLines(uint splitFlags);
+
+		uint64 FnvHash64(uint64 const seed) const;
 
 	private:
 		Seq RevReadToPtr(byte const* r) noexcept;

@@ -10,38 +10,51 @@ namespace At
 	// HtmlField
 
 	struct HtmlForm;
+	struct HtmlFieldCheckbox;
 
 	struct HtmlField
 	{
+		enum class GroupDisp { Neutral, Start, End, NoField=255 };
+		enum class GroupSep  { No, Yes };
+
 		using HelpFn = std::function<void (HtmlBuilder&)>;
 
-		HtmlForm*   m_form         {};
-		Seq         m_fieldName    {};
-		Seq         m_friendlyName {};		// Not set if field is hidden
+		HtmlForm*                m_form         {};
+		Seq                      m_fieldName    {};
+		Seq                      m_friendlyName {};		// Not set if field is hidden
+					             
+		Str                      m_fieldId;				// Not set if same as m_fieldName; not set if field is hidden
+		HelpFn                   m_helpFn       {};
+		bool                     m_autoFocus    {};
+		bool                     m_disabled     {};
+		bool                     m_hidden       {};
+		GroupDisp                m_groupDisp    {};
 
-		Str         m_fieldId;				// Not set if same as m_fieldName; not set if field is hidden
-		HelpFn      m_helpFn       {};
-		bool        m_autoFocus    {};
-		bool        m_disabled     {};
-		bool        m_hidden       {};
+		HtmlFieldCheckbox const* m_enablerCb    {};
 
-		Vec<Str>    m_fieldErrs;
+		Vec<Str>                 m_fieldErrs;
 
 		// The HtmlField instance must have a lifespan equal to or exceeding the lifespan of the HtmlForm to which it is being added
-		HtmlField& SetNameAndId(HtmlForm& form, char const* fieldName, char const* friendlyName)
+		HtmlField& SetNameAndId(HtmlForm& form, Seq fieldName, Seq friendlyName)
 			{ SetNameAndIdEx(form, fieldName, friendlyName, Visibility::Visible); return *this; }
 
 		HtmlField& SetHelpLit     (char const* z);
-		HtmlField& SetHelpFn      (HelpFn f) { m_helpFn    = f;    return *this; }
-		HtmlField& SetAutoFocus   ()         { m_autoFocus = true; return *this; }
-		HtmlField& SetAutoFocusIf (bool v)   { m_autoFocus = v;    return *this; }
-		HtmlField& SetDisabled    ()         { m_disabled  = true; return *this; }
-		HtmlField& SetDisabledIf  (bool v)   { m_disabled  = v;    return *this; }
+		HtmlField& SetHelpFn      (HelpFn f) { m_helpFn    = f;                return *this; }
+		HtmlField& SetAutoFocus   ()         { m_autoFocus = true;             return *this; }
+		HtmlField& SetAutoFocusIf (bool v)   { m_autoFocus = v;                return *this; }
+		HtmlField& SetDisabled    ()         { m_disabled  = true;             return *this; }
+		HtmlField& SetDisabledIf  (bool v)   { m_disabled  = v;                return *this; }
+		HtmlField& SetGroupStart  ()         { m_groupDisp = GroupDisp::Start; return *this; }
+		HtmlField& SetGroupEnd    ()         { m_groupDisp = GroupDisp::End;   return *this; }
+
+		HtmlField& SetEnablerCheckbox(HtmlFieldCheckbox* cb);
+		HtmlField& SetEnablerCheckbox(HtmlFieldCheckbox& cb) { SetEnablerCheckbox(&cb); }
 
 		Seq FieldId() const;
 
-		void RenderRow(HtmlBuilder& html) const;
+		void RenderField(HtmlBuilder& html, GroupSep groupSep) const;
 
+		virtual Seq LabelTdClass() const;
 		virtual void RenderInput(HtmlBuilder& html) const = 0;
 		virtual void RenderFieldTypeHelp(HtmlBuilder& html) const;
 		virtual bool ReadFromRequest(HttpRequest const& req, InsensitiveNameValuePairsWithStore const& nvp) = 0;
@@ -52,7 +65,7 @@ namespace At
 
 	protected:
 		enum class Visibility { Visible, Hidden };
-		void SetNameAndIdEx(HtmlForm& form, char const* fieldName, char const* friendlyName, Visibility visibility);
+		void SetNameAndIdEx(HtmlForm& form, Seq fieldName, Seq friendlyName, Visibility visibility);
 	};
 
 
@@ -66,13 +79,14 @@ namespace At
 	    uint            m_headingLevel  {};
 		Str             m_heading       {};
 		Seq             m_headingId     {};
+		HelpFn          m_introHelpFn   {};
 		Str             m_url           {};
 		bool            m_noSideEffect  {};
 		bool            m_multiUpload   {};
 		Seq             m_fieldIdPrefix {};
 		Seq             m_confirmText   {};
 		Seq             m_cmd           {};
-		HelpFn          m_helpFn        {};
+		HelpFn          m_submitHelpFn  {};
 		Opt<Recaptcha>  m_recaptcha     {};
 
 		Vec<HtmlField*> m_fields;
@@ -86,13 +100,14 @@ namespace At
 		HtmlForm& SetHeading       (uint l, Str&& s)       { m_headingLevel = l; m_heading = std::move(s); return *this; }
 
 		HtmlForm& SetHeadingId     (char const* z) { m_headingId = z;       return *this; }
+		HtmlForm& SetIntroHelpFn   (HelpFn f)      { m_introHelpFn = f;     return *this; }
 		HtmlForm& SetUrl           (Seq s)         { m_url = s;             return *this; }
 		HtmlForm& SetNoSideEffect  ()              { m_noSideEffect = true; return *this; }
 		HtmlForm& SetMultiUpload   ()              { m_multiUpload = true;  return *this; }
 		HtmlForm& SetFieldIdPrefix (char const* z) { m_fieldIdPrefix = z;   return *this; }
 		HtmlForm& SetConfirmText   (char const* z) { m_confirmText = z;     return *this; }
 		HtmlForm& SetCmd           (char const* z) { m_cmd = z;             return *this; }
-		HtmlForm& SetHelpFn        (HelpFn f)      { m_helpFn = f;          return *this; }
+		HtmlForm& SetSubmitHelpFn  (HelpFn f)      { m_submitHelpFn = f;    return *this; }
 
 		HtmlForm& SetRecaptcha     (Seq siteKey, Seq secret) { m_recaptcha.Init().Init(siteKey, secret); return *this; }
 
@@ -177,6 +192,7 @@ namespace At
 		HtmlFieldTextArea& SetValue    (char const* z)           { m_value = z;            return *this; }
 		HtmlFieldTextArea& SetValue    (Str&& v)                 { m_value = std::move(v); return *this; }
 
+		Seq LabelTdClass() const override;
 		void RenderInput(HtmlBuilder& html) const override;
 		void RenderFieldTypeHelp(HtmlBuilder& html) const override;
 		bool ReadFromRequest(HttpRequest const& req, InsensitiveNameValuePairsWithStore const& nvp) override;
@@ -188,8 +204,9 @@ namespace At
 
 	struct HtmlFieldCheckbox : HtmlField
 	{
-		Opt<bool> m_oldValue;
-		bool      m_value {};
+		Opt<bool>             m_oldValue;
+		bool                  m_value {};
+		Vec<HtmlField const*> m_enablerForFields;
 
 		HtmlFieldCheckbox& SetValue(bool v) { m_value = v; return *this; }
 
@@ -283,6 +300,37 @@ namespace At
 			m_fieldErrs.Add(Str::Join(m_friendlyName, ": invalid select field value"));
 			return false;
 		}
+	};
+
+
+
+	// HtmlFieldDuration
+
+	struct HtmlFieldDuration : HtmlField
+	{
+		Opt<Time>          m_oldValue;
+		Time               m_value;
+		Time               m_valueMin;
+		Time               m_valueMax { Time::Max() };
+		Units::Unit const* m_unitMin {};
+		Units::Unit const* m_unitMax {};
+
+		// Automatically sets unit range appropriately if not set yet
+		HtmlFieldDuration& SetValueRange(Time valueMin, Time valueMax);
+
+		HtmlFieldDuration& SetUnitRange(Units::Unit const* unitMin, Units::Unit const* unitMax);
+
+		HtmlFieldDuration& SetValue(Time v) { m_value = v; return *this; }
+
+		void RenderInput(HtmlBuilder& html) const override;
+		void RenderFieldTypeHelp(HtmlBuilder& html) const override;
+		bool ReadFromRequest(HttpRequest const& req, InsensitiveNameValuePairsWithStore const& nvp) override;
+
+	private:
+		Str mutable m_valueName;
+		Str mutable m_unitName;
+
+		void InitFieldNames() const;
 	};
 
 }

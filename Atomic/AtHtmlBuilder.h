@@ -175,9 +175,9 @@ namespace At
 		HtmlBuilder& InputIp4         (Seq ph) { return InputText(fit_ip4         ).Placeholder(ph); }
 		HtmlBuilder& InputIp6         (Seq ph) { return InputText(fit_ip6         ).Placeholder(ph); }
 		HtmlBuilder& InputIp4Or6      (Seq ph) { return InputText(fit_ip6         ).Placeholder(ph); }
-		HtmlBuilder& InputDnsName     (Seq ph) { return InputText(fit_dnsName     ).Placeholder(ph); }
-		HtmlBuilder& InputEmail       (Seq ph) { return InputText(fit_email       ).Placeholder(ph); }
-		HtmlBuilder& InputUrl         (Seq ph) { return InputText(fit_url         ).Placeholder(ph); }
+		HtmlBuilder& InputDnsName     (Seq ph) { return InputText(fit_dnsName     ).InputMode("url").Placeholder(ph); }
+		HtmlBuilder& InputEmail       (Seq ph) { return InputText(fit_email       ).InputMode("email").Placeholder(ph); }
+		HtmlBuilder& InputUrl         (Seq ph) { return InputText(fit_url         ).InputMode("url").Placeholder(ph); }
 		HtmlBuilder& InputPostalCode  ()       { return InputText(fit_postalCode  ); }
 		HtmlBuilder& InputName        ()       { return InputText(fit_name        ); }
 		HtmlBuilder& InputNameOrEmail ()       { return InputText(fit_nameOrEmail ); }
@@ -188,7 +188,7 @@ namespace At
 		HtmlBuilder& InputNameList    ()       { return InputText(fit_nameList    ); }
 		HtmlBuilder& InputLocalPath   ()       { return InputText(fit_localPath   ); }
 
-		HtmlBuilder& InputNumber() { return Input().Type("text").InputMode("numeric").Size(fit_number.mc_zWidth).MaxLength(fit_number.mc_zMaxLen); }
+		HtmlBuilder& InputNumeric() { return Input().Type("text").InputMode("numeric").Size(fit_number.mc_zWidth).MaxLength(fit_number.mc_zMaxLen); }
 
 		HtmlBuilder& InputIp4     () { return InputIp4     ("127.0.0.1"); }
 		HtmlBuilder& InputIp6     () { return InputIp6     ("::1"); }
@@ -306,10 +306,10 @@ namespace At
 
 		HtmlBuilder& OptGroup(Seq label) { return OptGroup().LabelAttr(label); }
 		
-		HtmlBuilder& Option(Seq value) { return Option().T(value).EndOption(); }
-		HtmlBuilder& Option(Seq value, bool selected) { return Option().Cond(selected, &HtmlBuilder::Selected).T(value).EndOption(); }
-		HtmlBuilder& Option(Seq label, Seq value) { return Option().LabelAttr(label).T(value).EndOption(); }
-		HtmlBuilder& Option(Seq label, Seq value, bool selected) { return Option().LabelAttr(label).Cond(selected, &HtmlBuilder::Selected).T(value).EndOption(); }
+		HtmlBuilder& Option_Simple(Seq value) { return Option().T(value).EndOption(); }
+		HtmlBuilder& Option_Simple(Seq value, bool selected) { return Option().Cond(selected, &HtmlBuilder::Selected).T(value).EndOption(); }
+		HtmlBuilder& Option_WithLabel(Seq label, Seq value) { return Option().LabelAttr(label).T(value).EndOption(); }
+		HtmlBuilder& Option_WithLabel(Seq label, Seq value, bool selected) { return Option().LabelAttr(label).Cond(selected, &HtmlBuilder::Selected).T(value).EndOption(); }
 
 		HtmlBuilder& ScriptSrc(Seq src) { return Script().Type("text/javascript").Src(src).EndScript(); }
 

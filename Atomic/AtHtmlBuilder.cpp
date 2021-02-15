@@ -244,7 +244,7 @@ namespace At
 		.Div().Id(mainDivId).Class("toggleMain")
 			.Div().Class("toggleHide")
 				.A().Id(mainLinkId).Href("#").T(hideText).EndA()
-			.Div();
+			.EndDiv();
 
 		AddJs_Args(c_js_AtHtmlBuilder_ToggleShowDiv)
 				.Member("crumbDivId").String(crumbDivId)

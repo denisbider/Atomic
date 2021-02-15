@@ -107,7 +107,7 @@ namespace At
 
 				default:
 					reqResult = ReqResult::Invalid;
-					EnsureThrowWithNr(!"Unrecognized page login type", (int64) loginType);
+					EnsureThrowWithNr(!"Unrecognized page login type", loginType);
 				}
 
 				if (ReqResult_IsStatus(reqResult))
@@ -197,18 +197,16 @@ namespace At
 
 					// Insert login token
 					LoginSession& loginSession = m_login.m_appUser->f_loginSessions.Add();
-					loginSession.f_token.Set(Token::Generate());
-					loginSession.f_createTime           = req.RequestTime();
-					loginSession.f_createRemoteAddrOnly = req.RemoteAddrOnly();
-					loginSession.f_createRemotePort     = req.RemoteAddr().GetPort();
+					LoginSession_InitNew(loginSession, req);
 					AccessRecords_RegisterAccess(      loginSession.f_accessRecords, req, true, 0);
 					AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, true, 0);
-					m_login.m_appUser->Update();
 
 					m_login.m_sessionIndex = m_login.m_appUser->f_loginSessions.Len() - 1;
 					m_login.m_state = Login::State::LoggedIn;
 
 					SetLoginCookies(req);
+					m_login.m_appUser->Update();
+
 					WP_OnLoggedIn(store, req);
 
 					SetRedirectResponse(HttpStatus::SeeOther, m_loginDest);			
@@ -266,7 +264,7 @@ namespace At
 					WP_ValidateAppUser(store, req, m_login.m_expiry))
 				{
 					Time expiryAnchorTime;
-					uint expiryMinutes {};
+					Time expiryDuration {};
 					bool update {};
 
 					if (loginType == PageLogin::Require_Strict)
@@ -275,7 +273,7 @@ namespace At
 						if (Seq(loginSession->f_createRemoteAddrOnly).EqualInsensitive(remoteAddrOnly))
 						{
 							expiryAnchorTime = loginSession->f_createTime;
-							expiryMinutes = m_login.m_expiry.m_strictExpiryMinutes;
+							expiryDuration = m_login.m_expiry.m_strictExpiry;
 						}
 					}
 					else
@@ -291,10 +289,10 @@ namespace At
 						}
 
 						expiryAnchorTime = loginSession->f_recentReqTime;
-						expiryMinutes = m_login.m_expiry.m_relaxedExpiryMinutes;
+						expiryDuration = m_login.m_expiry.m_relaxedExpiry;
 					}
 
-					if (req.RequestTime() >= expiryAnchorTime + Time::FromMinutes(expiryMinutes))
+					if (req.RequestTime() >= expiryAnchorTime + expiryDuration)
 					{
 						// Not logged in because session is expired for current page.
 						// However, we do not remove the session. It may not yet be expired for another page with longer session expiration.
@@ -325,6 +323,7 @@ namespace At
 							}
 
 							loginSession->f_recentReqTime = req.RequestTime();
+							loginSession->f_recentUserAgent = req.UserAgent();
 							m_login.m_appUser->f_recentReqTime = req.RequestTime();
 						}
 
@@ -332,8 +331,6 @@ namespace At
 
 						if (update)
 						{
-							m_login.m_appUser->Update();
-
 							if (!req.IsPost())
 							{
 								// Do not update login cookies in responses to POST requests. The POST request might be a password change which
@@ -341,6 +338,8 @@ namespace At
 								// Successful POSTs are expected to be immediately redirected to GET, so postponing cookie update should not usually be an issue.
 								SetLoginCookies(req);
 							}
+
+							m_login.m_appUser->Update();
 						}
 					}
 				}
@@ -406,16 +405,15 @@ namespace At
 		{
 			// Changed own password. Re-login the user to keep the session
 			LoginSession& loginSession = m_login.m_appUser->f_loginSessions.Add();
-			loginSession.f_token.Set(Token::Generate());
-			loginSession.f_createTime = req.RequestTime();
+			LoginSession_InitNew(loginSession, req);
 			AccessRecords_RegisterAccess(      loginSession.f_accessRecords, req, true, 0);
 			AccessRecords_RegisterAccess(m_login.m_appUser->f_accessRecords, req, true, 0);
-			m_login.m_appUser->Update();
 
 			EnsureThrow(m_login.m_appUser->f_loginSessions.Len() == 1);
 			m_login.m_sessionIndex = 0;
 
 			SetLoginCookies(req);
+			m_login.m_appUser->Update();
 		}
 	}
 
@@ -431,11 +429,25 @@ namespace At
 		EnsureThrow(m_login.m_state == Login::State::LoggedIn);
 		EnsureThrow(m_login.m_appUser.Any());
 
-		Seq token { m_login.GetLoginSession().f_token };
+		Seq token = m_login.GetLoginSession().f_token;
+
+		// Are we replacing a previous login session? If so, remove it
+		Seq prevToken = req.CookiesNvp("loginToken");
+		if (prevToken != token)
+		{
+			auto criterion = [prevToken] (LoginSession const& x) { return x.f_token == prevToken; };
+			sizet prevSessionIdx = m_login.m_appUser->f_loginSessions.FindIdx(criterion);
+			if (prevSessionIdx != SIZE_MAX && prevSessionIdx != m_login.m_sessionIndex)
+			{
+				m_login.m_appUser->f_loginSessions.Erase(prevSessionIdx, 1);
+				if (m_login.m_sessionIndex > prevSessionIdx)
+					--(m_login.m_sessionIndex);
+			}
+		}
 
 		if (m_login.m_remember)
 		{
-			int expirySeconds { NumCast<int>(m_login.m_expiry.m_relaxedExpiryMinutes * 60) };
+			int expirySeconds = NumCast<int>(m_login.m_expiry.m_relaxedExpiry.ToSeconds());
 			AddSavedCookie(req, "userName", m_login.m_appUser->f_name, Seq(), "/", expirySeconds);
 			AddSavedCookie(req, "loginToken", token, Seq(), "/", expirySeconds);
 			AddSavedCookie(req, "rememberLogin", "1", Seq(), "/", expirySeconds);

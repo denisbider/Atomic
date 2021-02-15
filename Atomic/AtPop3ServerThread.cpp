@@ -173,7 +173,7 @@ namespace At
 								case EmailServerAuthResult::InvalidCredentials:  SendSingleLineReply(conn, Pop3ReplyType::Err, "[AUTH] PASS command failed, credentials invalid"); break;
 								case EmailServerAuthResult::AttemptsTooFrequent: SendSingleLineReply(conn, Pop3ReplyType::Err, "[AUTH] PASS command failed, attempts too frequent"); break;
 								case EmailServerAuthResult::TransactionFailed:   SendSingleLineReply(conn, Pop3ReplyType::Err, "[SYS/TEMP] PASS command failed, could not complete transaction"); break;
-								default: EnsureThrowWithNr(!"Unexpected EmailServerAuthResult", (int64) result);
+								default: EnsureThrowWithNr(!"Unexpected EmailServerAuthResult", result);
 								}
 							}
 						}

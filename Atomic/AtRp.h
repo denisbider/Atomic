@@ -66,11 +66,11 @@ namespace At
 		// Copy operator
 		Rp<T>& operator= (T* p) noexcept { Set(p); return *this; }
 	
-		template <class RelatedType>
-		Rp<T>& operator= (Rp<RelatedType> const& sp) noexcept { Set(sp); return *this; }
+		template <class RelatedType> Rp<T>& operator= (Rp<RelatedType> const& sp) noexcept { Set(sp);            return *this; }	
+		template <class RelatedType> Rp<T>& operator= (Rp<RelatedType>&&      sp) noexcept { Set(std::move(sp)); return *this; }
 
-		Rp<T>& operator= (Rp<T> const& sp) noexcept { Set(sp); return *this; }
-		Rp<T>& operator= (Rp<T>&& sp) noexcept { Set(std::move(sp)); return *this; }
+		Rp<T>& operator= (Rp<T> const& sp) noexcept { Set(sp);            return *this; }
+		Rp<T>& operator= (Rp<T>&&      sp) noexcept { Set(std::move(sp)); return *this; }
 
 		// Set
 		void Set(T* p) noexcept { AddRefAndRelease(m_p, p); m_p = p; }
@@ -82,6 +82,19 @@ namespace At
 			m_p = dynamic_cast<T*>(x.Ptr());
 			if (!m_p && x.Any())
 				x.Ptr()->Release();		// dynamic_cast failed
+		}
+	
+		template <class RelatedType>
+		void Set(Rp<RelatedType>&& x) noexcept
+		{
+			if (m_p) m_p->Release();
+			m_p = dynamic_cast<T*>(x.Ptr());
+			if (x.Any())
+			{
+				if (!m_p)
+					x.Ptr()->Release();		// dynamic_cast failed
+				x.SetNull_NoRelease();
+			}
 		}
 	
 		template <>
@@ -100,6 +113,7 @@ namespace At
 
 		// Reset: since operator= is overloaded to two pointer types, "*this = 0" is ambiguous
 		void Clear() noexcept { Set(nullptr); }
+		void SetNull_NoRelease() noexcept { m_p = nullptr; }
 
 		// Swap
 		void Swap(Rp<T>& x) noexcept { NoExcept(std::swap(m_p, x.m_p)); }

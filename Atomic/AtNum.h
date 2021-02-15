@@ -61,8 +61,11 @@ namespace At
 
 	template <class T> inline T RoundUpToMultipleOf(T n, T k)
 	{
-		if ((n + k - 1) < n) throw OutOfBounds();
-		return((n / k) + 1) * k;
+		T r = n % k;
+		if (0 == r) return n;
+		T v = n + (k - r);
+		if (v < n) throw OutOfBounds();
+		return v;
 	}
 
 	template <typename T> unsigned int NrBitsUsed(T value);

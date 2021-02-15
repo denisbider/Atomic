@@ -102,7 +102,7 @@ namespace At
 						do
 						{
 							m_reader->Read(
-								[&] (Seq& data) -> Reader::Instr::E
+								[&] (Seq& data) -> Reader::ReadInstr
 								{
 									if (data.n)
 									{
@@ -114,7 +114,7 @@ namespace At
 										// Received some data. Reset reader timeout
 										m_reader->SetExpireMs(IoTimeoutMs);
 									}
-									return Reader::Instr::Done;
+									return Reader::ReadInstr::Done;
 								} );
 						}
 						while (chunkBytesToGo > 0);
@@ -500,7 +500,7 @@ namespace At
 			while (bytesToGo != 0)
 			{
 				chunkReader.Read(
-					[&] (Seq& data) -> Reader::Instr::E
+					[&] (Seq& data) -> Reader::ReadInstr
 					{
 						if (data.n)
 						{
@@ -509,7 +509,7 @@ namespace At
 							SendResponseBodyChunk(subChunk);
 							bytesToGo -= subChunk.n;
 						}
-						return Reader::Instr::Done;
+						return Reader::ReadInstr::Done;
 					} );
 			}
 		}

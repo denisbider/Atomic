@@ -36,7 +36,7 @@ namespace At
 
 	Rp<SmtpMsgToSend> SmtpSender::CreateMsg()
 	{ 
-		Rp<SmtpMsgToSend> msg { new SmtpMsgToSend(Entity::ChildOf, SmtpSender_GetStorageParent()) };
+		Rp<SmtpMsgToSend> msg = new SmtpMsgToSend(Entity::ChildOf, SmtpSender_GetStorageParent());
 
 		// This retry schedule is intended to cause messages sent toward the end of a business day to fail
 		// (if they fail) by a time earlier in the next business day, giving time to look into the issue
@@ -66,6 +66,31 @@ namespace At
 	}
 
 
+	bool SmtpSender::SendNextQueuedMessageNow()
+	{
+		Time nowPlusOne = Time::StrictNow();
+		++nowPlusOne;
+
+		Rp<SmtpMsgToSend> msgToSend;
+
+		SmtpSender_GetStorageParent().FindChildren<SmtpMsgToSend>(nowPlusOne, nullptr,
+			[&] (Rp<SmtpMsgToSend> const& msg) -> bool
+			{
+				if (msg->f_status == SmtpMsgStatus::NonFinal_Idle) { msgToSend = msg; return false; }
+				return true;
+			} );
+
+		if (!msgToSend.Any())
+			return false;
+
+		msgToSend->f_nextAttemptTime = Time();
+		msgToSend->Update();
+
+		SignalTrigger();
+		return true;
+	}
+
+
 	void SmtpSender::SmtpSender_InTx_LoadMoreContent(SmtpMsgToSend const&, Enc&)
 	{
 		throw NotImplemented();
@@ -85,11 +110,30 @@ namespace At
 					SmtpSender_GetStorageParent().EnumAllChildrenOfKind<SmtpMsgToSend>(
 						[&] (Rp<SmtpMsgToSend> const& msg) -> bool
 							{ if (msg->f_status == SmtpMsgStatus::NonFinal_Sending) msgsToReset.Add(msg); return true; } );
-		
-					for (Rp<SmtpMsgToSend> const& msg : msgsToReset)
+
+					if (msgsToReset.Any())
 					{
-						msg->f_status = SmtpMsgStatus::NonFinal_Idle;
-						msg->Update();
+						// Delay when we start resending messages from last run so that the admin has opportunity to take any emergency actions.
+						// Don't start resending the messages all at once, but instead spread them out over a reasonable period of time.
+
+						Time perMsgDelay = Time::FromMilliseconds(InitResumeSend_DefaultPerMsgDelayMs);
+						sizet const nrDelays = msgsToReset.Len() - 1;
+						Time const lastMsgDelay = perMsgDelay * nrDelays;
+						Time const maxLastMsgDelay = Time::FromMinutes(InitResumeSend_MaxLastMsgDelayMins);
+						if (nrDelays && lastMsgDelay > maxLastMsgDelay)
+							perMsgDelay = maxLastMsgDelay / nrDelays;
+
+						Time const now = Time::StrictNow();
+						Time nextMsgTime = now + Time::FromMinutes(InitResumeSend_DelayMins);
+		
+						for (Rp<SmtpMsgToSend> const& msg : msgsToReset)
+						{
+							msg->f_nextAttemptTime = nextMsgTime;
+							msg->f_status = SmtpMsgStatus::NonFinal_Idle;
+							msg->Update();
+
+							nextMsgTime += perMsgDelay;
+						}
 					}
 				} );
 
@@ -122,10 +166,12 @@ namespace At
 						workItems.Clear();
 						nextPumpTime = Time::Max();
 
-						Time timeMin { Time::Min() };
-						Time timeNow { Time::StrictNow() };
+						Time timeMin = Time::Min();
+						Time timeNow = Time::StrictNow();
+						Time timeNowPlusOne = timeNow;
+						++timeNowPlusOne;
 
-						SmtpSender_GetStorageParent().FindChildren<SmtpMsgToSend>(timeMin, &timeNow,
+						SmtpSender_GetStorageParent().FindChildren<SmtpMsgToSend>(timeMin, &timeNowPlusOne,
 							[&] (Rp<SmtpMsgToSend> const& m) -> bool
 							{
 								if (m->f_status == SmtpMsgStatus::NonFinal_Idle)
@@ -159,7 +205,7 @@ namespace At
 								return true;
 							} );
 
-						SmtpSender_GetStorageParent().FindChildren<SmtpMsgToSend>(timeNow, nullptr,
+						SmtpSender_GetStorageParent().FindChildren<SmtpMsgToSend>(timeNowPlusOne, nullptr,
 							[&] (Rp<SmtpMsgToSend> const& m) -> bool
 								{ nextPumpTime = m->f_nextAttemptTime; return false; } );
 					} );

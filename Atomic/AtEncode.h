@@ -14,14 +14,33 @@ namespace At
 	inline void EncodeByte(Enc& enc, byte v) { enc.Byte(v); }
 	bool DecodeByte(Seq& s, uint& b);
 
-	// Fixed-size 16-bit encoding. Preserves sort order.
+	// Fixed-size 16-bit encoding. Big-endian versions preserve sort order.
 	// Any high bits not representable in 16-bit encoding are ignored.
-	void EncodeUInt16(Enc& enc, unsigned int n);
-	bool DecodeUInt16(Seq& s, unsigned int& n);
+	void  EncodeUInt16       (Enc& enc, unsigned int n);
+	byte* EncodeUInt16LE_Ptr (byte* p,  unsigned int n);
+	void  EncodeUInt16LE     (Enc& enc, unsigned int n);
+	bool  DecodeUInt16       (Seq& s,   unsigned int& n);
+	bool  DecodeUInt16LE     (Seq& s,   unsigned int& n);
 
-	// Fixed-size 32-bit encoding. Preserves sort order.
-	void EncodeUInt32(Enc& enc, uint32 n);
-	bool DecodeUInt32(Seq& s, uint32& n);
+	// Fixed-size 32-bit encoding. Big-endian versions preserve sort order.
+	byte*       EncodeUInt32_Ptr   (byte* p, uint32 n);
+	byte*       EncodeUInt32LE_Ptr (byte* p, uint32 n);
+	void        EncodeUInt32       (Enc& enc, uint32 n);
+	void        EncodeUInt32LE     (Enc& enc, uint32 n);
+	byte const* DecodeUInt32_Ptr   (byte const* p, uint32& n);
+	byte const* DecodeUInt32LE_Ptr (byte const* p, uint32& n);
+	bool        DecodeUInt32       (Seq& s, uint32& n);
+	bool        DecodeUInt32LE     (Seq& s, uint32& n);
+
+	// Fixed-size 64-bit encoding. Big-endian versions preserve sort order.
+	byte*       EncodeUInt64_Ptr   (byte* p, uint64 n);
+	byte*       EncodeUInt64LE_Ptr (byte* p, uint64 n);
+	void        EncodeUInt64       (Enc& enc, uint64 n);
+	void        EncodeUInt64LE     (Enc& enc, uint64 n);
+	byte const* DecodeUInt64_Ptr   (byte const* p, uint64& n);
+	byte const* DecodeUInt64LE_Ptr (byte const* p, uint64& n);
+	bool        DecodeUInt64       (Seq& s, uint64& n);
+	bool        DecodeUInt64LE     (Seq& s, uint64& n);
 
 	// Preserves sort order, so that 0 < 1 < 2 < ...
 	sizet EncodeVarUInt64_Size(uint64 n);

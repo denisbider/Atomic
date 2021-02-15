@@ -245,68 +245,22 @@ namespace At
 	}
 
 
+	Enc& Enc::UIntUnitsEx(uint64 v, Slice<Units::Unit> units, Units::Unit const*& largestFitUnit)
+	{
+		ValueInUnits vu = ValueInUnits::Make(v, units, largestFitUnit);
+
+		UIntDecGrp(vu.m_whole);
+		if (vu.m_fracWidth)
+			Ch('.').UInt(vu.m_frac, 10, vu.m_fracWidth);
+
+		return *this;
+	}
+
+
 	Enc& Enc::UIntUnits(uint64 v, Slice<Units::Unit> units)
 	{
-		// Find largest fit unit, if any
 		Units::Unit const* largestFitUnit {};
-		Units::Unit const* nextLargerUnit {};
-		for (Units::Unit const& unit : units)
-		{
-			if (unit.m_size > v)
-			{
-				if (!v && unit.m_size == 1)
-					largestFitUnit = &unit;
-				else
-					nextLargerUnit = &unit;
-
-				break;
-			}
-			
-			largestFitUnit = &unit;
-		}
-
-		if (!largestFitUnit || 1 == largestFitUnit->m_size)
-		{
-			// Base unit: no rounding, no decimal point
-			UIntDecGrp(v);
-		}
-		else
-		{
-			// Non-base unit: use rounding, maybe use decimal point
-			uint64 whole, frac;
-			uint fracWidth, fracDiv;
-
-			while (true)
-			{
-				whole = (v / largestFitUnit->m_size);
-				frac  = ((v % largestFitUnit->m_size) * 1000) / largestFitUnit->m_size;
-
-				     if (whole >= 100) { fracWidth = 0; frac += 500; fracDiv =    0; }
-				else if (whole >=  10) { fracWidth = 1; frac +=  50; fracDiv =  100; }
-				else                   { fracWidth = 2; frac +=   5; fracDiv =   10; }
-
-				if (frac >= 1000)
-				{
-					++whole;
-					frac -= 1000;
-				}
-
-				if (!nextLargerUnit) break;
-
-				uint64 nextUnits = (nextLargerUnit->m_size / largestFitUnit->m_size);
-				if (whole < nextUnits) break;
-					
-				largestFitUnit = nextLargerUnit;
-				nextLargerUnit = nullptr;
-			}
-
-				 if (1 == fracWidth) { if (whole >= 100) { fracWidth = 0; fracDiv =   0; } }
-			else if (2 == fracWidth) { if (whole >=  10) { fracWidth = 1; fracDiv = 100; } }
-
-			UIntDecGrp(whole);
-			if (fracWidth)
-				Ch('.').UInt(frac / fracDiv, 10, fracWidth);
-		}
+		UIntUnitsEx(v, units, largestFitUnit);
 
 		if (largestFitUnit && largestFitUnit->m_zName && largestFitUnit->m_zName[0])
 			Ch(' ').Add(largestFitUnit->m_zName);
@@ -555,6 +509,30 @@ namespace At
 
 			Add("\"\"");
 			text.DropByte();
+		}
+		return *this;
+	}
+
+
+	Enc& Enc::CDataEncode(Seq text)
+	{
+		if (text.n)
+		{
+			Add("<![CDATA[");
+
+			while (true)
+			{
+				Seq segment = text.ReadToString("]]>");
+				Add(segment);
+
+				if (!text.n)
+					break;
+
+				Add("]]]]><![CDATA[>");
+				text.DropBytes(3);
+			}
+
+			Add("]]>");
 		}
 		return *this;
 	}

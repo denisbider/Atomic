@@ -17,6 +17,7 @@ extern Seq c_js_AtHtmlBuilder_PopUpLinks;
 extern Seq c_js_AtHtmlBuilder_ReloadElem;
 extern Seq c_js_AtHtmlBuilder_ReloadElem_Call;
 extern Seq c_js_AtHtmlBuilder_ToggleShowDiv;
+extern Seq c_js_AtHtmlForm_EnablerCb;
 extern Seq c_js_AtSmtpEntities_SenderCfg;
 extern Seq c_css_AtDbAdm;
 

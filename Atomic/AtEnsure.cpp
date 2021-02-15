@@ -109,12 +109,6 @@ namespace At
 		
 		// Add to error description
 		Ensure_AddStackTrace(efdRef, 2U + extraFramesToSkip, 15U);
-
-	#ifdef _DEBUG
-		bool waitForDebugger = (onFail != OnFail::Throw) && !IsDebuggerPresent();
-		if (waitForDebugger)
-			efdRef.Add("\r\nPlease attach a debugger or use other means to terminate the process\r\n");
-	#endif
 		
 		if (onFail == OnFail::Throw)
 			throw EnsureFailureException(std::move(efdRef));
@@ -123,16 +117,18 @@ namespace At
 		if (g_ensureReportHandler != nullptr)
 			reportSuccessful = g_ensureReportHandler(efdRef.Z());
 
-	#ifdef _DEBUG
-		if (waitForDebugger)
-		{
-			while (!IsDebuggerPresent()) Sleep(100);
-			DebugBreak();
-		}
-	#endif
-
 		if (onFail != OnFail::Report || !reportSuccessful)
+		{
+			// Cause an access violation. If compiled with /EHs or /EHsc, then "catch (...)" will not catch it.
+			// If local crash dumps are enabled in Windows Error Reporting, a crash dump will be created:
+			// https://docs.microsoft.com/en-us/windows/win32/wer/collecting-user-mode-dumps
+
+			try { *((int*) nullptr) = 0; }
+			catch (...) {}
+
+			// If compiled with /EHa, then "catch (...)" caught the access violation. In this case, exit
 			ExitProcess(0x52534E45);	// ASCII "ENSR" (little-endian), decimal 1381191237
+		}
 	}
 
 	struct EnsureFailDescBasic

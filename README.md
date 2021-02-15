@@ -9,6 +9,8 @@ Atomic is denis bider's love-child library of all the good stuff. It's written i
   * An intermediate `TreeStore` that provides hierarchy.
   
   * A full-fledged `EntityStore` that stores complex structures with fields in a hierarchy.
+  
+* `Afs`, an abstract filesystem that implements high-level concepts of directories and files based on arbitrary numbered block storage.
 
 * An `HttpServer` using the Windows HTTP API.
 
@@ -25,8 +27,6 @@ Atomic is denis bider's love-child library of all the good stuff. It's written i
 * `SmtpSender`, `SmtpReceiver` and `Pop3Server` with TLS support using Schannel on Windows.
 
 * Support for reading and generating email messages, including DKIM signing.
-
-* `Originator`, a self-contained DLL which packs email message generation, SMTP sending functionality, and an outgoing mail queue.
 
 * `Diff`, a general-purpose implementation of the Myers diff algorithm, suitable for inputs of any size.
 

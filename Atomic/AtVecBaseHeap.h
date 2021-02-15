@@ -51,9 +51,9 @@ namespace At
 
 		// Fixes capacity with the beginning of the next non-zero ReserveExact. Fix remains in place until FreeMem or destruction.
 		// Fix can be overridden with one or more subsequent calls to FixCap before first non-zero ReserveExact.
-		void FixCap(sizet fix)
+		void FixCap(sizet fix) noexcept
 		{
-			EnsureThrow(!Cap());
+			EnsureAbort(!Cap());
 			u_fix = fix;
 			m_cap = SizeHiBit;
 		}

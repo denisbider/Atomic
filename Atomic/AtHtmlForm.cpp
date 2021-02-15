@@ -1,13 +1,15 @@
 #include "AtIncludes.h"
 #include "AtHtmlForm.h"
 
+#include "AtScripts.h"
+
 
 namespace At
 {
 
 	// HtmlField
 
-	void HtmlField::SetNameAndIdEx(HtmlForm& form, char const* fieldName, char const* friendlyName, Visibility visibility)
+	void HtmlField::SetNameAndIdEx(HtmlForm& form, Seq fieldName, Seq friendlyName, Visibility visibility)
 	{
 		m_form = &form;
 		m_fieldName = fieldName;
@@ -35,6 +37,19 @@ namespace At
 	}
 
 
+	HtmlField& HtmlField::SetEnablerCheckbox(HtmlFieldCheckbox* cb)
+	{
+		EnsureThrow(!m_enablerCb);			// Correct implementation is significantly more complicated if m_enablerCb is already set and must be changed
+		if (cb)
+		{
+			EnsureThrow(nullptr != cb->m_form);	// If the enabler checkbox is not already added to the form, the values won't be read in the right order
+			m_enablerCb = cb;
+			cb->m_enablerForFields.Add(this);
+		}
+		return *this;
+	}
+
+
 	Seq HtmlField::FieldId() const
 	{
 		if (m_fieldId.Any()) return m_fieldId;
@@ -42,11 +57,31 @@ namespace At
 	}
 
 
-	void HtmlField::RenderRow(HtmlBuilder& html) const
+	void HtmlField::RenderField(HtmlBuilder& html, GroupSep groupSep) const
 	{
-		html.Tr()
-				.Td().P().Label(FieldId(), m_friendlyName).EndP().EndTd()
-				.Td();
+		html.Tr();
+
+		Str trClass;
+		if (m_enablerCb)
+		{
+			html.Id(Str::Join(FieldId(), "_container"));
+			if (!m_enablerCb->m_value)
+				trClass.Add("initDispNone");
+		}
+
+		if (groupSep != GroupSep::No)
+			trClass.IfAny(" ").Add("padTop");
+
+		if (trClass.Any())
+			html.Class(trClass);
+		
+		html.Td();
+				
+		Seq labelTdClass = LabelTdClass();
+		if (labelTdClass.n)
+			html.Class(labelTdClass);
+
+		html.Label(FieldId(), m_friendlyName).EndTd().Td();
 
 		if (m_fieldErrs.Any())
 			html.Class("err");
@@ -63,6 +98,8 @@ namespace At
 			.EndTr();
 	}
 
+
+	Seq HtmlField::LabelTdClass() const { return Seq(); }
 
 	void HtmlField::RenderFieldTypeHelp(HtmlBuilder&) const {}
 
@@ -86,6 +123,9 @@ namespace At
 			html.Advanced_EndNonVoidElem(tag);
 		}
 
+		if (m_introHelpFn)
+			m_introHelpFn(html);
+
 		for (Seq err : m_formErrs)
 			html.P().Class("err").T(err).EndP();
 
@@ -103,15 +143,24 @@ namespace At
 		}
 
 		if (m_anyHidden)
-			for (HtmlField* field : m_fields)
+			for (HtmlField const* field : m_fields)
 				if (field->m_hidden)
 					field->RenderInput(html);
 
 		html.Table();
 
-		for (HtmlField* field : m_fields)
+		HtmlField::GroupDisp prevGroupDisp = HtmlField::GroupDisp::NoField;
+		for (HtmlField const* field : m_fields)
 			if (!field->m_hidden)
-				field->RenderRow(html);
+			{
+				HtmlField::GroupSep groupSep = HtmlField::GroupSep::No;
+				if (prevGroupDisp != HtmlField::GroupDisp::NoField)
+					if (field->m_groupDisp == HtmlField::GroupDisp::Start || prevGroupDisp == HtmlField::GroupDisp::End)
+						groupSep = HtmlField::GroupSep::Yes;
+
+				field->RenderField(html, groupSep);
+				prevGroupDisp = field->m_groupDisp;
+			}
 
 		if (m_multiUpload)
 			html.Tr()
@@ -137,8 +186,8 @@ namespace At
 				html.InputSubmit("cmd", m_cmd);
 					
 			html.EndP();
-			if (m_helpFn)
-				m_helpFn(html);
+			if (m_submitHelpFn)
+				m_submitHelpFn(html);
 			
 			html	.EndTd()
 				.EndTr();
@@ -164,8 +213,9 @@ namespace At
 
 		for (HtmlField* field : m_fields)
 			if (!field->m_disabled)
-				if (!field->ReadFromRequest(req, nvp))
-					m_anyErrs = true;
+				if (!field->m_enablerCb || field->m_enablerCb->m_value)
+					if (!field->ReadFromRequest(req, nvp))
+						m_anyErrs = true;
 
 		if (m_recaptcha.Any())
 			if (!m_recaptcha->ProcessPost(req))
@@ -235,6 +285,12 @@ namespace At
 
 
 	// HtmlFieldTextArea
+
+	Seq HtmlFieldTextArea::LabelTdClass() const
+	{
+		return "alignWithTextArea";
+	}
+
 
 	void HtmlFieldTextArea::RenderInput(HtmlBuilder& html) const
 	{
@@ -322,6 +378,19 @@ namespace At
 		html.InputCheckbox().Id(FieldId()).Name(m_fieldName).CheckedIf(m_value);
 		if (m_autoFocus) html.AutoFocus();
 		if (m_disabled) html.Disabled();
+
+		if (m_enablerForFields.Any())
+		{
+			// JavaScript to show/hide fields which this checkbox enables
+			JsonBuilder& js = html.AddJs_Args(c_js_AtHtmlForm_EnablerCb)
+				.Member("enablerCbId").String(FieldId())
+				.Member("enablerForFieldIds").Array();
+
+			for (HtmlField const* f : m_enablerForFields)
+				js.String(f->FieldId());
+
+			js.EndArray().EndObject();
+		}
 	}
 
 
@@ -371,7 +440,7 @@ namespace At
 		m_renderOptions = [this, opts] (HtmlBuilder& html)
 			{
 				for (SelectOptInfo const& opt : opts)
-					html.Option(opt.m_label, opt.m_value, opt.m_value.EqualExact(m_value));
+					html.Option_WithLabel(opt.m_label, opt.m_value, opt.m_value.EqualExact(m_value));
 			};
 
 		m_verifyValue = [opts] (Seq value) -> bool
@@ -410,6 +479,125 @@ namespace At
 		if (m_verifyValue(m_value)) return true;
 		m_fieldErrs.Add(Str::Join(m_friendlyName, ": invalid select field value"));
 		return false;
+	}
+
+
+
+	// HtmlFieldDuration
+
+	HtmlFieldDuration& HtmlFieldDuration::SetValueRange(Time valueMin, Time valueMax)
+	{
+		EnsureThrow(valueMin < valueMax);
+		m_valueMin = valueMin;
+		m_valueMax = valueMax;
+
+		if (!m_unitMin) ValueInUnits::Make(valueMin.ToFt(), Units::Duration, m_unitMin);
+		if (!m_unitMax) ValueInUnits::Make(valueMax.ToFt(), Units::Duration, m_unitMax);
+		return *this;
+	}
+
+
+	HtmlFieldDuration& HtmlFieldDuration::SetUnitRange(Units::Unit const* unitMin, Units::Unit const* unitMax)
+	{
+		EnsureThrow(unitMin >= &Units::Duration[0]);
+		EnsureThrow(unitMax <= &Units::Duration[Units::Duration_NrUnits-1]);
+		EnsureThrow(unitMin <= unitMax);
+
+		m_unitMin = unitMin;
+		m_unitMax = unitMax;
+		return *this;
+	}
+
+
+	void HtmlFieldDuration::InitFieldNames() const
+	{
+		if (!m_valueName .Any()) m_valueName .SetAdd(m_fieldName, "_value" );
+		if (!m_unitName  .Any()) m_unitName  .SetAdd(m_fieldName, "_unit"  );
+	}
+
+
+	void HtmlFieldDuration::RenderInput(HtmlBuilder& html) const
+	{
+		InitFieldNames();
+
+		html.InputNumeric().Id(Str::Join(FieldId(), "_value")).Name(m_valueName);
+		if (m_autoFocus) html.AutoFocus();
+		if (m_disabled) html.Disabled();
+
+		Units::Unit const* largestFitUnit {};
+		html.Value(Str().UIntUnitsEx(m_value.ToFt(), Units::Duration, largestFitUnit));
+		EnsureThrow(nullptr != largestFitUnit);
+
+		Units::Unit const* unitMin = m_unitMin;
+		if (!unitMin)
+			unitMin = &Units::Duration[0];
+		else if (unitMin > largestFitUnit)
+			unitMin = largestFitUnit;
+
+		Units::Unit const* unitMax = m_unitMax;
+		if (!unitMax)
+			unitMax = &Units::Duration[Units::Duration_NrUnits-1];
+		else if (unitMax < largestFitUnit)
+			unitMax = largestFitUnit;
+
+		html.T(" ").Select().Id(Str::Join(FieldId(), "_unit")).Name(m_unitName);
+
+		for (Units::Unit const* unit = unitMin; unit <= unitMax; ++unit)
+			html.Option_WithLabel(unit->m_zName, unit->m_zName, unit == largestFitUnit);
+
+		html.EndSelect();
+	}
+
+
+	void HtmlFieldDuration::RenderFieldTypeHelp(HtmlBuilder& html) const
+	{
+		if (m_valueMin.Any() || m_valueMax != Time::Max())
+		{
+			html.P().Class("help").T("Must be ");
+
+			if (m_valueMin.Any())
+			{
+				html.T("at least ").B(Str().UIntUnits(m_valueMin.ToFt(), Units::Duration));
+				if (m_valueMax != Time::Max())
+					html.T(" and ");
+			}
+
+			if (m_valueMax != Time::Max())
+				html.T("no more than ").B(Str().UIntUnits(m_valueMax.ToFt(), Units::Duration));
+
+			html.T(".").EndP();
+		}
+	}
+
+
+	bool HtmlFieldDuration::ReadFromRequest(HttpRequest const&, InsensitiveNameValuePairsWithStore const& nvp)
+	{
+		m_oldValue.Init(m_value);
+
+		InitFieldNames();
+		Seq inValSeq = nvp.Get(m_valueName).Trim();
+		Seq inUnit = nvp.Get(m_unitName);
+
+		double inValDbl = inValSeq.ReadDouble();
+		if (isnan(inValDbl)) { m_fieldErrs.Add(Str::Join(m_friendlyName, " is not a valid floating-point number")); return false; }
+		if (inValSeq.Any())  { m_fieldErrs.Add(Str::Join(m_friendlyName, " contains unrecognized characters")); return false; }
+
+		Units::Unit const* const unitsEnd = Units::Duration + Units::Duration_NrUnits;
+		Units::Unit const* unit = Units::Duration;
+		for (; unit!=unitsEnd; ++unit)
+			if (inUnit.EqualExact(unit->m_zName))
+				break;
+
+		if (unit == unitsEnd) { m_fieldErrs.Add(Str::Join(m_friendlyName, ": unrecognized unit: ", Str().Set_TruncUtf8_MaxBytes(inUnit, 100))); return false; }
+
+		double valDbl = (inValDbl * (double) unit->m_size);
+		if (valDbl < 0.0)        { m_fieldErrs.Add(Str::Join(m_friendlyName, ": value cannot be negative")); return false; }
+		if (valDbl > UINT64_MAX) { m_fieldErrs.Add(Str::Join(m_friendlyName, ": value cannot exceed UINT64_MAX")); return false; }
+
+		m_value = Time::FromFt((uint64) valDbl);
+		if (m_valueMin.Any() && m_value < m_valueMin) { m_fieldErrs.Add(Str::Join(m_friendlyName, ": value is less than minimum")); return false; }
+		if (m_valueMax.Any() && m_value > m_valueMax) { m_fieldErrs.Add(Str::Join(m_friendlyName, ": value is more than maximum")); return false; }
+		return true;
 	}
 
 }

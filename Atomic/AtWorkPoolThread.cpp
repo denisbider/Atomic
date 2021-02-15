@@ -30,6 +30,8 @@ namespace At
 	{
 		try
 		{
+			m_workPoolBase->m_workAvailableEvent.ClearSignal();
+
 			while (true)
 			{
 				// Attempt to grab work item from queue
@@ -68,11 +70,17 @@ namespace At
 		}
 		catch (ExecutionAborted const&)
 		{
+			InterlockedIncrement_PtrDiff(&(m_workPoolBase->m_nrThreadsAborted));
 		}
 		catch (std::exception const& e)
 		{
-			WorkPool_LogEvent(EVENTLOG_WARNING_TYPE, Str("Work pool thread stopped by exception: ").Add(e.what()));
+			WorkPool_LogEvent(EVENTLOG_ERROR_TYPE, Str("Work pool thread stopped by exception: ").Add(e.what()));
 			StopCtl().Stop("Error in work pool thread");
+		}
+		catch (...)
+		{
+			WorkPool_LogEvent(EVENTLOG_ERROR_TYPE, "Work pool thread stopped by unrecognized exception");
+			StopCtl().Stop("Unrecognized error in work pool thread");
 		}
 	}
 

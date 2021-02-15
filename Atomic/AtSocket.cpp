@@ -446,21 +446,29 @@ namespace At
 	}
 
 
-	bool SockAddr::operator< (SockAddr const& x) const
+	int SockAddr::Compare(SockAddr const& x, uint flags) const
 	{
-		// Any invalid address is less than a valid address
-		if (!m_valid)   return x.m_valid;
-		if (!x.m_valid) return false;
+		// Any invalid address is less than a valid address. Two invalid addresses are equal
+		if (!m_valid) return x.m_valid ? -1 : 0;
+		if (!x.m_valid) return 1;
 
 		// Are both addresses IPv4?
 		if (m_sa.family == AF_INET && x.m_sa.family == AF_INET)
 		{
 			uint32 left  =   GetIp4Nr();
 			uint32 right = x.GetIp4Nr();
-			if (left < right) return true;
-			if (left > right) return false;
+			if (left < right) return -4;
+			if (left > right) return  4;
 
-			return ntohs(m_sa.sa4.sin_port) < (x.m_sa.sa4.sin_port);
+			if (0 == (flags & SockAddrCmp::AddrOnly))
+			{
+				uint16 leftPort  = ntohs(  m_sa.sa4.sin_port);
+				uint16 rightPort = ntohs(x.m_sa.sa4.sin_port);
+				if (leftPort < rightPort) return -5;
+				if (leftPort > rightPort) return  5;
+			}
+
+			return 0;
 		}
 		else
 		{
@@ -470,41 +478,32 @@ namespace At
 			SockAddr const* right = SetIp6FromIp4_IfNotAlreadyIp6(x,     rightStorage );
 
 			int diff = memcmp(&left->m_sa.sa6.sin6_addr, &right->m_sa.sa6.sin6_addr, 16);
-			if (diff < 0) return true;
-			if (diff > 0) return false;
+			if (diff < 0) return -6;
+			if (diff > 0) return  6;
 
-			uint16 leftPort  = ntohs(left ->m_sa.sa6.sin6_port);
-			uint16 rightPort = ntohs(right->m_sa.sa6.sin6_port);
-			if (leftPort < rightPort) return true;
-			if (leftPort > rightPort) return false;
+			if (0 == (flags & SockAddrCmp::AddrOnly))
+			{
+				uint16 leftPort  = ntohs(left ->m_sa.sa6.sin6_port);
+				uint16 rightPort = ntohs(right->m_sa.sa6.sin6_port);
+				if (leftPort < rightPort) return -7;
+				if (leftPort > rightPort) return  7;
 
-			return left->m_sa.sa6.sin6_scope_id < right->m_sa.sa6.sin6_scope_id;
+				ULONG leftScopeId  = left ->m_sa.sa6.sin6_scope_id;
+				ULONG rightScopeId = right->m_sa.sa6.sin6_scope_id;
+				if (leftScopeId < rightScopeId) return -8;
+				if (leftScopeId > rightScopeId) return  8;
+			}
+
+			return 0;
 		}
 	}
 
 
-	bool SockAddr::operator== (SockAddr const& x) const
+	int SockAddr::CompareStr_AddrOnly(Seq s) const
 	{
-		// Invalid addresses only equal other invalid addresses
-		if (!m_valid)   return !x.m_valid;
-		if (!x.m_valid) return false;
-
-		// Are both addresses IPv4?
-		if (m_sa.family == AF_INET && x.m_sa.family == AF_INET)
-		{
-			if (m_sa.sa4.sin_addr.S_un.S_addr != x.m_sa.sa4.sin_addr.S_un.S_addr) return false;
-			return ntohs(m_sa.sa4.sin_port) == (x.m_sa.sa4.sin_port);
-		}
-		else
-		{
-			SockAddr leftStorage, rightStorage;
-			SockAddr const* left  = SetIp6FromIp4_IfNotAlreadyIp6(*this, leftStorage  );
-			SockAddr const* right = SetIp6FromIp4_IfNotAlreadyIp6(x,     rightStorage );
-
-			if (0 != memcmp(&left->m_sa.sa6.sin6_addr, &right->m_sa.sa6.sin6_addr, 16)) return false;
-			if (left->m_sa.sa6.sin6_port != right->m_sa.sa6.sin6_port) return false;
-			return left->m_sa.sa6.sin6_scope_id == right->m_sa.sa6.sin6_scope_id;
-		}
+		SockAddr right;
+		right.Parse(s);
+		return Compare(right, SockAddrCmp::AddrOnly);
 	}
 
 
@@ -619,12 +618,14 @@ namespace At
 	{
 		EnsureThrow(!m_localSa.m_valid);
 	
-		sockaddr sa;
-		int saLen { sizeof(sa) };
-		if (getsockname(m_s, &sa, &saLen) == SOCKET_ERROR)
+		SOCKADDR_STORAGE saStorage;
+		int saLen = sizeof(saStorage);
+		sockaddr* sa = (sockaddr*) &saStorage;
+
+		if (getsockname(m_s, sa, &saLen) == SOCKET_ERROR)
 			{ LastWsaErr e; throw e.Make<Err>("Error in getsockname"); }
 
-		m_localSa.Set(&sa, (sizet) saLen);
+		m_localSa.Set(sa, (sizet) saLen);
 	}
 
 
@@ -632,12 +633,14 @@ namespace At
 	{
 		EnsureThrow(!m_remoteSa.m_valid);
 	
-		sockaddr sa;
-		int saLen { sizeof(sa) };
-		if (getpeername(m_s, &sa, &saLen) == SOCKET_ERROR)
+		SOCKADDR_STORAGE saStorage;
+		int saLen = sizeof(saStorage);
+		sockaddr* sa = (sockaddr*) &saStorage;
+
+		if (getpeername(m_s, sa, &saLen) == SOCKET_ERROR)
 			{ LastWsaErr e; throw e.Make<Err>("Error in getpeername"); }
 
-		m_remoteSa.Set(&sa, (sizet) saLen);
+		m_remoteSa.Set(sa, (sizet) saLen);
 	}
 
 }

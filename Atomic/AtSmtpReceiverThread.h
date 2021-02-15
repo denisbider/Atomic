@@ -15,8 +15,13 @@ namespace At
 
 		EhloHost ParseEhloHost(Seq host);
 
+		bool ReadAuthLoginParameter(Seq& paramReader, Str& result);
+		bool ReadAuthLoginResponse(Schannel& conn, Str& result);
+
 		void SendReply(Writer& writer, uint code, Seq text);
 		void SendNegativeReply(Writer& writer, uint code, Seq text);
+
+		Str SanitizeAndQuoteRemoteString(Seq s, sizet maxBytes);
 	};
 
 }

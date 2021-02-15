@@ -36,18 +36,30 @@ namespace At
 
 	sizet SecBufs::FindExtraBuf_CalcBytesRead(Seq orig) const
 	{
-		SecBuffer const* extraBuf = FindBuf(SECBUFFER_EXTRA);
+		SecBuffer const* extraBuf = FindNonFirstBuf(SECBUFFER_EXTRA);
 		if (!extraBuf)
 			return orig.n;
 
-		if (extraBuf->pvBuffer)
+		sizet extraLen = extraBuf->cbBuffer;
+		EnsureThrow(extraLen <= orig.n);
+
+		byte const* extraPtr = (byte const*) extraBuf->pvBuffer;		
+		if (extraPtr)
 		{
-			EnsureThrow(((byte const*) extraBuf->pvBuffer) >= orig.p);
-			EnsureThrow(((byte const*) extraBuf->pvBuffer) <  orig.p + orig.n);
+			EnsureThrow(extraPtr >= orig.p);
+			EnsureThrow(extraPtr + extraLen == orig.p + orig.n);
 		}
 
-		EnsureThrow(extraBuf->cbBuffer <= orig.n);
-		return orig.n - extraBuf->cbBuffer;
+		return orig.n - extraLen;
+	}
+
+	Seq SecBufs::FindAlertContent() const
+	{
+		SecBuffer const* alertBuf = FindNonFirstBuf(SECBUFFER_ALERT);
+		if (alertBuf && alertBuf->cbBuffer)
+			return Seq((byte const*) alertBuf->pvBuffer, alertBuf->cbBuffer);
+		else
+			return Seq();
 	}
 
 
@@ -69,6 +81,8 @@ namespace At
 		//						The CONFIDENTIALITY flag does not work if the generated context is for the Guest account.
 		//
 		// USE_SUPPLIED_CREDS	Package-specific credential information is available in the input buffer. The security package can use these credentials to authenticate the connection.
+		//                      "Schannel must not attempt to supply credentials for the client automatically."
+		//                      https://docs.microsoft.com/en-us/windows/win32/api/sspi/nf-sspi-initializesecuritycontexta
 		//
 		// ALLOCATE_MEMORY		The security package must allocate memory. The caller must eventually call the FreeContextBuffer function to free memory allocated by the security package.
 		//
@@ -105,7 +119,7 @@ namespace At
 	}
 
 
-	void Schannel::Read(std::function<Instr::E(Seq&)> process)
+	void Schannel::Read(std::function<ReadInstr(Seq&)> process)
 	{
 		try
 		{
@@ -120,34 +134,49 @@ namespace At
 
 				while (true)
 				{
-					if (ProcessData(process))
+					if (TryProcessData(process) == KeepReading::No)
 						return;
 				
 					if (m_lastDecryptSt == SEC_I_CONTEXT_EXPIRED)
 						throw Reader::ReachedEnd();
 
 					m_reader->Read(
-						[&] (Seq& reader) -> Reader::Instr::E
+						[&] (Seq& reader) -> Reader::ReadInstr
 						{
-							SecBufs bufs(SecBufs::Owner::Internal, SECBUFFER_DATA, SECBUFFER_EMPTY, SECBUFFER_EMPTY, SECBUFFER_EMPTY);
-							bufs.SetBufAt(0, (void*) reader.p, NumCast<unsigned long>(reader.n));
+							m_encryptBuf.Set(reader);
+
+							SecBufs bufs { SecBufs::Owner::Internal, SECBUFFER_DATA, SECBUFFER_EMPTY, SECBUFFER_EMPTY, SECBUFFER_EMPTY };
+							bufs.SetBufAt(0, m_encryptBuf.Ptr(), NumCast<unsigned long>(m_encryptBuf.Len()));
 
 							m_lastDecryptSt = DecryptMessage(&m_ctxt, &bufs.m_sbd, 0, nullptr);
 							if (m_lastDecryptSt == SEC_E_INCOMPLETE_MESSAGE)
-								return Reader::Instr::NeedMore;
+								return Reader::ReadInstr::NeedMore;
 
-							SecBuffer const* dataBuf = bufs.FindBuf(SECBUFFER_DATA);
+							if (m_lastDecryptSt != SEC_E_OK && m_lastDecryptSt != SEC_I_RENEGOTIATE)
+								return ReadInstr::RequiresAlternateProcessing;
+							
+							SecBuffer const* dataBuf = bufs.FindNonFirstBuf(SECBUFFER_DATA);
 							if (dataBuf != nullptr && dataBuf->cbBuffer != 0)
 							{
-								PrepareToRead(dataBuf->cbBuffer, dataBuf->cbBuffer);
-								memmove(m_buf.Ptr() + m_bytesInBuf, dataBuf->pvBuffer, dataBuf->cbBuffer);
-								m_bytesInBuf += dataBuf->cbBuffer;
-								m_haveNewDataToProcess = true;
+								if (m_transcriber.Any())
+									m_transcriber->Transcribe(TranscriptEvent::Decrypted, Seq(dataBuf->pvBuffer, dataBuf->cbBuffer));
+
+								ReadDest rd = BeginRead(dataBuf->cbBuffer, dataBuf->cbBuffer);
+								EnsureThrow(rd.m_maxBytes >= dataBuf->cbBuffer);
+
+								memmove(rd.m_destPtr, dataBuf->pvBuffer, dataBuf->cbBuffer);
+								CompleteRead(dataBuf->cbBuffer);
 							}
 
-							sizet readBytes = bufs.FindExtraBuf_CalcBytesRead(reader);
+							sizet readBytes = bufs.FindExtraBuf_CalcBytesRead(m_encryptBuf);
+							if (!readBytes)
+							{
+								EnsureThrow(m_lastDecryptSt == SEC_I_RENEGOTIATE);
+								return ReadInstr::RequiresAlternateProcessing;
+							}
+
 							reader.ReadBytes(readBytes);
-							return Reader::Instr::Done;
+							return Reader::ReadInstr::Done;
 						} );
 
 					if (m_lastDecryptSt == SEC_I_RENEGOTIATE)
@@ -161,11 +190,11 @@ namespace At
 								st = InitializeSecurityContextW(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, nullptr, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 							else
 								st = AcceptSecurityContext(&m_credHandle, &m_ctxt, nullptr, m_reqFlags, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
-							
-							if (st != SEC_I_CONTINUE_NEEDED)
-								throw SspiErr(st, "Unexpected return value from Initialize or AcceptSecurityContext (renegotiate)");
 
 							SendTokenBufs(outBufs);
+
+							if (st != SEC_I_CONTINUE_NEEDED)
+								throw SspiErr(st, ErrLoc::IASC_Reneg, outBufs.FindAlertContent(), "Unexpected return value from Initialize or AcceptSecurityContext (renegotiate)");
 						}
 
 						CompleteHandshake(HandshakeType::Renegotiate);
@@ -175,7 +204,7 @@ namespace At
 					else
 					{
 						if (m_lastDecryptSt != SEC_E_OK && m_lastDecryptSt != SEC_I_CONTEXT_EXPIRED)
-							throw SspiErr(m_lastDecryptSt, "Error in DecryptMessage");
+							throw SspiErr(m_lastDecryptSt, ErrLoc::Decrypt, Seq(), "Error in DecryptMessage");
 					}
 				}
 			}
@@ -206,6 +235,8 @@ namespace At
 					Seq           chunk    { data.ReadBytes(m_streamSizes.cbMaximumMessage) };
 					unsigned long chunkLen { NumCast<unsigned long>(chunk.n) };
 				
+					m_encryptBuf.ResizeExact(m_streamSizes.cbHeader + m_streamSizes.cbMaximumMessage + m_streamSizes.cbTrailer);
+
 					SecBufs bufs(SecBufs::Owner::Internal, SECBUFFER_STREAM_HEADER, SECBUFFER_DATA, SECBUFFER_STREAM_TRAILER, SECBUFFER_EMPTY);
 					bufs.SetBufAt(0, m_encryptBuf.Ptr(),                                     m_streamSizes.cbHeader  );
 					bufs.SetBufAt(1, m_encryptBuf.Ptr() + m_streamSizes.cbHeader,            chunkLen                );
@@ -213,9 +244,12 @@ namespace At
 
 					memcpy_s(bufs.m_bufs[1].pvBuffer, bufs.m_bufs[1].cbBuffer, chunk.p, chunk.n);
 
-					SECURITY_STATUS st { EncryptMessage(&m_ctxt, 0, &bufs.m_sbd, 0) };
+					SECURITY_STATUS st = EncryptMessage(&m_ctxt, 0, &bufs.m_sbd, 0);
 					if (st != SEC_E_OK)
-						throw SspiErr(st, "Error in EncryptMessage");
+						throw SspiErr(st, ErrLoc::Encrypt, Seq(), "Error in EncryptMessage");
+
+					if (m_transcriber.Any())
+						m_transcriber->Transcribe(TranscriptEvent::Encrypted, chunk);
 
 					Seq encrypted(bufs.m_bufs[0].pvBuffer, bufs.m_bufs[0].cbBuffer + bufs.m_bufs[1].cbBuffer + bufs.m_bufs[2].cbBuffer);
 					m_writer->Write(encrypted);
@@ -250,7 +284,7 @@ namespace At
 
 				SECURITY_STATUS st = ApplyControlToken(&m_ctxt, &bufs.m_sbd);
 				if (st != SEC_E_OK)
-					throw SspiErr(st, "Error in ApplyControlToken");
+					throw SspiErr(st, ErrLoc::ACT, Seq(), "Error in ApplyControlToken");
 
 				SecBufs outBufs(SecBufs::Owner::Sspi, SECBUFFER_TOKEN, SECBUFFER_ALERT);
 				unsigned long retFlags = 0;
@@ -259,11 +293,11 @@ namespace At
 					st = InitializeSecurityContextW(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, nullptr, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 				else
 					st = AcceptSecurityContext(&m_credHandle, &m_ctxt, nullptr, m_reqFlags, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
-				
-				if (st != SEC_E_OK && st != SEC_I_CONTEXT_EXPIRED && st != SEC_I_CONTINUE_NEEDED)
-					throw SspiErr(st, "Unexpected return value from Initialize or AcceptSecurityContext (shutdown)");
 
 				SendTokenBufs(outBufs);
+				
+				if (st != SEC_E_OK && st != SEC_I_CONTEXT_EXPIRED && st != SEC_I_CONTINUE_NEEDED)
+					throw SspiErr(st, ErrLoc::IASC_Shutdown, outBufs.FindAlertContent(), "Unexpected return value from Initialize or AcceptSecurityContext (shutdown)");
 
 				if (st == SEC_I_CONTINUE_NEEDED)
 					CompleteHandshake(HandshakeType::Shutdown);
@@ -303,12 +337,26 @@ namespace At
 		m_cred.palgSupportedAlgs = algs;
 		m_cred.cSupportedAlgs = NrAlgs;
 
-		m_cred.dwMinimumCipherStrength = 128;
-		m_cred.dwFlags = SCH_SEND_AUX_RECORD | SCH_USE_STRONG_CRYPTO;
+		m_cred.dwFlags = SCH_SEND_AUX_RECORD;
+
+		if (m_weakCiphersOk)
+			m_cred.dwMinimumCipherStrength = 56;
+		else
+		{
+			m_cred.dwMinimumCipherStrength = 128;
+			m_cred.dwFlags |= SCH_USE_STRONG_CRYPTO;
+		}
+
 		if (m_side == ProtoSide::Client)
-			m_cred.dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS;
+		{
+			m_cred.dwFlags |= SCH_CRED_NO_DEFAULT_CREDS;
+			if (m_manualCredVal)
+				m_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
+			else
+				m_cred.dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
+		}
 		
-		// Currently don't know how to set up AcquireCredentialsHandle for SNI. Awaiting possible answers on Stack Overflow:
+		// Currently don't know how to set up AcquireCredentialsHandle for SNI on the server. Awaiting possible answers on Stack Overflow:
 		// https://stackoverflow.com/questions/62879526/windows-schannel-server-side-how-to-use-acquirecredentialshandle-with-multiple
 
 		m_certPtrs.Clear().ReserveExact(m_certs.Len());
@@ -326,16 +374,30 @@ namespace At
 
 		SECURITY_STATUS st = AcquireCredentialsHandleW(nullptr, UNISP_NAME, credUse, nullptr, &m_cred, nullptr, nullptr, &m_credHandle, nullptr);
 		if (st != SEC_E_OK)
-			throw SspiErr_Acquire(st, "Error in AcquireCredentialsHandle");
+			throw SspiErr_Acquire(st, ErrLoc::ACH, Seq(), "Error in AcquireCredentialsHandle");
 
 		m_haveCredHandle = true;
 	}
 
 
-	void Schannel::ValidateServerName(Seq serverName)
+	void Schannel::SetServerName(Seq serverName)
 	{
 		EnsureThrow(m_state == State::NotStarted);
 		m_serverName = serverName;
+	}
+
+
+	void Schannel::SetManualCredValidation(bool v)
+	{
+		EnsureThrow(m_state == State::NotStarted);
+		m_manualCredVal = v;
+	}
+
+
+	void Schannel::SetWeakCiphersOk(bool v)
+	{
+		EnsureThrow(m_state == State::NotStarted);
+		m_weakCiphersOk = v;
 	}
 
 
@@ -353,18 +415,16 @@ namespace At
 				m_reqFlags = AscReqFlags;
 			else
 			{
-				m_reqFlags = IscReqFlags;
-				
-				if (!m_serverName.Any())
+				m_reqFlags = IscReqFlags;				
+				if (m_manualCredVal)
 				{
+					// ISC_REQ_MANUAL_CRED_VALIDATION: "Schannel must not authenticate the server automatically."
+					// https://docs.microsoft.com/en-us/windows/win32/api/sspi/nf-sspi-initializesecuritycontexta
 					m_reqFlags |= ISC_REQ_MANUAL_CRED_VALIDATION;
-					m_wzServerName = nullptr;
 				}
-				else
-				{
-					m_wsServerName.Set(m_serverName);
-					m_wzServerName = (wchar_t*) m_wsServerName.Z();
-				}
+
+				m_wsServerName.Set(m_serverName);
+				m_wzServerName = (wchar_t*) m_wsServerName.Z();
 
 				SecBufs outBufs(SecBufs::Owner::Sspi, SECBUFFER_TOKEN, SECBUFFER_ALERT);
 				unsigned long retFlags = 0;
@@ -372,7 +432,7 @@ namespace At
 				if (SUCCEEDED(st))
 					m_haveCtxt = true;
 				if (st != SEC_I_CONTINUE_NEEDED)
-					throw SspiErr(st, "Unexpected return value from InitializeSecurityContext (initial)");
+					throw SspiErr(st, ErrLoc::ISC_Init, outBufs.FindAlertContent(), "Unexpected return value from InitializeSecurityContext (initial)");
 
 				SendTokenBufs(outBufs);
 			}
@@ -409,20 +469,23 @@ namespace At
 
 	void Schannel::CompleteHandshake(HandshakeType::E handshakeType)
 	{
-		unsigned long retFlags = 0;
+		unsigned long retFlags {};
+
 		while (true)
 		{
+			Str alertSent;
 			SECURITY_STATUS st = SEC_E_OK;
 			m_reader->Read(
-				[&] (Seq& reader) -> Reader::Instr::E
+				[&] (Seq& reader) -> Reader::ReadInstr
 				{
 					SecBufs inBufs(SecBufs::Owner::Internal, SECBUFFER_TOKEN, SECBUFFER_EMPTY);
 					inBufs.SetBufAt(0, (void*) reader.p, NumCast<unsigned long>(reader.n));
 
-					SecBufs outBufs(SecBufs::Owner::Sspi, SECBUFFER_TOKEN);
+					SecBufs outBufs(SecBufs::Owner::Sspi, SECBUFFER_TOKEN, SECBUFFER_ALERT);
+					retFlags = 0;
 
 					if (m_side == ProtoSide::Client)
-						st = InitializeSecurityContext(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, &inBufs.m_sbd, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
+						st = InitializeSecurityContextW(&m_credHandle, &m_ctxt, (wchar_t*) m_wsServerName.Z(), m_reqFlags, 0, 0, &inBufs.m_sbd, 0, nullptr, &outBufs.m_sbd, &retFlags, nullptr);
 					else
 					{
 						PCtxtHandle existingCtxt = If(m_haveCtxt, PCtxtHandle, &m_ctxt, nullptr);
@@ -433,7 +496,7 @@ namespace At
 					}
 
 					if (st == SEC_E_INCOMPLETE_MESSAGE)
-						return Reader::Instr::NeedMore;
+						return Reader::ReadInstr::NeedMore;
 
 					if (st == SEC_E_OK ||
 						st == SEC_I_CONTINUE_NEEDED ||
@@ -441,11 +504,12 @@ namespace At
 						FAILED(st) && HaveRetExtendedError(retFlags, m_side))
 					{
 						SendTokenBufs(outBufs);
+						alertSent = outBufs.FindAlertContent();
 					}
 
 					sizet readBytes = inBufs.FindExtraBuf_CalcBytesRead(reader);
 					reader.ReadBytes(readBytes);
-					return Reader::Instr::Done;
+					return Reader::ReadInstr::Done;
 				} );
 
 
@@ -463,11 +527,11 @@ namespace At
 				// https://tools.ietf.org/html/rfc5246#page-51 with a byte encoding that is one byte less than other times. This appears to be instances where
 				// the public integer can be encoded in a shorter byte string. In these situations, SChannel returns a SEC_E_BUFFER_TOO_SMALL error.
 				// I've confirmed this to happen on Windows 7 and Windows 8.1. I have not confirmed on Windows 10 yet."
-				throw SspiErr_LikelyDhIssue_TryRestart(st, "Error in InitializeSecurityContext (subsequent)");
+				throw SspiErr_LikelyDhIssue_TryRestart(st, ErrLoc::IASC_Cont, alertSent, "Error in InitializeSecurityContext (subsequent)");
 			}
 
 			if (st != SEC_I_CONTINUE_NEEDED)
-				throw SspiErr(st, "Error in Initialize or AcceptSecurityContext (subsequent)");
+				throw SspiErr(st, ErrLoc::IASC_Cont, alertSent, "Error in Initialize or AcceptSecurityContext (subsequent)");
 		}
 
 		if (handshakeType != HandshakeType::Shutdown)
@@ -478,9 +542,7 @@ namespace At
 
 			SECURITY_STATUS st = QueryContextAttributesW(&m_ctxt, SECPKG_ATTR_STREAM_SIZES, &m_streamSizes);
 			if (st != SEC_E_OK)
-				throw SspiErr(st, "Error in QueryContextAttributes (SECPKG_ATTR_STREAM_SIZES)");
-
-			m_encryptBuf.ResizeExact(m_streamSizes.cbHeader + m_streamSizes.cbMaximumMessage + m_streamSizes.cbTrailer);
+				throw SspiErr(st, ErrLoc::QCA, Seq(), "Error in QueryContextAttributes (SECPKG_ATTR_STREAM_SIZES)");
 		}
 	}
 

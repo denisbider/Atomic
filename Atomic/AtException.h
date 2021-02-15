@@ -3,8 +3,10 @@
 #include "AtIncludes.h"
 #include "AtStr.h"
 
+
 namespace At
 {
+
 	// Intentionally does not inherit from Exception.
 	// Requires special handling. Should not be treated as an arbitrary exception.
 	struct ExecutionAborted {};
@@ -16,11 +18,10 @@ namespace At
 
 	struct StrErr : public Exception
 	{
-		StrErr(Seq msg) : m_s(Str::NullTerminate(msg)) {}	
-		char const* what() const override { return m_s.CharPtr(); }
-		Str const& S() const { return m_s; }
+		StrErr(Seq msg) : m_nullTermMsg(Str::NullTerminate(msg)) {}	
+		char const* what() const override { return m_nullTermMsg.CharPtr(); }
 	protected:
-		Str m_s;		// Null-terminated
+		Str m_nullTermMsg;
 	};
 
 	struct InputErr : public StrErr { InputErr(Seq msg) : StrErr(msg) {} };
@@ -52,7 +53,7 @@ namespace At
 		{
 			if (!m_built.Any())
 			{
-				m_built.Set(Seq(m_s).RevDropByte());
+				m_built.Set(Seq(m_nullTermMsg).RevDropByte());
 				BuildDesc(m_built);
 				m_built.Byte(0);
 			}
@@ -65,4 +66,5 @@ namespace At
 	private:
 		mutable Str m_built;	// Null-terminated if non-empty
 	};
+
 }

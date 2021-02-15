@@ -28,6 +28,8 @@ namespace At
 		Seq AddStrFromParts(Seq a, Seq b)        { Seq parts[2] = { a, b };    return AddStrFromParts(parts); }
 		Seq AddStrFromParts(Seq a, Seq b, Seq c) { Seq parts[3] = { a, b, c }; return AddStrFromParts(parts); }
 
+		void MergeFrom(PinStore& x) { m_strs.MergeFrom(x.m_strs); m_largeStrs.MergeFrom(x.m_largeStrs); }
+
 	private:
 		sizet    m_bytesPerStr {};
 		Vec<Str> m_strs;

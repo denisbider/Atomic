@@ -5,13 +5,14 @@
 #include "AtEncode.h"
 #include "AtEvent.h"
 #include "AtException.h"
-#include "AtFile.h"
 #include "AtHashMap.h"
 #include "AtMap.h"
 #include "AtMutex.h"
-#include "AtPageAllocator.h"
+#include "AtObjId.h"
+#include "AtBlockAllocator.h"
 #include "AtRpVec.h"
 #include "AtStopCtl.h"
+#include "AtStorageFile.h"
 #include "AtStr.h"
 #include "AtTime.h"
 #include "AtTxScheduler.h"
@@ -42,50 +43,6 @@
 
 namespace At
 {
-	enum { Storage_PageSize = 4096 };
-
-	class StorageFile : public File
-	{
-	public:
-		enum class CachedBy { Unknown, Store, OS };
-
-		void         SetId          (byte id)      { m_id = id; }
-		byte         Id             () const       { return m_id; }
-
-		void         AddOldFullPath (Seq fullPath) { m_oldFullPaths.Add(fullPath); }
-		void         SetFullPath    (Seq fullPath) { m_fullPath = fullPath; }
-		Seq          FullPath       () const       { return m_fullPath; }
-
-		virtual void Open           () = 0;
-
-		bool         IsStoreCached  () const       { return m_cachedBy == CachedBy::Store; }
-		uint64       FileSize       () const       { return m_fileSize; }
-
-		void         ReadPages          (void* firstPage, sizet nrPages, uint64 offset);
-		void         ReadBytesUnaligned (void* pDestination, sizet bytesToRead, uint64 offset);
-		void         WritePages         (void const* firstPage, sizet nrPages, uint64 offset);
-		void         SetEof             (uint64 offset);
-
-	protected:
-		byte     m_id			{ 255 };			// ObjectStore::FileId::None
-		Vec<Str> m_oldFullPaths;
-		Str      m_fullPath;
-		CachedBy m_cachedBy {};
-		uint64   m_fileSize	{};
-		uint64   m_lastOffset {};
-
-		void OpenInner(CachedBy cachedBy);
-		void CheckOldPathsAndRename();
-		void ReadInner(void* pDestination, DWORD bytesToRead, uint64 offset);
-	};
-
-	class StorageFile_OsCached : public StorageFile
-		{ public: virtual void Open() override final { StorageFile::OpenInner(CachedBy::OS); } };
-
-	class StorageFile_StoreCached : public StorageFile
-		{ public: virtual void Open() override final { StorageFile::OpenInner(CachedBy::Store); } };
-
-
 
 	class EntryFile : public StorageFile
 	{
@@ -100,10 +57,10 @@ namespace At
 		void  SetObjSizeMax (sizet objSizeMax) { m_objSizeMax = objSizeMax; }
 		sizet ObjSizeMax    () const           { return m_objSizeMax; }
 
-		bool const OneOrMoreEntriesPerPage () const { return m_objSizeMax <= Storage_PageSize; };
-		bool const MultiplePagesPerEntry   () const { return m_objSizeMin >  Storage_PageSize; };
+		bool const OneOrMoreEntriesPerBlock () const { return m_objSizeMax <= m_blockSize; };
+		bool const MultipleBlocksPerEntry   () const { return m_objSizeMin >  m_blockSize; };
 
-		virtual void Open() override final;
+		virtual void Open();
 
 	protected:
 		sizet m_objSizeMin {};
@@ -114,55 +71,8 @@ namespace At
 
 	class FreeFile  : public EntryFile {};
 	class DataFile  : public EntryFile {};
-	class MetaFile  : public StorageFile_StoreCached {};
+	class MetaFile  : public StorageFile_Uncached {};
 	class IndexFile : public EntryFile {};
-
-
-
-	class JournalFile : public StorageFile_StoreCached
-	{
-	public:
-		~JournalFile();
-
-		void SetPageAllocator(PageAllocator& pageAllocator) { m_pageAllocator = &pageAllocator; }
-		void Clear();
-
-	private:
-		PageAllocator* m_pageAllocator {};
-		void*          m_clearPage     {};
-	};
-
-
-
-	struct ObjId
-	{
-		ObjId() = default;
-		ObjId(uint64 uniqueId, uint64 index) noexcept : m_uniqueId(uniqueId), m_index(index) {}
-
-		static ObjId None;
-		static ObjId Root;
-
-		static ObjId Next(ObjId x) noexcept { ObjId k(x); ++k.m_index; return k; }
-
-		bool Any() const noexcept { return *this != ObjId::None; }
-
-		bool operator<  (ObjId x) const noexcept { return m_uniqueId < x.m_uniqueId || (m_uniqueId == x.m_uniqueId && m_index < x.m_index); }
-		bool operator== (ObjId x) const noexcept { return m_uniqueId == x.m_uniqueId && m_index == x.m_index; }
-		bool operator<= (ObjId x) const noexcept { return operator<(x) || operator==(x); }
-		bool operator!= (ObjId x) const noexcept { return !operator==(x); }
-
-		enum { EncodedSize = 16 };
-
-		void        EncodeBin     (Enc& enc) const;
-		bool        DecodeBin     (Seq& s);
-		static bool SkipDecodeBin (Seq& s);
-	
-		void        EncObj     (Enc& s) const;
-		bool        ReadStr    (Seq& s);
-
-		uint64 m_uniqueId {};
-		uint64 m_index    {};
-	};
 
 
 
@@ -226,8 +136,8 @@ namespace At
 		virtual void  SetDirectory               (Seq path);
 
 		// May be called before Init(), and cannot be called after.
-		virtual void  SetOpenOversizeFilesTarget (sizet target);
-		virtual void  SetCachedPagesTarget       (sizet target);
+		virtual void  SetOpenOversizeFilesParams (sizet target, Time maxAge);
+		virtual void  SetCachedBlocksParams      (sizet target, Time maxAge);
 		virtual void  SetVerifyCommits           (bool verifyCommits);
 		virtual void  SetWritePlanTest           (bool enable, uint32 writeFailOdds);
 
@@ -256,21 +166,23 @@ namespace At
 	{
 	// Initialization
 	public:
-		enum { DefaultOpenOversizeFilesTarget = 1000, DefaultCachedPagesTarget = 250000 };
+		enum { BlockSize = 4096 };
+		enum { DefaultOpenOversizeFilesTarget     = 1000, DefaultCachedBlocksTarget     = 250000,
+			   DefaultOpenOversizeFilesMaxAgeSecs = 60,   DefaultCachedBlocksMaxAgeSecs = 60 };
 
 		~ObjectStore() noexcept;
 
 		void SetDirectory               (Seq path                          ) override final;
-		void SetOpenOversizeFilesTarget (sizet target                      ) override final;
-		void SetCachedPagesTarget       (sizet target                      ) override final;
+		void SetOpenOversizeFilesParams (sizet target, Time maxAge         ) override final;
+		void SetCachedBlocksParams      (sizet target, Time maxAge         ) override final;
 		void SetVerifyCommits           (bool verifyCommits                ) override final;
 		void SetWritePlanTest           (bool enable, uint32 writeFailOdds ) override final;
 		void Init                       (                                  ) override final;
 
 	// Transactions
 	public:
-		enum { MaxSingleReadObjectSize = Storage_PageSize - 2, MaxDoubleReadObjectSize = (2 * Storage_PageSize) - 2 };
-		enum { NrDataFiles = 16, IndexEntryBytes = 16, IndexPagesPerFreeFilePage = 2, UInt64PerPage = Storage_PageSize / 8 };
+		enum { MaxSingleReadObjectSize = BlockSize - 2, MaxDoubleReadObjectSize = (2 * BlockSize) - 2 };
+		enum { NrDataFiles = 16, IndexEntryBytes = 16, IndexBlocksPerFreeFileBlock = 2, UInt64PerBlock = BlockSize / 8 };
 		enum { DefaultOsCachedDataFileIncrementBytes = 1024*1024 };
 		struct FileId { enum { Meta = 1, Index = 2, IndexFree = 3, DataStart = 10, DataFreeStart = 40, MaxNonSpecial = DataFreeStart + NrDataFiles - 1,
 							   SpecialBit = 128, Oversize = 253, Journal = 254, None = 255 }; };
@@ -395,7 +307,7 @@ namespace At
 
 	// Private types and data
 	private:
-		PageAllocator m_pageAllocator;
+		BlockAllocator m_allocator;
 		DWORD m_tlsIndex { TLS_OUT_OF_INDEXES };
 
 		// Initialization data
@@ -417,8 +329,8 @@ namespace At
 
 		struct StructuredOffset
 		{
-			uint64 pageOffsetInFile;
-			uint64 offsetInPage;
+			uint64 blockOffsetInFile;
+			uint64 offsetInBlock;
 		};
 
 		// Some fields are updated with normal increments when m_mx is locked.
@@ -441,12 +353,12 @@ namespace At
 
 		struct FreeIndexState { enum E { Invalid, Available, Reserved }; };
 
-		struct FisPage
+		struct FisBlock
 		{
-			FisPage() { m_state.ResizeExact(UInt64PerPage); }
-			FisPage(FisPage const&) = delete;
+			FisBlock() { m_state.ResizeExact(UInt64PerBlock); }
+			FisBlock(FisBlock const&) = delete;
 
-			FisPage(FisPage&& x) noexcept
+			FisBlock(FisBlock&& x) noexcept
 			{
 				NoExcept(m_state.Swap(x.m_state));
 				NoExcept(std::swap(m_nrInvalid, x.m_nrInvalid));
@@ -454,14 +366,14 @@ namespace At
 				NoExcept(std::swap(m_nrReserved, x.m_nrReserved));
 			}
 
-			Str   m_state;								// Each value indicates the state of the corresponding entry on the m_indexFreeFile page.
+			Str   m_state;								// Each value indicates the state of the corresponding entry in the m_indexFreeFile block.
 			sizet m_nrInvalid   {};
 			sizet m_nrAvailable {};
 			sizet m_nrReserved  {};
 		};
 
-		Vec<FisPage> m_fisPages;						// First/second/... page contains the state of first/second/... page in m_indexFreeFile.
-		uint64       m_fisPages_totalNrInvalid {};		// Total number of invalid entries in m_fisPages
+		Vec<FisBlock> m_fisBlocks;						// First/second/... block contains the state of first/second/... block in m_indexFreeFile.
+		uint64        m_fisBlocks_totalNrInvalid {};	// Total number of invalid entries in m_fisBlocks
 
 		struct TouchedObjectEntry : NoCopy
 		{
@@ -477,16 +389,16 @@ namespace At
 
 		HashMap<TouchedObjectEntry> m_touchedObjects;
 
-		// Cached pages
-		struct CachedPage
+		// Cached blocks
+		struct CachedBlock
 		{
-			PageAllocator* m_pageAllocator {};
-			byte*          m_page          {};
+			BlockAllocator* m_allocator {};
+			byte*           m_block     {};
 
-			~CachedPage() { if (m_page != nullptr) m_pageAllocator->ReleasePage(m_page); }
+			~CachedBlock() { if (m_block != nullptr) m_allocator->ReleaseBlock(m_block); }
 
-			bool Inited() const { return m_page != nullptr; }
-			void Init(PageAllocator& pageAllocator) { EnsureAbort(m_page == nullptr); m_pageAllocator = &pageAllocator; m_page = m_pageAllocator->GetPage(); }
+			bool Inited() const { return m_block != nullptr; }
+			void Init(BlockAllocator& allocator) { EnsureAbort(m_block == nullptr); m_allocator = &allocator; m_block = m_allocator->GetBlock(); }
 		};
 
 		struct Locator
@@ -510,19 +422,21 @@ namespace At
 		};
 
 		sizet                              m_openOversizeFilesTarget { DefaultOpenOversizeFilesTarget };
-		sizet                              m_cachedPagesTarget       { DefaultCachedPagesTarget };
+		Time                               m_openOversizeFilesMaxAge { Time::FromSeconds(DefaultOpenOversizeFilesMaxAgeSecs) };
+		sizet                              m_cachedBlocksTarget      { DefaultCachedBlocksTarget };
+		Time                               m_cachedBlocksMaxAge      { Time::FromSeconds(DefaultCachedBlocksMaxAgeSecs) };
 		Cache<ObjId, StorageFile_OsCached> m_openOversizeFiles;
-		Cache<Locator, CachedPage>         m_cachedPages;
+		Cache<Locator, CachedBlock>        m_cachedBlocks;
 
 		// Write log
 		struct WritePlanEntry
 		{
-			enum { SerializedBytes_Base                 = 1 + 1 + 16 + 8,
-				   SerializedBytes_DeleteOversizedFile  = SerializedBytes_Base,
-				   SerializedBytes_WriteSinglePage      = SerializedBytes_Base + Storage_PageSize,
-				   SerializedBytes_WriteMultiPageHeader = SerializedBytes_Base + 4 };
+			enum { SerializedBytes_Base                  = 1 + 1 + 16 + 8,
+				   SerializedBytes_DeleteOversizedFile   = SerializedBytes_Base,
+				   SerializedBytes_WriteSingleBlock      = SerializedBytes_Base + BlockSize,
+				   SerializedBytes_WriteMultiBlockHeader = SerializedBytes_Base + 4 };
 
-			enum { EntryTypeMask = 0x7F, Flag_MultiPage = 0x80 };
+			enum { EntryTypeMask = 0x7F, Flag_MultiBlock = 0x80 };
 
 			enum Type { Undefined = 0, Write = 1, WriteEof = 2, DeleteOversizeFile = 3 };
 
@@ -530,24 +444,24 @@ namespace At
 
 			// This version of constructor used for type == DeleteOversizeFile.
 			WritePlanEntry(Locator const& locator, Type type)
-				: m_locator(locator), m_type(type), m_firstPage(nullptr), m_nrPages(0), m_entryIndex(SIZE_MAX) {}
+				: m_locator(locator), m_type(type), m_firstBlock(nullptr), m_nrBlocks(0), m_entryIndex(SIZE_MAX) {}
 
-			// This version of constructor used for single-page writes of cached pages. The page must be already in cache.
-			// Pointer to first page is non-const because writes to beginning of meta file get modified in PerformWritePlanActions().
-			WritePlanEntry(Locator const& locator, void* firstPage, Type type = Write)
-				: m_locator(locator), m_type(type), m_firstPage((byte*) firstPage), m_nrPages(1), m_entryIndex(SIZE_MAX) {}
+			// This version of constructor used for single-block writes of cached blocks. The block must be already in cache.
+			// Pointer to first block is non-const because writes to beginning of meta file get modified in PerformWritePlanActions().
+			WritePlanEntry(Locator const& locator, void* firstBlock, Type type = Write)
+				: m_locator(locator), m_type(type), m_firstBlock((byte*) firstBlock), m_nrBlocks(1), m_entryIndex(SIZE_MAX) {}
 
-			// This version of constructor used for multi-page writes. Accepts reference-counted sequential pages not in cache.
-			WritePlanEntry(Locator const& locator, Rp<Rc<SequentialPages>> const& pages, Type type = Write)
-				: m_locator(locator), m_type(type), m_firstPage(pages->Ptr()), m_nrPages(pages->Nr()), m_pages(pages), m_entryIndex(SIZE_MAX) {}
+			// This version of constructor used for multi-block writes. Accepts reference-counted sequential blocks not in cache.
+			WritePlanEntry(Locator const& locator, Rp<Rc<BlockMemory>> const& blocks, Type type = Write)
+				: m_locator(locator), m_type(type), m_firstBlock(blocks->Ptr()), m_nrBlocks(blocks->NrBlocks()), m_blocks(blocks), m_entryIndex(SIZE_MAX) {}
 
 			Locator m_locator;
 			Type    m_type       { Undefined };
-			byte*   m_firstPage  {};
-			sizet   m_nrPages    {};
+			byte*   m_firstBlock {};
+			sizet   m_nrBlocks   {};
 			sizet   m_entryIndex { SIZE_MAX };
 
-			Rp<Rc<SequentialPages>> m_pages;
+			Rp<Rc<BlockMemory>> m_blocks;
 		};
 
 		typedef Vec<WritePlanEntry*> WritePlanEntries;
@@ -603,7 +517,7 @@ namespace At
 		StructuredOffset GetStructuredOffset                   (uint64 offsetInFile);
 
 		void             LoadMetaData                          ();
-		void             LoadFisPages                          ();
+		void             LoadFisBlocks                         ();
 		uint64           ReserveIndex                          ();
 		void             ConsolidateFreeIndexState             ();
 
@@ -612,12 +526,12 @@ namespace At
 
 		uint64           GetWritePlanFileSize                  (StorageFile* sf);
 
-		StorageFile*     GetOversizeFile                       (ObjId oversizeFileId);
+		StorageFile&     GetOversizeFile                       (ObjId oversizeFileId);
 		void             DeleteOversizeFile                    (ObjId oversizeFileId);
 		Str              GetOversizeDirPath                    ();
 		Str              GetOversizeFilePath                   (ObjId oversizeFileId);
 
-		byte*            CachedReadPage                        (StorageFile* sf, uint64 offset);
+		byte*            CachedReadBlock                       (StorageFile* sf, uint64 offset);
 
 		void             PruneCache                            ();
 
@@ -640,11 +554,11 @@ namespace At
 		void AddWritePlanEntry_DeleteOversizeFile(Locator const& locator)
 			{ AutoFree<WritePlanEntry> wpe(new WritePlanEntry(locator, WritePlanEntry::DeleteOversizeFile)); AddWritePlanEntry(wpe); }
 
-		void AddWritePlanEntry_CachedPage(Locator const& locator, void* page, WritePlanEntry::Type type=WritePlanEntry::Write)
-			{ AutoFree<WritePlanEntry> wpe(new WritePlanEntry(locator, page, type)); AddWritePlanEntry(wpe); }
+		void AddWritePlanEntry_CachedBlock(Locator const& locator, void* block, WritePlanEntry::Type type=WritePlanEntry::Write)
+			{ AutoFree<WritePlanEntry> wpe(new WritePlanEntry(locator, block, type)); AddWritePlanEntry(wpe); }
 
-		void AddWritePlanEntry_SequentialPages(Locator const& locator, Rp<Rc<SequentialPages>> const& pages, WritePlanEntry::Type type=WritePlanEntry::Write)
-			{ AutoFree<WritePlanEntry> wpe(new WritePlanEntry(locator, pages, type)); AddWritePlanEntry(wpe); }
+		void AddWritePlanEntry_SequentialBlocks(Locator const& locator, Rp<Rc<BlockMemory>> const& blocks, WritePlanEntry::Type type=WritePlanEntry::Write)
+			{ AutoFree<WritePlanEntry> wpe(new WritePlanEntry(locator, blocks, type)); AddWritePlanEntry(wpe); }
 	};
 
 }

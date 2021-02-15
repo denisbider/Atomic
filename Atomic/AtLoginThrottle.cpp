@@ -69,8 +69,8 @@ namespace At
 			{
 				sizet origSize = m_entries.Len();
 				m_entries.ResizeExact(origSize * 2, nullptr);
-				memmove(&m_entries[m_nextIndex], &m_entries[m_nextIndex+origSize], (origSize - m_nextIndex) * sizeof(LoginFailure));
-				memset(&m_entries[m_nextIndex], 0, origSize * sizeof(LoginFailure));
+				memmove(&m_entries[m_nextIndex], &m_entries[m_nextIndex+origSize], (origSize - m_nextIndex) * m_entries.ValSize());
+				memset(&m_entries[m_nextIndex], 0, origSize * m_entries.ValSize());
 				entry = nullptr;
 			}
 		}

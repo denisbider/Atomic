@@ -51,11 +51,11 @@ namespace At
 
 		// ASSIGN
 		Str& Set(Str const& x)                 { Vec<byte>::operator=(x); return *this; }
-		Str& Set(Str&& x)                      { return Free().Swap(x); }
+		Str& Set(Str&& x) noexcept             { return Free().Swap(x); }
 		Str& Set(Seq x)                        { return Set(x.p, x.n); }
 		Str& Set(char const* ptr)              { return Set(ptr, ZLen(ptr)); }
 		Str& Set(char const* ptr, sizet count) { return Set((byte const*) ptr, count); }
-		Str& Set(byte const* ptr, sizet count) { Clear().Add(ptr, count); return *this; }
+		Str& Set(byte const* ptr, sizet count) { Clear().ReserveExact(count).Add(ptr, count); return *this; }
 
 		Str& operator= (Str const& x)    { Vec<byte>::operator=(x); return *this; }
 		Str& operator= (Str&& x)         { Vec<byte>::operator=(std::move(x)); return *this; }
@@ -86,8 +86,8 @@ namespace At
 		Str& Set_TruncUtf8_MaxChars (Seq x, sizet n, Seq ellipsis = Utf8::Lit::Ellipsis) { Seq r=x; Seq t=r.ReadUtf8_MaxChars(n); if (r.n > ellipsis.n) Set(t.n).Add(ellipsis); else Set(x); return *this; }
 
 		// CLEAR
-		Str& Clear() { Vec<byte>::Clear(); return *this; }
-		Str& Free()  { Vec<byte>::Free();  return *this; }
+		Str& Clear () noexcept { Vec<byte>::Clear(); return *this; }
+		Str& Free  () noexcept { Vec<byte>::Free();  return *this; }
 
 		// ACCESSORS
 		byte const* Ptr() const { return Vec<byte>::Ptr(); }
@@ -141,6 +141,9 @@ namespace At
 		Str& ErrCode       (int64 v)                                                { Enc::ErrCode(v);           return *this; }
 		Str& TzOffset      (int64 v)                                                { Enc::TzOffset(v);          return *this; }
 
+		Str& UIntUnitsEx(uint64 v, Slice<Units::Unit> units, Units::Unit const*& largestFitUnit)
+			{ Enc::UIntUnitsEx(v, units, largestFitUnit); return *this; }
+
 		Str& UIntDecGrp    (uint64 v)                                               { Enc::UIntDecGrp(v);        return *this; }
 		Str& UIntUnits     (uint64 v, Slice<Units::Unit> units)                     { Enc::UIntUnits(v, units);  return *this; }
 		Str& UIntBytes     (uint64 v)                                               { Enc::UIntBytes(v);         return *this; }
@@ -156,6 +159,7 @@ namespace At
 		Str& HtmlElemText  (Seq t, Html::CharRefs c)                                { Enc::HtmlElemText(t, c);   return *this; }
 		Str& JsStrEncode   (Seq text)                                               { Enc::JsStrEncode(text);    return *this; }
 		Str& CsvStrEncode  (Seq text)                                               { Enc::CsvStrEncode(text);   return *this; }
+		Str& CDataEncode   (Seq text)                                               { Enc::CDataEncode(text);    return *this; }
 
 		template <typename SeqOrStr>
 		Str& AddN(typename Vec<SeqOrStr> const& container, Seq separator)

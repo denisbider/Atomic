@@ -94,7 +94,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>ATOMIC_DBGHELP;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <ExceptionHandling>Sync</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -115,7 +115,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>ATOMIC_DBGHELP;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <ExceptionHandling>Sync</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -136,7 +136,7 @@
     </Midl>
     <ClCompile>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>EnableAllWarnings</WarningLevel>
@@ -155,7 +155,7 @@
     <Midl />
     <ClCompile>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ExceptionHandling>Async</ExceptionHandling>
+      <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>EnableAllWarnings</WarningLevel>
@@ -171,8 +171,11 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AtAfsMemStorage.cpp" />
     <ClCompile Include="AtAbortable.cpp" />
+    <ClCompile Include="AtAfs.cpp" />
     <ClCompile Include="AtActv.cpp" />
+    <ClCompile Include="AtAfsFileStorage.cpp" />
     <ClCompile Include="AtArgs.cpp" />
     <ClCompile Include="AtAsciiArt.cpp" />
     <ClCompile Include="AtAsn1.cpp" />
@@ -184,6 +187,8 @@
     <ClCompile Include="AtBhtpnServerThread.cpp" />
     <ClCompile Include="AtCert.cpp" />
     <ClCompile Include="AtCertStore.cpp" />
+    <ClCompile Include="AtStorageFile.cpp" />
+    <ClCompile Include="AtStrList.cpp" />
     <ClCompile Include="AtCspBuilder.cpp" />
     <ClCompile Include="AtCssPack.cpp" />
     <ClCompile Include="AtDiff.cpp" />
@@ -240,6 +245,8 @@
     <ClCompile Include="AtMarkdownGrammar.cpp" />
     <ClCompile Include="AtMem.cpp" />
     <ClCompile Include="AtDllKernel32.cpp" />
+    <ClCompile Include="AtObjId.cpp" />
+    <ClCompile Include="AtTranscriber.cpp" />
     <ClCompile Include="AtUnits.cpp" />
     <ClCompile Include="AtOvlReader.cpp" />
     <ClCompile Include="AtOvlWriter.cpp" />
@@ -307,7 +314,7 @@
     <ClCompile Include="AtMimeReadWrite.cpp" />
     <ClCompile Include="AtNum.cpp" />
     <ClCompile Include="AtNumCvt.cpp" />
-    <ClCompile Include="AtPageAllocator.cpp" />
+    <ClCompile Include="AtBlockAllocator.cpp" />
     <ClCompile Include="AtParse.cpp" />
     <ClCompile Include="AtParseNode.cpp" />
     <ClCompile Include="AtParseTree.cpp" />
@@ -317,7 +324,6 @@
     <ClCompile Include="AtRecaptcha.cpp" />
     <ClCompile Include="AtSeq.cpp" />
     <ClCompile Include="AtService.cpp" />
-    <ClCompile Include="AtSeTranslate.cpp" />
     <ClCompile Include="AtSmtpGrammar.cpp" />
     <ClCompile Include="AtEmailEntities.cpp" />
     <ClCompile Include="AtSmtpReceiver.cpp" />
@@ -350,7 +356,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h" />
+    <ClInclude Include="AtAfs.h" />
     <ClInclude Include="AtActv.h" />
+    <ClInclude Include="AtAfsFileStorage.h" />
+    <ClInclude Include="AtAfsMemStorage.h" />
     <ClInclude Include="AtArgs.h" />
     <ClInclude Include="AtAsciiArt.h" />
     <ClInclude Include="AtAsn1.h" />
@@ -358,6 +367,8 @@
     <ClInclude Include="AtBgTask.h" />
     <ClInclude Include="AtCert.h" />
     <ClInclude Include="AtCertStore.h" />
+    <ClInclude Include="AtStorageFile.h" />
+    <ClInclude Include="AtStrList.h" />
     <ClInclude Include="AtEnsureConvert.h" />
     <ClInclude Include="AtEnsureFailDesc.h" />
     <ClInclude Include="AtEnsureStackTrace.h" />
@@ -401,6 +412,8 @@
     <ClInclude Include="AtLogEvent.h" />
     <ClInclude Include="AtMarkdownGrammar.h" />
     <ClInclude Include="AtDllKernel32.h" />
+    <ClInclude Include="AtObjId.h" />
+    <ClInclude Include="AtTranscriber.h" />
     <ClInclude Include="AtUnits.h" />
     <ClInclude Include="AtOpt.h" />
     <ClInclude Include="AtParseTree.h" />
@@ -501,7 +514,7 @@
     <ClInclude Include="AtNum.h" />
     <ClInclude Include="AtNumCvt.h" />
     <ClInclude Include="AtObjectStore.h" />
-    <ClInclude Include="AtPageAllocator.h" />
+    <ClInclude Include="AtBlockAllocator.h" />
     <ClInclude Include="AtParse.h" />
     <ClInclude Include="AtPath.h" />
     <ClInclude Include="AtMimeQuotedPrintable.h" />
@@ -512,7 +525,6 @@
     <ClInclude Include="AtRuid.h" />
     <ClInclude Include="AtSeq.h" />
     <ClInclude Include="AtService.h" />
-    <ClInclude Include="AtSeTranslate.h" />
     <ClInclude Include="AtSmtpGrammar.h" />
     <ClInclude Include="AtEmailEntities.h" />
     <ClInclude Include="AtSmtpReceiver.h" />
@@ -560,6 +572,7 @@
     <None Include="AtHtmlBuilder_ReloadElem.js" />
     <None Include="AtHtmlBuilder_ReloadElem_Call.js" />
     <None Include="AtHtmlBuilder_ToggleShowDiv.js" />
+    <None Include="AtHtmlForm_EnablerCb.js" />
     <None Include="AtSmtpEntities_SenderCfg.js" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -5,6 +5,7 @@
 #pragma warning (disable: 4265)  // L4: 'class' : class has virtual functions, but destructor is not virtual
 #pragma warning (disable: 4350)  // L4: behavior change: 'member1' called instead of 'member2'
 #pragma warning (disable: 4365)  // L4: 'action' : conversion from 'type_1' to 'type_2', signed/unsigned mismatch
+#pragma warning (disable: 4571)  // L4: Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
 #pragma warning (disable: 4574)  // L4: 'identifier' is defined to be '0': did you mean to use '#if identifier'?
 #pragma warning (disable: 4668)  // L4: 'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'
 #pragma warning (disable: 4710)  // L4: 'function' : function not inlined

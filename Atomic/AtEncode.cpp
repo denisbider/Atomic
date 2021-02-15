@@ -28,6 +28,20 @@ namespace At
 		enc.Byte((byte) ((n      ) & 0xFF));
 	}
 
+	byte* EncodeUInt16LE_Ptr (byte* p, unsigned int n)
+	{
+		
+		*p++ = (byte) ((n      ) & 0xFF);
+		*p++ = (byte) ((n >> 8 ) & 0xFF);
+		return p;
+	}
+
+	void EncodeUInt16LE(Enc& enc, unsigned int n)
+	{
+		enc.Byte((byte) ((n      ) & 0xFF));
+		enc.Byte((byte) ((n >> 8 ) & 0xFF));
+	}
+
 	bool DecodeUInt16(Seq& s, unsigned int& n)
 	{
 		if (s.n < 2)
@@ -40,16 +54,70 @@ namespace At
 		return true;
 	}
 
+	bool DecodeUInt16LE(Seq& s, unsigned int& n)
+	{
+		if (s.n < 2)
+			return false;
+
+		n = (((unsigned int) s.p[0])      ) |
+			(((unsigned int) s.p[1]) <<  8);
+
+		s.DropBytes(2);
+		return true;
+	}
+
 
 
 	// UInt32
 
+	byte* EncodeUInt32_Ptr(byte* p, uint32 n)
+	{
+		*p++ = (byte) ((n >> 24) & 0xFF);
+		*p++ = (byte) ((n >> 16) & 0xFF);
+		*p++ = (byte) ((n >>  8) & 0xFF);
+		*p++ = (byte) ((n      ) & 0xFF);
+		return p;
+	}
+
+	byte* EncodeUInt32LE_Ptr(byte* p, uint32 n)
+	{
+		*p++ = (byte) ((n      ) & 0xFF);
+		*p++ = (byte) ((n >>  8) & 0xFF);
+		*p++ = (byte) ((n >> 16) & 0xFF);
+		*p++ = (byte) ((n >> 24) & 0xFF);
+		return p;
+	}
+
 	void EncodeUInt32(Enc& enc, uint32 n)
 	{
-		enc.Byte((byte) ((n >> 24) & 0xFF));
-		enc.Byte((byte) ((n >> 16) & 0xFF));
-		enc.Byte((byte) ((n >>  8) & 0xFF));
-		enc.Byte((byte) ((n      ) & 0xFF));
+		Enc::Write write = enc.IncWrite(4);
+		EncodeUInt32_Ptr(write.Ptr(), n);
+		write.Add(4);
+	}
+
+	void EncodeUInt32LE(Enc& enc, uint32 n)
+	{
+		Enc::Write write = enc.IncWrite(4);
+		EncodeUInt32LE_Ptr(write.Ptr(), n);
+		write.Add(4);
+	}
+
+	byte const* DecodeUInt32_Ptr(byte const* p, uint32& n)
+	{
+		n = (((uint32) p[0]) << 24) |
+			(((uint32) p[1]) << 16) |
+			(((uint32) p[2]) <<  8) |
+			(((uint32) p[3])      );
+		return p + 4;
+	}
+
+	byte const* DecodeUInt32LE_Ptr(byte const* p, uint32& n)
+	{
+		n = (((uint32) p[0])      ) |
+			(((uint32) p[1]) <<  8) |
+			(((uint32) p[2]) << 16) |
+			(((uint32) p[3]) << 24);
+		return p + 4;
 	}
 
 	bool DecodeUInt32(Seq& s, uint32& n)
@@ -57,12 +125,108 @@ namespace At
 		if (s.n < 4)
 			return false;
 
-		n = (((uint32) s.p[0]) << 24) |
-			(((uint32) s.p[1]) << 16) |
-			(((uint32) s.p[2]) <<  8) |
-			(((uint32) s.p[3])      );
-
+		DecodeUInt32_Ptr(s.p, n);
 		s.DropBytes(4);
+		return true;
+	}
+
+	bool DecodeUInt32LE(Seq& s, uint32& n)
+	{
+		if (s.n < 4)
+			return false;
+
+		DecodeUInt32LE_Ptr(s.p, n);
+		s.DropBytes(4);
+		return true;
+	}
+
+
+
+	// UInt64
+
+	byte* EncodeUInt64_Ptr(byte* p, uint64 n)
+	{
+		*p++ = (byte) ((n >> 56) & 0xFF);
+		*p++ = (byte) ((n >> 48) & 0xFF);
+		*p++ = (byte) ((n >> 40) & 0xFF);
+		*p++ = (byte) ((n >> 32) & 0xFF);
+		*p++ = (byte) ((n >> 24) & 0xFF);
+		*p++ = (byte) ((n >> 16) & 0xFF);
+		*p++ = (byte) ((n >>  8) & 0xFF);
+		*p++ = (byte) ((n      ) & 0xFF);
+		return p;
+	}
+
+	byte* EncodeUInt64LE_Ptr(byte* p, uint64 n)
+	{
+		*p++ = (byte) ((n      ) & 0xFF);
+		*p++ = (byte) ((n >>  8) & 0xFF);
+		*p++ = (byte) ((n >> 16) & 0xFF);
+		*p++ = (byte) ((n >> 24) & 0xFF);
+		*p++ = (byte) ((n >> 32) & 0xFF);
+		*p++ = (byte) ((n >> 40) & 0xFF);
+		*p++ = (byte) ((n >> 48) & 0xFF);
+		*p++ = (byte) ((n >> 56) & 0xFF);
+		return p;
+	}
+
+	void EncodeUInt64(Enc& enc, uint64 n)
+	{
+		Enc::Write write = enc.IncWrite(8);
+		EncodeUInt64_Ptr(write.Ptr(), n);
+		write.Add(8);
+	}
+
+	void EncodeUInt64LE(Enc& enc, uint64 n)
+	{
+		Enc::Write write = enc.IncWrite(8);
+		EncodeUInt64LE_Ptr(write.Ptr(), n);
+		write.Add(8);
+	}
+
+	byte const* DecodeUInt64_Ptr(byte const* p, uint64& n)
+	{
+		n = (((uint64) p[0]) << 56) |
+			(((uint64) p[1]) << 48) |
+			(((uint64) p[2]) << 40) |
+			(((uint64) p[3]) << 32) |
+			(((uint64) p[4]) << 24) |
+			(((uint64) p[5]) << 16) |
+			(((uint64) p[6]) <<  8) |
+			(((uint64) p[7])      );
+		return p + 8;
+	}
+
+	byte const* DecodeUInt64LE_Ptr(byte const* p, uint64& n)
+	{
+		n = (((uint64) p[0])      ) |
+			(((uint64) p[1]) <<  8) |
+			(((uint64) p[2]) << 16) |
+			(((uint64) p[3]) << 24) |
+			(((uint64) p[4]) << 32) |
+			(((uint64) p[5]) << 40) |
+			(((uint64) p[6]) << 48) |
+			(((uint64) p[7]) << 56);
+		return p + 8;
+	}
+
+	bool DecodeUInt64(Seq& s, uint64& n)
+	{
+		if (s.n < 8)
+			return false;
+
+		DecodeUInt64_Ptr(s.p, n);
+		s.DropBytes(8);
+		return true;
+	}
+
+	bool DecodeUInt64LE(Seq& s, uint64& n)
+	{
+		if (s.n < 8)
+			return false;
+
+		DecodeUInt64LE_Ptr(s.p, n);
+		s.DropBytes(8);
 		return true;
 	}
 

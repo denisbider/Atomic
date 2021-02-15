@@ -39,8 +39,14 @@ namespace At
 				throw WriteWinErr(errorCode);
 
 			EnsureAbort(ioResult == IoResult::Done);
-			EnsureAbort(nrBytesWritten <= nrBytesToWrite);
-			data.DropBytes(nrBytesWritten);
+			if (nrBytesWritten)
+			{
+				EnsureAbort(nrBytesWritten <= nrBytesToWrite);
+				if (m_transcriber.Any())
+					m_transcriber->Transcribe(TranscriptEvent::Written, Seq(data.p, nrBytesWritten));
+
+				data.DropBytes(nrBytesWritten);
+			}
 		}
 	}
 

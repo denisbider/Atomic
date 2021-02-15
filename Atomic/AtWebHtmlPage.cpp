@@ -52,9 +52,7 @@ namespace At
 				.EndDiv();
 		}
 
-		html	.Div().Id("WHP_Body")
-					.Method(*this, &WebHtmlPage::WHP_Body, req)
-				.EndDiv()
+		html	.Method(*this, &WebHtmlPage::WHP_Body, req)
 			.EndBody().EndHtml();
 		
 		if (html.MustSetPostFormSecurityCookie(req))

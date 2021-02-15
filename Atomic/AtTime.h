@@ -99,15 +99,17 @@ namespace At
 		Time& operator-- ()             noexcept { m_ft = SatSub<uint64>(m_ft,      1); return *this; }
 		Time& operator+= (Time t)       noexcept { m_ft = SatAdd<uint64>(m_ft, t.m_ft); return *this; }
 		Time& operator-= (Time t)       noexcept { m_ft = SatSub<uint64>(m_ft, t.m_ft); return *this; }
-		Time& operator*= (uint n)       noexcept { m_ft = SatMul<uint64>(m_ft,      n); return *this; }
-		Time& operator/= (uint n)       noexcept { m_ft /= n; return *this; }
+		Time& operator*= (uint64 n)     noexcept { m_ft = SatMul<uint64>(m_ft,      n); return *this; }
+		Time& operator/= (uint64 n)     noexcept { m_ft /= n; return *this; }
 
-		Time  operator++ (int)          noexcept { Time prev{*this}; operator++(); return prev; }
-		Time  operator-- (int)          noexcept { Time prev{*this}; operator--(); return prev; }
-		Time  operator+  (Time t) const noexcept { return Time(*this).operator+=(t); }
-		Time  operator-  (Time t) const noexcept { return Time(*this).operator-=(t); }
-		Time  operator*  (uint n) const noexcept { return Time(*this).operator*=(n); }
-		Time  operator/  (uint n) const noexcept { return Time(*this).operator/=(n); }
+		Time  operator++ (int)            noexcept { Time prev{*this}; operator++(); return prev; }
+		Time  operator-- (int)            noexcept { Time prev{*this}; operator--(); return prev; }
+		Time  operator+  (Time t)   const noexcept { return Time(*this).operator+=(t); }
+		Time  operator-  (Time t)   const noexcept { return Time(*this).operator-=(t); }
+		Time  operator*  (uint64 n) const noexcept { return Time(*this).operator*=(n); }
+		Time  operator/  (uint64 n) const noexcept { return Time(*this).operator/=(n); }
+
+		friend Time operator* (uint64 n, Time t) noexcept { return Time(t).operator*=(n); }
 
 		bool  operator<  (Time t) const noexcept { return m_ft <  t.m_ft; }
 		bool  operator<= (Time t) const noexcept { return m_ft <= t.m_ft; }

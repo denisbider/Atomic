@@ -3,8 +3,10 @@
 #include "AtIncludes.h"
 #include "AtTime.h"
 
+
 namespace At
 {
+
 	template <class Key, class Value>
 	class Cache
 	{
@@ -40,7 +42,7 @@ namespace At
 				return nullptr;
 
 			Time prevTime = it->second.m_lastAccessTime;
-			it->second.m_lastAccessTime = Time::StrictNow();
+			it->second.m_lastAccessTime = Time::NonStrictNow();
 
 			KeysByLastAccessTime::iterator timeIt = m_keysByLastAccessTime.find(prevTime);
 			EnsureThrow(timeIt != m_keysByLastAccessTime.end());
@@ -50,13 +52,13 @@ namespace At
 		}
 
 	
-		Value* FindOrInsertEntry(Key const& key)
+		Value& FindOrInsertEntry(Key const& key)
 		{
 			EntriesByKey::iterator it = m_entriesByKey.find(key);
 			if (it != m_entriesByKey.end())
 			{
 				Time prevTime = it->second.m_lastAccessTime;
-				it->second.m_lastAccessTime = Time::StrictNow();
+				it->second.m_lastAccessTime = Time::NonStrictNow();
 
 				KeysByLastAccessTime::iterator timeIt = m_keysByLastAccessTime.find(prevTime);
 				EnsureThrow(timeIt != m_keysByLastAccessTime.end());
@@ -66,12 +68,11 @@ namespace At
 			{
 				it = m_entriesByKey.insert(std::make_pair(key, Entry<Value>())).first;
 				it->second.m_value = new Value;
-				it->second.m_lastAccessTime = Time::StrictNow();
+				it->second.m_lastAccessTime = Time::NonStrictNow();
 			}
 
 			m_keysByLastAccessTime.insert(std::make_pair(it->second.m_lastAccessTime, key));
-
-			return it->second.m_value;
+			return *(it->second.m_value);
 		}
 
 
@@ -100,14 +101,23 @@ namespace At
 		}
 
 
-		void PruneEntries(sizet targetSize)
+		void PruneEntries(sizet targetSize, Time maxAge)
 		{
-			while (m_entriesByKey.size() > targetSize)
+			Time now = Time::NonStrictNow();
+			while (true)
 			{
 				KeysByLastAccessTime::iterator timeIt = m_keysByLastAccessTime.begin();
+				if (timeIt == m_keysByLastAccessTime.end())
+					break;
+
+				if (m_entriesByKey.size() < targetSize)
+					if ((now - timeIt->first) <= maxAge)
+						break;
+
 				EntriesByKey::iterator it = m_entriesByKey.find(timeIt->second);
 				if (it->second.m_value != nullptr)
 					delete it->second.m_value;
+
 				m_entriesByKey.erase(it);
 				m_keysByLastAccessTime.erase(timeIt);
 			}
@@ -121,4 +131,5 @@ namespace At
 		EntriesByKey m_entriesByKey;
 		KeysByLastAccessTime m_keysByLastAccessTime;	
 	};
+
 }

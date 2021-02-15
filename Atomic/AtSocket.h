@@ -5,8 +5,10 @@
 #include "AtNumCvt.h"
 #include "AtStr.h"
 
+
 namespace At
 {
+
 	class SockInit : NoCopy
 	{
 	public:
@@ -14,6 +16,8 @@ namespace At
 		~SockInit();
 	};
 
+
+	struct SockAddrCmp { enum E : uint { AddrOnly = 1 }; };
 
 	struct SockAddr
 	{
@@ -84,10 +88,17 @@ namespace At
 		bool IsLocal() const;
 		bool IsIpMaxValue() const;
 
-		bool operator<  (SockAddr const& x) const;
-		bool operator== (SockAddr const& x) const;
+		int Compare(SockAddr const& x, uint flags) const;
 
-		bool operator!= (SockAddr const& x) const { return !operator==(x); }
+		bool operator<  (SockAddr const& x) const { return Compare(x, 0)  < 0; }
+		bool operator<= (SockAddr const& x) const { return Compare(x, 0) <= 0; }
+		bool operator>  (SockAddr const& x) const { return Compare(x, 0)  > 0; }
+		bool operator>= (SockAddr const& x) const { return Compare(x, 0) >= 0; }
+		bool operator== (SockAddr const& x) const { return Compare(x, 0) == 0; }
+		bool operator!= (SockAddr const& x) const { return Compare(x, 0) != 0; }
+
+		int CompareStr_AddrOnly(Seq s) const;
+		bool EqualsStr_AddrOnly(Seq s) const { return CompareStr_AddrOnly(s) == 0; }
 
 	private:
 		static SockAddr const* SetIp6FromIp4_IfNotAlreadyIp6(SockAddr const& orig, SockAddr& storage);

@@ -14,6 +14,7 @@ int wmain(int argc, wchar_t const* const* argv)
 				"AtUnitTest commands:\r\n"
 				"  core\r\n"
 				"  actv - Actv\r\n"
+				"  afs  - Afs\r\n"
 				"  base - BaseXY\r\n"
 				"  bcrp - BCrypt\r\n"
 				"  boot - BootTime\r\n"
@@ -24,7 +25,7 @@ int wmain(int argc, wchar_t const* const* argv)
 				"  ents - EntityStore\r\n"
 				"  htme - HtmlEmbed\r\n"
 				"  lrge - LargeEntities\r\n"
-				"  mapc - Map\r\n"
+				"  map  - Map\r\n"
 				"  mkdn - Markdown\r\n"
 				"  mpui - MpUInt\r\n"
 				"  mltp - Multipart\r\n"
@@ -47,6 +48,7 @@ int wmain(int argc, wchar_t const* const* argv)
 
 			if (false) {}
 			else if (cmd.EqualInsensitive("actv")) { ActvTests          ();                              }
+			else if (cmd.EqualInsensitive("afs" )) { AfsTests           (args);                          }
 			else if (cmd.EqualInsensitive("base")) { BaseXYTests        ();                              }
 			else if (cmd.EqualInsensitive("bcrp")) { BCryptTests        ();                              }
 			else if (cmd.EqualInsensitive("boot")) { BootTime           ();                              }
@@ -57,7 +59,7 @@ int wmain(int argc, wchar_t const* const* argv)
 			else if (cmd.EqualInsensitive("ents")) { EntityStoreTests   (args.ConvertAll().Converted()); }
 			else if (cmd.EqualInsensitive("htme")) { HtmlEmbedTest      (args);                          }
 			else if (cmd.EqualInsensitive("lrge")) { LargeEntitiesTests ();                              }
-			else if (cmd.EqualInsensitive("mapc")) { MapTests           ();                              }
+			else if (cmd.EqualInsensitive("map" )) { MapTests           ();                              }
 			else if (cmd.EqualInsensitive("mkdn")) { MarkdownTests      (args.ConvertAll().Converted()); }
 			else if (cmd.EqualInsensitive("mpui")) { MpUIntTests        ();                              }
 			else if (cmd.EqualInsensitive("mltp")) { MultipartTests     ();                              }
@@ -72,23 +74,23 @@ int wmain(int argc, wchar_t const* const* argv)
 	}
 	catch (Args::Err const& e)
 	{
-		Console::Out(Str(e.S()).Add("\r\n"));
+		Console::Out(Str::Join(e.what(), "\r\n"));
 		exitCode = 2;
 	}
 	catch (char const* z)
 	{
-		Console::Out(Str(z).Add("\r\n"));
+		Console::Out(Str::Join(z, "\r\n"));
 		exitCode = 1;
 	}
 	catch (std::exception const& e)
 	{
-		Console::Out(Str("Terminated by unexpected exception:\r\n").Add(e.what()).Add("\r\n"));
+		Console::Out(Str::Join("AtUnitTest terminated by unexpected exception:\r\n", e.what(), "\r\n"));
 		exitCode = 1;
 	}
 
 	if (IsDebuggerPresent())
 	{
-		Console::Out(Str("\r\nProgram exiting with exit code ").SInt(exitCode).Add(". Press any key to exit\r\n"));
+		Console::Out(Str("\r\nAtUnitTest exiting with exit code ").SInt(exitCode).Add(". Press any key to exit\r\n"));
 		Console::ReadChar();
 	}
 

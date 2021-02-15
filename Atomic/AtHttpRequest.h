@@ -75,7 +75,8 @@ namespace At
 
 		Seq RawKnownHeader(HTTP_KNOWN_HEADER const& h) const	{ return Seq(h.pRawValue, h.RawValueLength); }
 		Seq RawKnownHeader(HTTP_HEADER_ID id) const				{ return RawKnownHeader(m_req->Headers.KnownHeaders[id]); }
-		Seq Referrer() const { if (!m_referrer.Any()) { m_referrer.Init(); ToUtf8Norm(RawKnownHeader(HttpHeaderReferer), m_referrer.Ref(), CP_UTF8); } return m_referrer.Ref(); }
+		Seq Referrer  () const { if (!m_referrer  .Any()) { m_referrer  .Init(); ToUtf8Norm(RawKnownHeader(HttpHeaderReferer   ), m_referrer  .Ref(), CP_UTF8); } return m_referrer  .Ref(); }
+		Seq UserAgent () const { if (!m_userAgent .Any()) { m_userAgent .Init(); ToUtf8Norm(RawKnownHeader(HttpHeaderUserAgent ), m_userAgent .Ref(), CP_UTF8); } return m_userAgent .Ref(); }
 	
 		InsensitiveNameValuePairsWithStore const& CookiesNvp () const { if (!m_cookiesNvp.Any()) ParseCookiesNvp(); return m_cookiesNvp.Ref();      }
 		InsensitiveNameValuePairsWithStore&       CfmNvp     ()       { if (!m_cfmNvp.Any())     m_cfmNvp.Init();   return m_cfmNvp.Ref();          }  // Initialized in WebRequestHandler::CheckCfmCookie()
@@ -124,6 +125,7 @@ namespace At
 		mutable Opt<Str> m_absPathAndQS;
 
 		mutable Opt<Str> m_referrer;
+		mutable Opt<Str> m_userAgent;
 
 		mutable Opt<InsensitiveNameValuePairsWithStore> m_cookiesNvp;
 		mutable Opt<InsensitiveNameValuePairsWithStore> m_cfmNvp;

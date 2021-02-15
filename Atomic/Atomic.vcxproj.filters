@@ -193,9 +193,6 @@
     <ClCompile Include="AtNumCvt.cpp">
       <Filter>Foundation</Filter>
     </ClCompile>
-    <ClCompile Include="AtSeTranslate.cpp">
-      <Filter>Foundation</Filter>
-    </ClCompile>
     <ClCompile Include="AtSeq.cpp">
       <Filter>Foundation</Filter>
     </ClCompile>
@@ -207,9 +204,6 @@
     </ClCompile>
     <ClCompile Include="AtSocket.cpp">
       <Filter>Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="AtPageAllocator.cpp">
-      <Filter>Allocation</Filter>
     </ClCompile>
     <ClCompile Include="AtBulkAlloc.cpp">
       <Filter>Allocation</Filter>
@@ -514,6 +508,30 @@
     <ClCompile Include="AtUtf8Lit.cpp">
       <Filter>Foundation</Filter>
     </ClCompile>
+    <ClCompile Include="AtTranscriber.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
+    <ClCompile Include="AtObjId.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtStrList.cpp">
+      <Filter>Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtStorageFile.cpp">
+      <Filter>Datastore</Filter>
+    </ClCompile>
+    <ClCompile Include="AtBlockAllocator.cpp">
+      <Filter>Allocation</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAfs.cpp">
+      <Filter>Afs</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAfsFileStorage.cpp">
+      <Filter>Afs</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAfsMemStorage.cpp">
+      <Filter>Afs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -714,9 +732,6 @@
     <ClInclude Include="AtNum.h">
       <Filter>Foundation</Filter>
     </ClInclude>
-    <ClInclude Include="AtSeTranslate.h">
-      <Filter>Foundation</Filter>
-    </ClInclude>
     <ClInclude Include="AtSeq.h">
       <Filter>Foundation</Filter>
     </ClInclude>
@@ -734,9 +749,6 @@
     </ClInclude>
     <ClInclude Include="AtSocket.h">
       <Filter>Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="AtPageAllocator.h">
-      <Filter>Allocation</Filter>
     </ClInclude>
     <ClInclude Include="AtBulkAlloc.h">
       <Filter>Allocation</Filter>
@@ -1107,6 +1119,30 @@
     <ClInclude Include="AtUtf8Lit.h">
       <Filter>Foundation</Filter>
     </ClInclude>
+    <ClInclude Include="AtTranscriber.h">
+      <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtObjId.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtStrList.h">
+      <Filter>Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtStorageFile.h">
+      <Filter>Datastore</Filter>
+    </ClInclude>
+    <ClInclude Include="AtBlockAllocator.h">
+      <Filter>Allocation</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAfs.h">
+      <Filter>Afs</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAfsFileStorage.h">
+      <Filter>Afs</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAfsMemStorage.h">
+      <Filter>Afs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Web">
@@ -1154,6 +1190,9 @@
     <Filter Include="Windows DLLs">
       <UniqueIdentifier>{476346e0-15b0-4304-bdf9-020d811d4f87}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Afs">
+      <UniqueIdentifier>{2fa0a580-0dd6-4c56-b676-bf8bada68856}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Atomic.natvis" />
@@ -1187,6 +1226,9 @@
       <Filter>Email</Filter>
     </None>
     <None Include="AtHtmlBuilder_ReloadElem_Call.js">
+      <Filter>HTML</Filter>
+    </None>
+    <None Include="AtHtmlForm_EnablerCb.js">
       <Filter>HTML</Filter>
     </None>
   </ItemGroup>

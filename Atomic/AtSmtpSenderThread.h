@@ -23,13 +23,12 @@ namespace At
 		void SendMsgToMailExchanger(SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, bool haveMxDomainMatch,
 			SmtpMsgToSend const& msg, Seq const content, bool contains8bit, Vec<MailboxResult>& mailboxResults, SmtpTlsAssurance::E& tlsAssuranceAchieved);
 
-		void PerformAuthPlain   (SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, Schannel& conn);
-		void PerformAuthCramMd5 (SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, Schannel& conn);
+		void PerformAuthPlain   (SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, Socket& sk, Schannel& conn, Rp<SmtpSendFailure> const& prevFailure);
+		void PerformAuthCramMd5 (SmtpSenderCfg const& cfg, Timeouts const& timeouts, LookedUpAddr const& mxa, Socket& sk, Schannel& conn, Rp<SmtpSendFailure> const& prevFailure);
 
 		struct SendAttempter
 		{
-			Str                 m_firstConnFailure;
-			LookedUpAddr        m_firstConnFailureMxa    {};
+			Rp<SmtpSendFailure> m_firstConnFailure;
 			Rp<SmtpSendFailure> m_firstTempFailure;
 			Str                 m_failDescSuffix;
 			sizet               m_nrTempDeliveryFailures {};

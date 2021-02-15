@@ -15,7 +15,6 @@
     <ClCompile Include="AutBCrypt.cpp" />
     <ClCompile Include="AutMpUInt.cpp" />
     <ClCompile Include="AutBaseXY.cpp" />
-    <ClCompile Include="AutActvTests.cpp" />
     <ClCompile Include="AutLargeEntities.cpp" />
     <ClCompile Include="AutEmailAddress.cpp" />
     <ClCompile Include="AutRsaSigner.cpp" />
@@ -25,6 +24,8 @@
     <ClCompile Include="AutUri.cpp" />
     <ClCompile Include="AutHtmlEmbed.cpp" />
     <ClCompile Include="AutCharInfo.cpp" />
+    <ClCompile Include="AutAfs.cpp" />
+    <ClCompile Include="AutActv.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutIncludes.h" />

@@ -51,8 +51,6 @@ namespace At
 
 	uint __stdcall Thread::ThreadEnvelope(void* param)
 	{
-		_set_se_translator(SeTranslator);
-
 		Thread* obj     { (Thread*) param };
 		bool    runMain { true };
 

@@ -8,22 +8,23 @@
 namespace At
 {
 
-	void OvlReader::Read(std::function<Instr::E(Seq&)> process)
+	void OvlReader::Read(std::function<ReadInstr(Seq&)> process)
 	{
 		while (true)
 		{
-			if (ProcessData(process))
+			if (TryProcessData(process) == KeepReading::No)
 				return;
 
 			// Prepare to read
-			DWORD readSize { NumCast<DWORD>(PrepareToRead(m_readSize, 1)) };
+			ReadDest rd = BeginRead(m_readSize, 1);
+			DWORD readSize = NumCast<DWORD>(rd.m_maxBytes);
 			ZeroMemory(&m_ovl, sizeof(m_ovl));
 			m_ovl.hEvent = m_readEvent.Handle();
 
 			// Read
 			int64       errorCode   {};
 			DWORD       nrBytesRead {};
-			IoResult::E ioResult    { OvlReader_Read(m_buf.Ptr() + m_bytesInBuf, readSize, nrBytesRead, m_ovl, errorCode) };
+			IoResult::E ioResult    { OvlReader_Read(rd.m_destPtr, readSize, nrBytesRead, m_ovl, errorCode) };
 			if (ioResult == IoResult::Pending)
 			{
 				OnExit autoCancel([&] () { OvlReader_Cancel(m_ovl); });
@@ -47,8 +48,10 @@ namespace At
 			if (nrBytesRead != 0)
 			{
 				EnsureAbort(nrBytesRead <= readSize);
-				m_bytesInBuf += nrBytesRead;
-				m_haveNewDataToProcess = true;
+				if (m_transcriber.Any())
+					m_transcriber->Transcribe(TranscriptEvent::Read, Seq(rd.m_destPtr, nrBytesRead));
+
+				CompleteRead(nrBytesRead);
 			}
 		}
 	}

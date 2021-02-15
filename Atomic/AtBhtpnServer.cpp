@@ -20,7 +20,7 @@ namespace At
 		EnsureThrow(m_pipeName.Any());
 
 		// Init log
-		m_requestLog.Init(Str(BhtpnServer_LogNamePrefix()).Add("BhtpnLog"));
+		m_requestLog.Init(Str(BhtpnServer_LogNamePrefix()).Add("BhtpnLog"), TextLog::Flags::AutoRollover);
 
 		// Init pipe name
 		m_sddlStr = 

@@ -12,7 +12,7 @@ namespace At
 	public:
 		void SetReadSize(DWORD readSize) { m_readSize = readSize; }
 
-		void Read(std::function<Instr::E(Seq&)> process) override final;
+		void Read(std::function<ReadInstr(Seq&)> process) override final;
 
 	protected:
 		struct IoResult { enum E { Done, Pending, ReachedEnd, Error }; }; 

@@ -164,7 +164,7 @@ namespace At
 		m_ipFairThrottle.SetMaxHoldsGlobal(128 * std::thread::hardware_concurrency());
 
 		// Init log
-		m_requestLog.Init(Str(HttpServer_LogNamePrefix()).Add("HttpLog"));
+		m_requestLog.Init(Str(HttpServer_LogNamePrefix()).Add("HttpLog"), TextLog::Flags::AutoRollover);
 
 		// Give application opportunity to call SyncUrls()
 		HttpServer_SyncUrls();

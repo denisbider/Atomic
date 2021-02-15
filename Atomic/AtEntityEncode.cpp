@@ -260,7 +260,7 @@ namespace At
 				break;
 
 			currentlyEncodingVersion = lowestNextVersion;
-			lowestNextVersion = 0;
+			lowestNextVersion = UINT_MAX;
 			efi = m_fields;
 		}
 

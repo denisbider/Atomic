@@ -197,12 +197,12 @@ namespace At
 				do
 				{
 					// Read bytes from file or pipe
-					reader.Read( [] (Seq& data) -> Reader::Instr::E
+					reader.Read( [] (Seq& data) -> Reader::ReadInstr
 						{
 							sizet origLen { a_readByteBuf.Len() };
 							a_readByteBuf.ResizeAtLeast(origLen + data.n);
 							memcpy_s(a_readByteBuf.Ptr() + origLen, a_readByteBuf.Len() - origLen, data.p, data.n);
-							return Reader::Instr::Done;
+							return Reader::ReadInstr::Done;
 						} );
 
 					// Decode into read queue

@@ -17,6 +17,9 @@ namespace At
 		// If not called, default value is used. If called, must be called before work pool is started.
 		void SetMaxNrThreads(uint maxNrThreads) { EnsureThrow(!Started()); m_maxNrThreads = maxNrThreads; }
 
+		// If execution was stopped via StopCtl, can be called before exiting to see how many threads from this WorkPool were aborted
+		ptrdiff NrThreadsAborted() const { return m_nrThreadsAborted; }
+
 	private:
 		void ThreadMain();
 
@@ -27,6 +30,7 @@ namespace At
 
 		ptrdiff volatile  m_nrThreads          {};
 		ptrdiff volatile  m_nrThreadsReady     {};
+		ptrdiff volatile  m_nrThreadsAborted   {};
 
 		Mutex             m_mxWorkQueue;
 		std::deque<void*> m_workQueue;		// Destroyed in WorkPool<> derived template
@@ -54,31 +58,32 @@ namespace At
 
 		void EnqueueWorkItem(AutoFree<WorkItemType>& workItem)
 		{
-			while (true)
-			{
-				{
-					Locker locker(m_mxWorkQueue);
-					if (m_workQueue.size() < m_maxNrThreads)
-					{
-						m_workQueue.push_back(nullptr);
-						m_workQueue.back() = workItem.Dismiss();
-						break;
-					}
-				}
+			m_workItemTakenEvent.ClearSignal();
 
-				if (Wait2(StopEvent().Handle(), m_workItemTakenEvent.Handle(), INFINITE) == 0)
-					throw ExecutionAborted();
-			}
-
-			if (InterlockedExchangeAdd_PtrDiff(&m_nrThreadsReady, 0) < 1 &&
-				InterlockedExchangeAdd_PtrDiff(&m_nrThreads,      0) < SatCast<ptrdiff>(m_maxNrThreads))
 			{
-				ThreadPtr<ThreadType> thread { Thread::Create };
-				thread->SetWorkPool(this);
-				thread->Start(GetStopCtl());
+				Locker locker { m_mxWorkQueue };
+				m_workQueue.push_back(nullptr);
+				m_workQueue.back() = workItem.Dismiss();
 			}
 
 			m_workAvailableEvent.Signal();
+
+			DWORD waitMs = 1000;
+			while (true)
+			{
+				if (InterlockedExchangeAdd_PtrDiff(&m_nrThreadsReady, 0) < 1 &&
+					InterlockedExchangeAdd_PtrDiff(&m_nrThreads,      0) < SatCast<ptrdiff>(m_maxNrThreads))
+				{
+					ThreadPtr<ThreadType> thread { Thread::Create };
+					thread->SetWorkPool(this);
+					thread->Start(GetStopCtl());
+					waitMs = INFINITE;
+				}
+
+				DWORD waitResult = Wait2(StopEvent().Handle(), m_workItemTakenEvent.Handle(), waitMs);
+				if (0 == waitResult) throw ExecutionAborted();
+				if (1 == waitResult) break;
+			}
 		}
 	};
 

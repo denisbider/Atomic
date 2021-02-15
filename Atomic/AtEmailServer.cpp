@@ -100,7 +100,7 @@ namespace At
 	void EmailServer_ClientLine::ReadLine(Reader& reader)
 	{
 		reader.SetExpireMs(EmailServer_RecvTimeoutMs);
-		reader.Read( [&] (Seq& avail) -> Reader::Instr::E
+		reader.Read( [&] (Seq& avail) -> Reader::ReadInstr
 			{
 				Seq const line { avail.ReadToString("\r\n") };
 				if (avail.n)
@@ -108,13 +108,13 @@ namespace At
 					m_line = line;
 
 					avail.DropBytes(2);
-					return Reader::Instr::Done;
+					return Reader::ReadInstr::Done;
 				}
 		
 				if (avail.n > EmailServer_MaxClientLineBytes)
 					throw EmailServer_Disconnect("Line too long");
 
-				return Reader::Instr::NeedMore;		
+				return Reader::ReadInstr::NeedMore;		
 			} );
 	}
 

@@ -5,6 +5,7 @@ enum class Display { No, Yes };
 void CoreTests          ();
 
 void ActvTests          ();
+void AfsTests           (Args& args);
 void BaseXYTests        ();
 void BCryptTests        ();
 void BootTime           ();

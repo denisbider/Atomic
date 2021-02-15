@@ -122,7 +122,7 @@ namespace At
 		void ActvCodeData::EnsureValid() const
 		{
 			CheckResult result = CheckFields();
-			EnsureThrowWithNr(result == CheckResult::OK, (int64) result);
+			EnsureThrowWithNr(result == CheckResult::OK, result);
 		}
 
 

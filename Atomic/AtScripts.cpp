@@ -58,6 +58,12 @@ Seq c_js_AtHtmlBuilder_ToggleShowDiv {
 	".display = 'block'; mainDiv.style.display = 'none'; e.preventDefault(); });",
 	435 };
 
+Seq c_js_AtHtmlForm_EnablerCb {
+	"const enablerCbElem = Elem(arg.enablerCbId); enablerCbElem.addEventListener('click', function () { for (let i=0; i<arg.enablerForFieldIds.length; ++i) { let fieldId = arg.enablerFo"
+	"rFieldIds[i]; let container = Elem(fieldId + \"_container\"); if (!enablerCbElem.checked) container.style.display = 'none'; else if (container.tagName.toLowerCase() == \"tr\") cont"
+	"ainer.style.display = 'table-row'; else container.style.display = 'block'; } });",
+	436 };
+
 Seq c_js_AtSmtpEntities_SenderCfg {
 	"{ const inputIds = [ 'smtpSender_relayHost', 'smtpSender_relayPort', 'smtpSender_relayImplicitTls', 'smtpSender_relayTlsRequirement', 'smtpSender_relayAuthType', 'smtpSender_relayU"
 	"sername', 'smtpSender_relayPassword' ]; const checkbox = Elem('smtpSender_useRelay'); const OnCheckbox = function () { inputIds.forEach(function (id) { Elem(id).disabled = !checkbo"
