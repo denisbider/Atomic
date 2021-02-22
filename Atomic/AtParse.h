@@ -94,6 +94,8 @@ namespace At
 		inline bool G_SeqMatchExact (ParseNode& p, Ruid const& type, Seq s) { return G_SeqMatch(p, type, CaseMatch::Exact, s); }
 		inline bool G_SeqMatchInsens(ParseNode& p, Ruid const& type, Seq s) { return G_SeqMatch(p, type, CaseMatch::Insensitive, s); }
 
+		bool G_MaxBytes(ParseNode& p, Ruid const& type, ParseFunc pf, sizet maxBytes);
+
 	
 		// Value
 	

@@ -103,7 +103,7 @@ namespace At
 	} // anon
 
 
-	Schannel::~Schannel()
+	Schannel::~Schannel() noexcept
 	{
 		if (m_haveCredHandle)
 		{

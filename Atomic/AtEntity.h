@@ -717,19 +717,19 @@ namespace At
 
 	
 	// Vec and Opt are friends to allow use of Vec<ENT> and Opt<ENT> using default constructor, without requiring Entity::Contained
-	#define ENTITY_DECL_BEGIN(ENT)				class ENT : public Entity { \
+	#define ENTITY_DECL_BEGIN(ENT)				class ENT : public At::Entity { \
 														ENT(); \
-														friend class VecCore<VecBaseHeap<ENT>>; \
-														friend class Opt<ENT>; \
+														friend class At::VecCore<At::VecBaseHeap<ENT>>; \
+														friend class At::Opt<ENT>; \
 													public: \
 														static uint32 const Kind; \
 														static uint32 const NrFields; \
-														static EntityFieldInfo const Fields[]; \
-														static EntityFieldInfo const* KeyField; \
-														ENT(EntityStore& store, ObjId parentId = ObjId()); \
-														ENT(EChildOf, Entity const& parent); \
+														static At::EntityFieldInfo const Fields[]; \
+														static At::EntityFieldInfo const* KeyField; \
+														ENT(At::EntityStore& store, At::ObjId parentId = At::ObjId()); \
+														ENT(EChildOf, At::Entity const& parent); \
 														ENT(EContainedOrTbd); \
-														static Rp<Entity> Create(EntityStore* store, ObjId parentId); \
+														static At::Rp<At::Entity> Create(At::EntityStore* store, At::ObjId parentId); \
 														static ENT const Sample;
 	#define ENTITY_DECL_FIELD(TYPE, FLD)				TYPE    f_##FLD; enum { KC_##FLD = KeyCat::None };
 	#define ENTITY_DECL_FLD_C(TYPE, FLD)				TYPE    f_##FLD { Contained }; enum { KC_##FLD = KeyCat::None };
@@ -739,22 +739,22 @@ namespace At
 	#define ENTITY_DECL_CLOSE()						};
 
 
-	#define ENTITY_DEF_BEGIN(ENT)					uint32 const ENT::Kind = Crc32(#ENT); \
-													EntityFieldInfo const ENT::Fields[] = {
-	#define ENTITY_DEF_FIELD(ENT, FLD)					EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), At::FieldTypeOf(((ENT const*) nullptr)->f_##FLD), (KeyCat::E) ENT::KC_##FLD, 0),
-	#define ENTITY_DEF_FLD_V(ENT, FLD, VER)				EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), At::FieldTypeOf(((ENT const*) nullptr)->f_##FLD), (KeyCat::E) ENT::KC_##FLD, (VER)),
-	#define ENTITY_DEF_FLD_E(ENT, FLD)					EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), ENT::ET_##FLD::TypeName(), &ENT::ET_##FLD::Name, 0),
-	#define ENTITY_DEF_F_E_V(ENT, FLD, VER)				EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), ENT::ET_##FLD::TypeName(), &ENT::ET_##FLD::Name, (VER)),
-	#define ENTITY_DEF_CLOSE(ENT)						EntityFieldInfo() }; \
-													EntityFieldInfo const* ENT::KeyField = nullptr; \
-													uint32 const ENT::NrFields = VerifyEntityFields(ENT::Fields, ENT::KeyField); \
-													ENT::ENT(EntityStore& store, ObjId parentId) : Entity(&store, Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, parentId) { ReInitFields(); } \
-													ENT::ENT(EChildOf, Entity const& parent) : Entity(GetStorePtr(parent), Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, parent.m_entityId) { ReInitFields(); } \
-													ENT::ENT(EContainedOrTbd) : Entity(0, Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, ObjId()) { ReInitFields(); } \
-													ENT::ENT()                : Entity(0, Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, ObjId()) { ReInitFields(); } \
-													Rp<Entity> ENT::Create(EntityStore* store, ObjId parentId) { return If(!store, Entity*, new ENT(), new ENT(*store, parentId)); } \
+	#define ENTITY_DEF_BEGIN(ENT)					uint32 const ENT::Kind = At::Crc32(#ENT); \
+													At::EntityFieldInfo const ENT::Fields[] = {
+	#define ENTITY_DEF_FIELD(ENT, FLD)					At::EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), At::FieldTypeOf(((ENT const*) nullptr)->f_##FLD), (KeyCat::E) ENT::KC_##FLD, 0),
+	#define ENTITY_DEF_FLD_V(ENT, FLD, VER)				At::EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), At::FieldTypeOf(((ENT const*) nullptr)->f_##FLD), (KeyCat::E) ENT::KC_##FLD, (VER)),
+	#define ENTITY_DEF_FLD_E(ENT, FLD)					At::EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), ENT::ET_##FLD::TypeName(), &ENT::ET_##FLD::Name, 0),
+	#define ENTITY_DEF_F_E_V(ENT, FLD, VER)				At::EntityFieldInfo(#FLD, At::FieldOffsetOf(((ENT const*) nullptr)->f_##FLD), ENT::ET_##FLD::TypeName(), &ENT::ET_##FLD::Name, (VER)),
+	#define ENTITY_DEF_CLOSE(ENT)						At::EntityFieldInfo() }; \
+													At::EntityFieldInfo const* ENT::KeyField = nullptr; \
+													uint32 const ENT::NrFields = At::VerifyEntityFields(ENT::Fields, ENT::KeyField); \
+													ENT::ENT(At::EntityStore& store, At::ObjId parentId) : At::Entity(&store, Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, parentId) { ReInitFields(); } \
+													ENT::ENT(EChildOf, At::Entity const& parent) : At::Entity(GetStorePtr(parent), Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, parent.m_entityId) { ReInitFields(); } \
+													ENT::ENT(EContainedOrTbd) : At::Entity(0, Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, At::ObjId()) { ReInitFields(); } \
+													ENT::ENT()                : At::Entity(0, Kind, #ENT, NrFields, ENT::Fields, ENT::KeyField, At::ObjId()) { ReInitFields(); } \
+													At::Rp<At::Entity> ENT::Create(At::EntityStore* store, At::ObjId parentId) { return If(!store, At::Entity*, new ENT(), new ENT(*store, parentId)); } \
 													ENT const ENT::Sample; \
-													uint32 g_entityAdded##ENT = AddEntityKind(ENT::Sample, ENT::Create);
+													uint32 g_entityAdded##ENT = At::AddEntityKind(ENT::Sample, ENT::Create);
 
 
 

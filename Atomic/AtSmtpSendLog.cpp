@@ -53,15 +53,19 @@ namespace At
 
 	// TextSmtpSendLog
 
-	void TextSmtpSendLog::Enc_Msg(Enc& enc, SmtpMsgToSend const& msg)
+	void TextSmtpSendLog::Enc_Msg(Enc& enc, SmtpMsgToSend const& msg, sizet contentLen)
 	{
 		enc.Add(" <msg id=\"")      .Obj  (msg.m_entityId)
 		   .Add("\" next=\"")       .Obj  (msg.f_nextAttemptTime, TimeFmt::IsoMicroZ)
 		   .Add("\" status=\"")     .Add  (SmtpMsgStatus::Name(msg.f_status))
 		   .Add("\" from=\"")       .Add  (msg.f_fromAddress)
 		   .Add("\" toDomain=\"")   .Add  (msg.f_toDomain)
-		   .Add("\" lenPart1=\"")   .UInt (msg.f_contentPart1.Len())
-		   .Add("\" tlsReq=\"")     .Add  (SmtpTlsAssurance::Name(msg.f_tlsRequirement))
+		   .Add("\" len=\"");
+		   
+		if (SIZE_MAX != contentLen)		enc.UInt(contentLen);
+		else							enc.Add("n/a");
+
+		enc.Add("\" tlsReq=\"")     .Add  (SmtpTlsAssurance::Name(msg.f_tlsRequirement))
 		   .Add("\" baseSecs=\"")   .UInt (msg.f_baseSendSecondsMax)
 		   .Add("\" nrBytes1Sec=\"").UInt (msg.f_nrBytesToAddOneSec)
 		   .Add("\" retry=\"");
@@ -101,7 +105,7 @@ namespace At
 			 .Add("\">\r\n");
 
 		for (Rp<SmtpMsgToSend> const& msg : msgs)
-			entry.Fun(Enc_Msg, msg.Ref());
+			entry.Fun(Enc_Msg, msg.Ref(), SIZE_MAX);
 
 		entry.Add("</reset>\r\n");
 
@@ -109,7 +113,7 @@ namespace At
 	}
 
 
-	void TextSmtpSendLog::SmtpSendLog_OnAttempt(SmtpMsgToSend const& msg)
+	void TextSmtpSendLog::SmtpSendLog_OnAttempt(SmtpMsgToSend const& msg, sizet contentLen)
 	{
 		Time now { Time::StrictNow() };
 		TzInfo tzi;
@@ -118,14 +122,14 @@ namespace At
 		entry.ReserveExact(500)
 			 .Add("<attempt time=\"").Fun(Enc_EntryTime, now, tzi)
 			 .Add("\">\r\n")
-			 .Fun(Enc_Msg, msg)
+			 .Fun(Enc_Msg, msg, contentLen)
 			 .Add("</attempt>\r\n");
 
 		WriteEntry(now, tzi, entry);
 	}
 
 
-	void TextSmtpSendLog::SmtpSendLog_OnResult(SmtpMsgToSend const& msg, Vec<MailboxResult> const& mailboxResults, SmtpTlsAssurance::E tlsAssuranceAchieved)
+	void TextSmtpSendLog::SmtpSendLog_OnResult(SmtpMsgToSend const& msg, sizet contentLen, Vec<MailboxResult> const& mailboxResults, SmtpTlsAssurance::E tlsAssuranceAchieved)
 	{
 		Time now { Time::StrictNow() };
 		TzInfo tzi;
@@ -133,9 +137,9 @@ namespace At
 		Str entry;
 		entry.ReserveExact(500)
 			 .Add("<result time=\"").Fun(Enc_EntryTime, now, tzi)
-			 .Add("\" tlsAchieved=\"").Add(SmtpTlsAssurance::Name(tlsAssuranceAchieved))
+			 .Add("\" tls=\"").Add(SmtpTlsAssurance::Name(tlsAssuranceAchieved))
 			 .Add("\">\r\n")
-			 .Fun(Enc_Msg, msg);
+			 .Fun(Enc_Msg, msg, contentLen);
 
 		for (MailboxResult const& result : mailboxResults)
 		{
@@ -158,6 +162,7 @@ namespace At
 						 .Add("\" detail=\"").Add(SmtpSendDetail::Name(failure->f_detail))
 						 .Add("\" mx=\"").Add(failure->f_mx)
 						 .Add("\" localAddr=\"").Add(failure->f_localAddr)
+						 .Add("\" tls=\"").Add(SmtpTlsAssurance::Name(failure->f_tlsAssurance))
 						 .Add("\" replyCode=\"").Obj(SmtpReplyCode(failure->f_replyCode))
 						 .Add("\" enhStatus=\"").Obj(SmtpEnhStatus::FromUint(failure->f_enhStatus))
 						 .Add("\" desc=\"").HtmlAttrValue(Seq(failure->f_desc).Trim(), Html::CharRefs::Escape);

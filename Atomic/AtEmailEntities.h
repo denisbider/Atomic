@@ -6,6 +6,7 @@
 #include "AtHtmlBuilder.h"
 #include "AtHttpRequest.h"
 #include "AtSlice.h"
+#include "AtSocketConnection.h"
 
 
 namespace At
@@ -101,7 +102,7 @@ namespace At
 	DESCENUM_DECL_VALUE(Tls_StartTlsRejected,                  80002000)
 	DESCENUM_DECL_VALUE(Tls_Sspi_LikelyDhIssue,                80003000)
 	DESCENUM_DECL_VALUE(Tls_Sspi_InvalidToken_IllegalMsg,      80004000)
-	DESCENUM_DECL_VALUE(Tls_Sspi_ServerAuthRequired,           80005000)
+	DESCENUM_DECL_VALUE(Tls_Sspi_ServerNotAuthenticated,       80005000)
 	DESCENUM_DECL_VALUE(Tls_Sspi_Other,                        80006000)
 	DESCENUM_DECL_VALUE(Tls_Communication,                     80007000)
 	DESCENUM_DECL_VALUE(Tls_RequiredAssuranceNotAchieved,      80008000)
@@ -120,7 +121,18 @@ namespace At
 	DESCENUM_DECL_VALUE(Data_UnexpectedReply,                 110002000)
 	DESCENUM_DECL_VALUE(Content_Rejected,                     120001000)
 	DESCENUM_DECL_VALUE(Content_UnexpectedReply,              120002000)
-	DESCENUM_DECL_CLOSE()
+	DESCENUM_DECL_CLOSE();
+
+
+
+	struct SmtpSenderConnection : RefCountable
+	{
+		LookedUpAddr         m_mxa;
+		bool                 m_haveMxDomainMatch {};
+		Str                  m_localAddr         {};			// Useful if local address is known, but SocketConnection::m_sk is not valid, e.g. due to failed connection attempt
+		Rp<SocketConnection> m_sc;
+		SmtpTlsAssurance::E  m_tlsAssurance      {};
+	};
 
 
 
@@ -215,35 +227,36 @@ namespace At
 
 
 	ENTITY_DECL_BEGIN(SmtpSendFailure)
-	ENTITY_DECL_FIELD(Time,           time)
-	ENTITY_DECL_FLD_E(SmtpSendStage,  stage)
-	ENTITY_DECL_FLD_E(SmtpSendDetail, detail)
-	ENTITY_DECL_FIELD(Str,            mx)
-	ENTITY_DECL_FIELD(Str,            localAddr)
-	ENTITY_DECL_FIELD(uint64,         replyCode)
-	ENTITY_DECL_FIELD(uint64,         enhStatus)
-	ENTITY_DECL_FIELD(Str,            desc)
-	ENTITY_DECL_FIELD(Vec<Str>,       lines)			// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
-	ENTITY_DECL_FIELD(Rp<Entity>,     prevFailure)		// A send attempt can be immediately retried, e.g. to connect from a different interface. In this case there are chained failures
+	ENTITY_DECL_FIELD(Time,             time)
+	ENTITY_DECL_FLD_E(SmtpSendStage,    stage)
+	ENTITY_DECL_FLD_E(SmtpSendDetail,   detail)
+	ENTITY_DECL_FIELD(Str,              mx)
+	ENTITY_DECL_FIELD(Str,              localAddr)
+	ENTITY_DECL_FLD_E(SmtpTlsAssurance, tlsAssurance)	// TLS assurance achieved
+	ENTITY_DECL_FIELD(uint64,           replyCode)
+	ENTITY_DECL_FIELD(uint64,           enhStatus)
+	ENTITY_DECL_FIELD(Str,              desc)
+	ENTITY_DECL_FIELD(Vec<Str>,         lines)			// Reply lines with first 4 characters (reply code and separator) removed and CRLF removed. Enhanced status code is NOT removed
+	ENTITY_DECL_FIELD(Rp<Entity>,       prevFailure)	// A send attempt can be immediately retried, e.g. to connect from a different interface. In this case there are chained failures
 	ENTITY_DECL_CLOSE();
 	
-	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx, Socket const* sk, Seq localAddr,
+	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpSenderConnection const* ssc,
 		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines, Rp<SmtpSendFailure> const& prevFailure);
 
 	inline Rp<SmtpSendFailure> SmtpSendFailure_RelayLookup(SmtpSendDetail::E detail, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::RelayLookup, detail, nullptr, nullptr, Seq(), SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, nullptr); }
+		{ return SmtpSendFailure_New(SmtpSendStage::RelayLookup, detail, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, nullptr); }
 
 	inline Rp<SmtpSendFailure> SmtpSendFailure_FindMx(SmtpSendDetail::E detail, Seq desc)
-		{ return SmtpSendFailure_New(SmtpSendStage::FindMx, detail, nullptr, nullptr, Seq(), SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, nullptr); }
+		{ return SmtpSendFailure_New(SmtpSendStage::FindMx, detail, nullptr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, nullptr); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_Connect(SmtpSendDetail::E detail, LookedUpAddr const& mx, Seq localAddr, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
-		{ return SmtpSendFailure_New(SmtpSendStage::Connect, detail, &mx, nullptr, localAddr, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, prevFailure); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_Connect(SmtpSendDetail::E detail, SmtpSenderConnection const& ssc, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
+		{ return SmtpSendFailure_New(SmtpSendStage::Connect, detail, &ssc, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, prevFailure); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_NoCode(LookedUpAddr const& mx, Socket const& sk, SmtpSendStage::E stage, SmtpSendDetail::E detail, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
-		{ return SmtpSendFailure_New(stage, detail, &mx, &sk, Seq(), SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, prevFailure); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_NoCode(SmtpSenderConnection const& ssc, SmtpSendStage::E stage, SmtpSendDetail::E detail, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
+		{ return SmtpSendFailure_New(stage, detail, &ssc, SmtpReplyCode::None(), SmtpEnhStatus::None(), desc, nullptr, prevFailure); }
 
-	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(LookedUpAddr const& mx, Socket const& sk, SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpServerReply const& reply, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
-		{ return SmtpSendFailure_New(stage, detail, &mx, &sk, Seq(), reply.m_code, reply.m_enhStatus, desc, &reply.m_lines, prevFailure); }
+	inline Rp<SmtpSendFailure> SmtpSendFailure_Reply(SmtpSenderConnection const& ssc, SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpServerReply const& reply, Seq desc, Rp<SmtpSendFailure> const& prevFailure)
+		{ return SmtpSendFailure_New(stage, detail, &ssc, reply.m_code, reply.m_enhStatus, desc, &reply.m_lines, prevFailure); }
 
 	// Encodes an SmtpSendFailure as one or more plain text lines compliant with the message/delivery-status (DSN) field "Diagnostic-Code" of type "smtp".
 	// Since the DSN format does not define escaping, this function uses HTML entities to encode non-ASCII characters, invalid bytes, parentheses and ampersands.

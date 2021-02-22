@@ -1,6 +1,7 @@
 #include "AtIncludes.h"
 #include "AtEnc.h"
 
+#include "AtImfGrammar.h"
 #include "AtStr.h"
 #include "AtUtf8.h"
 
@@ -533,6 +534,46 @@ namespace At
 			}
 
 			Add("]]>");
+		}
+		return *this;
+	}
+
+
+	Enc& Enc::ImfCommentEncode(Seq text)
+	{
+		while (text.n)
+		{
+			Seq literalSegment = text.ReadToFirstUtf8CharNotOfType(Imf::Is_std_ctext_char);
+			while (literalSegment.n)
+			{
+				// '&' and '#' are normal characters which are part of "ctext" and do not need escaping.
+				// However, we use an HTML-like "&#...;" sequence to encode characters that we cannot escape using standard means.
+				// Therefore, we avoid encoding the literal sequence "&#" if it appears in the source text, and replace it with "\&#".
+				Seq subSegment = literalSegment.ReadToString("&#");
+				Add(subSegment);
+
+				if (!literalSegment.n)
+					break;
+
+				literalSegment.DropBytes(2);
+				Add("\\&#");
+			}
+
+			if (!text.n)
+				break;
+
+			Seq escapeSegment = text.ReadToFirstUtf8CharOfType(Imf::Is_std_ctext_char);
+			uint c;
+			while (UINT_MAX != (c = escapeSegment.ReadUtf8Char()))
+			{
+				if (c >= 0x80 || !Imf::Is_quoted_pair_char(c))
+					Add("&#").UInt(c).Ch(';');		// Use HTML-like escaping to preserve char value for human inspection
+				else
+				{
+					Ch('\\');
+					Byte((byte) c);
+				}
+			}
 		}
 		return *this;
 	}

@@ -2000,6 +2000,7 @@ namespace At
 			Str filePath = GetOversizeFilePath(oversizeFileId);
 
 			sf.SetId(FileId::Oversize);
+			sf.SetBlockSize(BlockSize);
 			sf.SetFullPath(filePath);
 			sf.Open();
 		}
@@ -2532,7 +2533,7 @@ namespace At
 								// Oversize file write
 								sizet writeSize = ((sizet) nrBlocks) * BlockSize;
 								Rp<Rc<BlockMemory>> writeBlocks = new Rc<BlockMemory>(m_allocator, writeSize);
-								EnsureAbort(reader.ReadBytesInto(writeBlocks.Ptr(), writeSize));
+								EnsureAbort(reader.ReadBytesInto(writeBlocks->Ptr(), writeSize));
 								AddWritePlanEntry_SequentialBlocks(locator, writeBlocks, entryType);
 							}
 							else
@@ -2553,7 +2554,7 @@ namespace At
 									EnsureAbort(nrBlocks > 1);
 									sizet writeSize = ((sizet) nrBlocks) * BlockSize;
 									Rp<Rc<BlockMemory>> writeBlocks = new Rc<BlockMemory>(m_allocator, writeSize);
-									EnsureAbort(reader.ReadBytesInto(writeBlocks.Ptr(), writeSize));
+									EnsureAbort(reader.ReadBytesInto(writeBlocks->Ptr(), writeSize));
 									AddWritePlanEntry_SequentialBlocks(locator, writeBlocks, entryType);
 								}
 							}

@@ -852,7 +852,7 @@ namespace At
 		{
 			FileCxRW(Afs& afs, JournaledWrite& jw) : FileCxR(afs) { m_jw = &jw; }
 
-			sizet ImpliedCapacity(sizet sizeBytes) const;
+			uint64 ImpliedCapacity(uint64 sizeBytes) const;
 			void EnlargeToSize(uint64 newSizeBytes);		// Does NOT zero out the new space since the next action is usually a write
 			void ShrinkToSize(uint64 newSizeBytes);			// Zeroes out removed space
 			void Finalize();

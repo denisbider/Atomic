@@ -155,6 +155,7 @@ namespace At
 		Enc& JsStrEncode(Seq text);
 		Enc& CsvStrEncode(Seq text);
 		Enc& CDataEncode(Seq text);
+		Enc& ImfCommentEncode(Seq text);
 
 		template <class T, typename... Args>
 		Enc& Obj(T const& x, Args&&... args)

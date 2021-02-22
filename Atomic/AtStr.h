@@ -114,52 +114,53 @@ namespace At
 		Seq SubSeq(sizet off, sizet count) const { EnsureThrow(off <= m_len); EnsureThrow(count <= m_len - off); return Seq(Ptr() + off, count); }
 
 		// Aliases of Enc methods with Str return types to allow chaining
-		Str& Add           (Seq x)                                                  { Enc::Add(x);               return *this; }
-		Str& Add           (char const* ptr)                                        { Enc::Add(ptr);             return *this; }
-		Str& Add           (char const* ptr, sizet count)                           { Enc::Add(ptr, count);      return *this; }
-		Str& Add           (byte const* ptr, sizet count)                           { Enc::Add(ptr, count);      return *this; }
-
-		Str& Ch            (char ch)                                                { Enc::Ch(ch);               return *this; }
-		Str& Byte          (byte ch)                                                { Enc::Byte(ch);             return *this; }
-
-		Str& Utf8Char      (uint c)                                                 { Enc::Utf8Char(c);          return *this; }
-
-		Str& Chars         (sizet count, char ch)                                   { Enc::Chars(count, ch);     return *this; }
-		Str& Bytes         (sizet count, byte ch)                                   { Enc::Bytes(count, ch);     return *this; }
-
-		Str& Word16LE      (uint16 v)                                               { Enc::Word16LE(v);          return *this; }
-		Str& Word32LE      (uint32 v)                                               { Enc::Word32LE(v);          return *this; }
-
-		Str& Hex           (uint c, CharCase cc = CharCase::Upper)                  { Enc::Hex(c, cc);           return *this; }
-		Str& Hex           (Seq  s, CharCase cc = CharCase::Upper, byte sep = 0)    { Enc::Hex(s, cc, sep);      return *this; }
-		Str& Base32        (Seq s)                                                  { Enc::Base32(s);            return *this; }
-		Str& UrlBase64     (Seq s, Base64::Padding pad)                             { Enc::UrlBase64(s, pad);    return *this; }
-		Str& MimeBase64    (Seq s, Base64::Padding pad)                             { Enc::MimeBase64(s, pad);   return *this; }
-
-		Str& Dbl           (double v, uint prec=4)                                  { Enc::Dbl(v, prec);         return *this; }
-
-		Str& ErrCode       (int64 v)                                                { Enc::ErrCode(v);           return *this; }
-		Str& TzOffset      (int64 v)                                                { Enc::TzOffset(v);          return *this; }
+		Str& Add              (Seq x)                                               { Enc::Add(x);                 return *this; }
+		Str& Add              (char const* ptr)                                     { Enc::Add(ptr);               return *this; }
+		Str& Add              (char const* ptr, sizet count)                        { Enc::Add(ptr, count);        return *this; }
+		Str& Add              (byte const* ptr, sizet count)                        { Enc::Add(ptr, count);        return *this; }
+						      																					   
+		Str& Ch               (char ch)                                             { Enc::Ch(ch);                 return *this; }
+		Str& Byte             (byte ch)                                             { Enc::Byte(ch);               return *this; }
+						      																					   
+		Str& Utf8Char         (uint c)                                              { Enc::Utf8Char(c);            return *this; }
+						      																					   
+		Str& Chars            (sizet count, char ch)                                { Enc::Chars(count, ch);       return *this; }
+		Str& Bytes            (sizet count, byte ch)                                { Enc::Bytes(count, ch);       return *this; }
+						      																					   
+		Str& Word16LE         (uint16 v)                                            { Enc::Word16LE(v);            return *this; }
+		Str& Word32LE         (uint32 v)                                            { Enc::Word32LE(v);            return *this; }
+						      																					   
+		Str& Hex              (uint c, CharCase cc = CharCase::Upper)               { Enc::Hex(c, cc);             return *this; }
+		Str& Hex              (Seq  s, CharCase cc = CharCase::Upper, byte sep = 0) { Enc::Hex(s, cc, sep);        return *this; }
+		Str& Base32           (Seq s)                                               { Enc::Base32(s);              return *this; }
+		Str& UrlBase64        (Seq s, Base64::Padding pad)                          { Enc::UrlBase64(s, pad);      return *this; }
+		Str& MimeBase64       (Seq s, Base64::Padding pad)                          { Enc::MimeBase64(s, pad);     return *this; }
+						      																					   
+		Str& Dbl              (double v, uint prec=4)                               { Enc::Dbl(v, prec);           return *this; }
+						      																					   
+		Str& ErrCode          (int64 v)                                             { Enc::ErrCode(v);             return *this; }
+		Str& TzOffset         (int64 v)                                             { Enc::TzOffset(v);            return *this; }
 
 		Str& UIntUnitsEx(uint64 v, Slice<Units::Unit> units, Units::Unit const*& largestFitUnit)
 			{ Enc::UIntUnitsEx(v, units, largestFitUnit); return *this; }
 
-		Str& UIntDecGrp    (uint64 v)                                               { Enc::UIntDecGrp(v);        return *this; }
-		Str& UIntUnits     (uint64 v, Slice<Units::Unit> units)                     { Enc::UIntUnits(v, units);  return *this; }
-		Str& UIntBytes     (uint64 v)                                               { Enc::UIntBytes(v);         return *this; }
-		Str& UIntKb        (uint64 v)                                               { Enc::UIntKb(v);            return *this; }
-
-		Str& Lower         (Seq source)                                             { Enc::Lower(source);        return *this; }
-		Str& Upper         (Seq source)                                             { Enc::Upper(source);        return *this; }
-
-		Str& UrlDecode     (Seq in)                                                 { Enc::UrlDecode(in);        return *this; }
-		Str& UrlEncode     (Seq text)                                               { Enc::UrlEncode(text);      return *this; }
-
-		Str& HtmlAttrValue (Seq v, Html::CharRefs c)                                { Enc::HtmlAttrValue(v, c);  return *this; }
-		Str& HtmlElemText  (Seq t, Html::CharRefs c)                                { Enc::HtmlElemText(t, c);   return *this; }
-		Str& JsStrEncode   (Seq text)                                               { Enc::JsStrEncode(text);    return *this; }
-		Str& CsvStrEncode  (Seq text)                                               { Enc::CsvStrEncode(text);   return *this; }
-		Str& CDataEncode   (Seq text)                                               { Enc::CDataEncode(text);    return *this; }
+		Str& UIntDecGrp       (uint64 v)                                            { Enc::UIntDecGrp(v);          return *this; }
+		Str& UIntUnits        (uint64 v, Slice<Units::Unit> units)                  { Enc::UIntUnits(v, units);    return *this; }
+		Str& UIntBytes        (uint64 v)                                            { Enc::UIntBytes(v);           return *this; }
+		Str& UIntKb           (uint64 v)                                            { Enc::UIntKb(v);              return *this; }
+						      																					   
+		Str& Lower            (Seq source)                                          { Enc::Lower(source);          return *this; }
+		Str& Upper            (Seq source)                                          { Enc::Upper(source);          return *this; }
+						      																					   
+		Str& UrlDecode        (Seq in)                                              { Enc::UrlDecode(in);          return *this; }
+		Str& UrlEncode        (Seq text)                                            { Enc::UrlEncode(text);        return *this; }
+						      																					   
+		Str& HtmlAttrValue    (Seq v, Html::CharRefs c)                             { Enc::HtmlAttrValue(v, c);    return *this; }
+		Str& HtmlElemText     (Seq t, Html::CharRefs c)                             { Enc::HtmlElemText(t, c);     return *this; }
+		Str& JsStrEncode      (Seq text)                                            { Enc::JsStrEncode(text);      return *this; }
+		Str& CsvStrEncode     (Seq text)                                            { Enc::CsvStrEncode(text);     return *this; }
+		Str& CDataEncode      (Seq text)                                            { Enc::CDataEncode(text);      return *this; }
+		Str& ImfCommentEncode (Seq text)                                            { Enc::ImfCommentEncode(text); return *this; }
 
 		template <typename SeqOrStr>
 		Str& AddN(typename Vec<SeqOrStr> const& container, Seq separator)

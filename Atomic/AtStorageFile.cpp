@@ -60,8 +60,8 @@ namespace At
 
 	void StorageFile::ReadBlocks(void* firstBlock, sizet nrBlocks, uint64 offset)
 	{
-		EnsureAbort((offset % MinSectorSize) == 0);
-		EnsureAbort(nrBlocks < (MAXDWORD / m_blockSize));
+		EnsureThrow((offset % MinSectorSize) == 0);
+		EnsureThrow(nrBlocks < (MAXDWORD / m_blockSize));
 		DWORD bytesToRead = (DWORD) (nrBlocks * m_blockSize);
 		ReadInner(firstBlock, bytesToRead, offset);
 	}
@@ -69,8 +69,8 @@ namespace At
 
 	void StorageFile::ReadBytesUnaligned(void* pDestination, sizet bytesToRead, uint64 offset)
 	{
-		EnsureAbort(Uncached::No == m_uncached);
-		EnsureAbort(bytesToRead < MAXDWORD);
+		EnsureThrow(Uncached::No == m_uncached);
+		EnsureThrow(bytesToRead < MAXDWORD);
 		ReadInner(pDestination, (DWORD) bytesToRead, offset);
 	}
 
@@ -108,9 +108,9 @@ namespace At
 
 	void StorageFile::WriteBlocks(void const* firstBlock, sizet nrBlocks, uint64 offset)
 	{
-		EnsureAbort(offset <= m_fileSize);
-		EnsureAbort((offset % MinSectorSize) == 0);
-		EnsureAbort(nrBlocks < (MAXDWORD / m_blockSize));
+		EnsureThrow(offset <= m_fileSize);
+		EnsureThrow((offset % MinSectorSize) == 0);
+		EnsureThrow(nrBlocks < (MAXDWORD / m_blockSize));
 
 		if (offset != m_lastOffset)
 		{
@@ -135,7 +135,7 @@ namespace At
 
 	void StorageFile::SetEof(uint64 offset)
 	{
-		EnsureAbort((offset % MinSectorSize) == 0);
+		EnsureThrow((offset % MinSectorSize) == 0);
 
 		if (offset != m_lastOffset)
 		{
@@ -165,8 +165,8 @@ namespace At
 
 	void JournalFile::Clear()
 	{
-		EnsureAbort(INVALID_HANDLE_VALUE != m_hFile);
-		EnsureAbort(nullptr != m_allocator);
+		EnsureThrow(INVALID_HANDLE_VALUE != m_hFile);
+		EnsureThrow(nullptr != m_allocator);
 	
 		if (!m_clearBlock)
 			m_clearBlock = m_allocator->GetBlock();

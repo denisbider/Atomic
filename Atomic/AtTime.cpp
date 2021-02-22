@@ -263,7 +263,7 @@ namespace At
 
 	void Time::Enc_Email(Enc& s, Opt<SYSTEMTIME>& sto) const
 	{
-		s.ReserveInc(31);	// "Wed, 6 Mar 2019 23:59:59 +0000"
+		s.ReserveInc(TimeFmt::Email_MaxBytes);	// "Wed, 16 Mar 2019 23:59:59 +0000"
 
 		SYSTEMTIME const& st = ToSystemTimeOpt(sto);
 

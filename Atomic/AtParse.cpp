@@ -483,6 +483,21 @@ namespace At
 		}
 
 
+		bool G_MaxBytes(ParseNode& p, Ruid const& type, ParseFunc pf, sizet maxBytes)
+		{
+			ParseNode* pn = p.NewChild(type);
+			if (!pn)
+				return false;
+
+			if (!pf(*pn))
+				return p.FailChild(pn);
+			if (pn->SrcText().n > maxBytes)
+				return p.FailChild(pn);
+
+			return p.CommitChild(pn);
+		}
+
+
 
 		// Value
 

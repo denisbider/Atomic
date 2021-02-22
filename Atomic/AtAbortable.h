@@ -25,7 +25,7 @@ namespace At
 	class IAbortable
 	{
 	public:
-		virtual ~IAbortable() {};
+		virtual ~IAbortable() noexcept {};
 
 		virtual void SetStopCtl(Rp<StopCtl> const& sc) = 0;
 		virtual void SetExpireTickCount(uint64 tickCount) = 0;
@@ -54,6 +54,7 @@ namespace At
 		Rp<StopCtl> m_stopCtl;
 		uint64      m_expireTickCount { UINT64_MAX };
 
+		void AbortableSleep(DWORD waitMs);
 		void AbortableWait(HANDLE hEvent);
 	};
 

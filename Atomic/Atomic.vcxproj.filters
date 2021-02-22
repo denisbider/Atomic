@@ -532,6 +532,9 @@
     <ClCompile Include="AtAfsMemStorage.cpp">
       <Filter>Afs</Filter>
     </ClCompile>
+    <ClCompile Include="AtSocketConnection.cpp">
+      <Filter>Connections</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1142,6 +1145,9 @@
     </ClInclude>
     <ClInclude Include="AtAfsMemStorage.h">
       <Filter>Afs</Filter>
+    </ClInclude>
+    <ClInclude Include="AtSocketConnection.h">
+      <Filter>Connections</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

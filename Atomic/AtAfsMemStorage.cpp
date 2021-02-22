@@ -89,7 +89,8 @@ namespace At
 				// Block was added in the current journaled write
 				EnsureThrow(blockIndex < m_addNextBlockIndex);
 
-				StoredBlock& sb = m_addBlocks[blockIndex - m_nextBlockIndex];
+				sizet const addBlocksIndex = NumCast<sizet>(blockIndex - m_nextBlockIndex);
+				StoredBlock& sb = m_addBlocks[addBlocksIndex];
 				EnsureThrowWithNr2(sb.m_blockIndex == blockIndex, sb.m_blockIndex, blockIndex);
 				sb.m_data = block.GetDataBlock();
 

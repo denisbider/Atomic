@@ -306,7 +306,7 @@ namespace At
 			p += nameLen;
 		}
 
-		EnsureAbortWithNr2(pEnd >= p, pEnd, p);
+		EnsureAbortWithNr2(pEnd >= p, (ptrdiff) pEnd, (ptrdiff) p);
 	}
 
 
@@ -358,7 +358,7 @@ namespace At
 			p += nameLen;
 		}
 
-		EnsureAbortWithNr2(pEnd >= p, pEnd, p);
+		EnsureAbortWithNr2(pEnd >= p, (ptrdiff) pEnd, (ptrdiff) p);
 	}
 
 
@@ -398,7 +398,7 @@ namespace At
 		for (FileLeafEntry const& e : entries)
 			p = EncodeUInt64LE_Ptr(p, e.m_blockIndex);
 
-		EnsureAbortWithNr2(pEnd >= p, pEnd, p);
+		EnsureAbortWithNr2(pEnd >= p, (ptrdiff) pEnd, (ptrdiff) p);
 	}
 
 
@@ -439,7 +439,7 @@ namespace At
 			p = EncodeUInt64LE_Ptr(p, e.m_blockIndex);
 		}
 
-		EnsureAbortWithNr2(pEnd >= p, pEnd, p);
+		EnsureAbortWithNr2(pEnd >= p, (ptrdiff) pEnd, (ptrdiff) p);
 	}
 
 
@@ -1741,7 +1741,7 @@ namespace At
 
 	// Afs::FileCxRW
 
-	sizet Afs::FileCxRW::ImpliedCapacity(sizet sizeBytes) const
+	uint64 Afs::FileCxRW::ImpliedCapacity(uint64 sizeBytes) const
 	{
 		uint64 cap = sizeBytes;
 		uint32 capOverBlockSize = (uint32) (cap % m_afs.m_blockSize);
@@ -1777,10 +1777,11 @@ namespace At
 				// Convert from existing mini-node into leaf node + data block
 				FileMiniView mini = fileView.AsMiniView();
 				EnsureThrowWithNr2(prevSizeBytes <= mini.ViewLen(), prevSizeBytes, mini.ViewLen());
+				uint32 prevSize32 = (uint32) prevSizeBytes;
 
 				Rp<VarBlock> dataBlock = m_jw->ReclaimBlockOrAddNew(BlockKind::None);
-				EnsureThrowWithNr2(prevSizeBytes <= m_afs.m_blockSize, prevSizeBytes, m_afs.m_blockSize);
-				Mem::Copy<byte>(dataBlock->WritePtr(), mini.ReadPtr(), prevSizeBytes);
+				EnsureThrowWithNr2(prevSize32 <= m_afs.m_blockSize, prevSize32, m_afs.m_blockSize);
+				Mem::Copy<byte>(dataBlock->WritePtr(), mini.ReadPtr(), prevSize32);
 
 				fileView.SetFileNodeLevel() = 0;
 
@@ -1892,12 +1893,13 @@ namespace At
 				EnsureThrowWithNr(1 == m_topNode->m_leafEntries.Len(), m_topNode->m_leafEntries.Len());
 				EnsureThrowWithNr(1 == m_topNode->m_dataBlocks.Len(), m_topNode->m_dataBlocks.Len());
 
+				uint32 newSize32 = (uint32) newSizeBytes;
 				Rp<VarBlock>& block = GetDataBlock(*m_topNode, 0);
-				EnsureThrowWithNr2(newSizeBytes <= m_afs.m_blockSize, newSizeBytes, m_afs.m_blockSize);
+				EnsureThrowWithNr2(newSize32 <= m_afs.m_blockSize, newSize32, m_afs.m_blockSize);
 
 				fileView.SetFileNodeLevel() = NodeLevel_BeyondMax;
-				Mem::Copy<byte>(mini.WritePtr(), block->ReadPtr(), newSizeBytes);
-				Mem::Zero<byte>(mini.WritePtr() + newSizeBytes, mini.ViewLen() - newSizeBytes);
+				Mem::Copy<byte>(mini.WritePtr(), block->ReadPtr(), newSize32);
+				Mem::Zero<byte>(mini.WritePtr() + newSize32, mini.ViewLen() - newSize32);
 
 				m_jw->AddBlockToFree(block);
 
@@ -2936,7 +2938,7 @@ namespace At
 			return AfsResult::InvalidOffset;
 
 		if (offset + n > fileSize)
-			n = fileSize - offset;
+			n = (sizet) (fileSize - offset);
 
 		if (!n)
 		{
@@ -3002,7 +3004,7 @@ namespace At
 				return r;
 
 			TopView top = fcx.m_topNode->m_block->AsNodeView().AsTopView();
-			sizet const sizeRequired = offset + data.n;
+			uint64 const sizeRequired = offset + data.n;
 			if (top.Get_File_SizeBytes() < sizeRequired)
 				fcx.EnlargeToSize(sizeRequired);
 
@@ -3232,9 +3234,12 @@ namespace At
 					if (fileView.IsMini())
 					{
 						FileMiniView mini = fileView.AsMiniView();
+						EnsureThrowWithNr2(prevSizeBytes <= mini.ViewLen(), prevSizeBytes, mini.ViewLen());
 						EnsureThrowWithNr2(targetSize <= mini.ViewLen(), targetSize, mini.ViewLen());
-						sizet nrToZero = targetSize - prevSizeBytes;
-						Mem::Zero<byte>(mini.WritePtr() + prevSizeBytes, nrToZero);
+						uint32 const prevSize32 = (uint32) prevSizeBytes;
+						uint32 const targetSize32 = (uint32) targetSize;
+						uint32 nrToZero = targetSize32 - prevSize32;
+						Mem::Zero<byte>(mini.WritePtr() + prevSize32, nrToZero);
 					}
 					else
 					{

@@ -94,7 +94,7 @@ namespace At
 	DESCENUM_DEF_VAL_X(Tls_StartTlsRejected,                  "The destination mail exchanger rejected the STARTTLS command")
 	DESCENUM_DEF_VAL_X(Tls_Sspi_LikelyDhIssue,                "TLS could not be started due to a likely DH issue")
 	DESCENUM_DEF_VAL_X(Tls_Sspi_InvalidToken_IllegalMsg,      "TLS could not be started due to SEC_E_INVALID_TOKEN or SEC_E_ILLEGAL_MESSAGE")
-	DESCENUM_DEF_VAL_X(Tls_Sspi_ServerAuthRequired,           "The destination mail exchanger's identity could not be verified")
+	DESCENUM_DEF_VAL_X(Tls_Sspi_ServerNotAuthenticated,       "The destination mail exchanger's identity could not be verified")
 	DESCENUM_DEF_VAL_X(Tls_Sspi_Other,                        "TLS could not be started due to an SSPI condition")
 	DESCENUM_DEF_VAL_X(Tls_Communication,                     "TLS could not be started due to a communication condition")
 	DESCENUM_DEF_VAL_X(Tls_RequiredAssuranceNotAchieved,      "The TLS assurance level required to send message was not achieved")
@@ -313,36 +313,48 @@ namespace At
 
 
 	ENTITY_DEF_BEGIN(SmtpSendFailure)
-	ENTITY_DEF_FLD_V(SmtpSendFailure, time,        1)
+	ENTITY_DEF_FLD_V(SmtpSendFailure, time,         1)
 	ENTITY_DEF_FLD_E(SmtpSendFailure, stage)
+	ENTITY_DEF_F_E_V(SmtpSendFailure, detail,       2)
 	ENTITY_DEF_FIELD(SmtpSendFailure, mx)
-	ENTITY_DEF_FLD_V(SmtpSendFailure, localAddr,   1)
+	ENTITY_DEF_FLD_V(SmtpSendFailure, localAddr,    1)
+	ENTITY_DEF_F_E_V(SmtpSendFailure, tlsAssurance, 2)
 	ENTITY_DEF_FIELD(SmtpSendFailure, replyCode)
 	ENTITY_DEF_FIELD(SmtpSendFailure, enhStatus)
 	ENTITY_DEF_FIELD(SmtpSendFailure, desc)
 	ENTITY_DEF_FIELD(SmtpSendFailure, lines)
-	ENTITY_DEF_FLD_V(SmtpSendFailure, prevFailure, 1)
+	ENTITY_DEF_FLD_V(SmtpSendFailure, prevFailure,  1)
 	ENTITY_DEF_CLOSE(SmtpSendFailure);
 
 
-	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, LookedUpAddr const* mx, Socket const* sk, Seq localAddr,
+	Rp<SmtpSendFailure> SmtpSendFailure_New(SmtpSendStage::E stage, SmtpSendDetail::E detail, SmtpSenderConnection const* ssc,
 		SmtpReplyCode code, SmtpEnhStatus enhStatus, Seq desc, Vec<Str> const* lines, Rp<SmtpSendFailure> const& prevFailure)
 	{
 		Rp<SmtpSendFailure> f = new SmtpSendFailure(Entity::Contained);
-		f->f_time = Time::NonStrictNow();
-		f->f_stage = stage;
+		f->f_time   = Time::NonStrictNow();
+		f->f_stage  = stage;
 		f->f_detail = detail;
-		if (mx)
-			mx->EncObj(f->f_mx);
-		if (sk && sk->IsValid())
-			sk->LocalAddr().EncObj(f->f_localAddr, SockAddr::AddrOnly);
-		else if (localAddr.n)
-			f->f_localAddr = localAddr;
+
+		if (ssc)
+		{
+			if (ssc->m_mxa.Any())
+				ssc->m_mxa.EncObj(f->f_mx);
+
+			if (ssc->m_sc.Any() && ssc->m_sc->m_sk.IsValid())
+				ssc->m_sc->m_sk.LocalAddr().EncObj(f->f_localAddr, SockAddr::AddrOnly);
+			else if (ssc->m_localAddr.Any())
+				f->f_localAddr = ssc->m_localAddr;
+
+			f->f_tlsAssurance = ssc->m_tlsAssurance;
+		}
+
 		f->f_replyCode = code.Value();
 		f->f_enhStatus = enhStatus.ToUint();
 		f->f_desc      = desc;
+
 		if (lines)
 			f->f_lines = *lines;
+
 		f->f_prevFailure = prevFailure;
 		return f;
 	}

@@ -72,10 +72,10 @@ namespace At
 		virtual SmtpSendLog& SmtpSender_GetSendLog() = 0;
 
 		// Called separately by each sender thread. Must copy or initialize SMTP sender configuration into the provided entity.
-		virtual void SmtpSender_GetCfg(SmtpSenderCfg& cfg) const = 0;
+		virtual void SmtpSender_GetCfg(SmtpSenderCfg& cfg) = 0;
 
 		// A fully qualified sender computer name that will be sent as part of the EHLO command.
-		virtual Str SmtpSender_SenderComputerName(Seq fromDomainName) const = 0;
+		virtual Str SmtpSender_SenderComputerName(Seq fromDomainName) = 0;
 
 		// Called by sender threads each time TLS is started
 		virtual void SmtpSender_AddSchannelCerts(Seq ourName, Schannel&) = 0;

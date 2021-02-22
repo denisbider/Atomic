@@ -61,6 +61,8 @@ namespace At
 						    IsoMicroZ = IsoMicro | IsoZ };
 		enum EDense       { Dense };			// "20190306-235959"
 		enum EDuration    { DurationDays, DurationHours, DurationMinutes, DurationSeconds, DurationMilliseconds };
+
+		enum { Email_MaxBytes = 31 };
 	};
 
 

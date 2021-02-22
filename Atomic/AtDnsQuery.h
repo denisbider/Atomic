@@ -75,6 +75,7 @@ namespace At
 		Str      m_dnsName;				// Empty if not known
 		SockAddr m_sa;
 
+		bool Any() const { return m_sa.Valid(); }
 		uint64 Key() const { return m_preference; }
 		void EncObj(Enc& s) const;
 	};

@@ -187,6 +187,7 @@
     <ClCompile Include="AtBhtpnServerThread.cpp" />
     <ClCompile Include="AtCert.cpp" />
     <ClCompile Include="AtCertStore.cpp" />
+    <ClCompile Include="AtSocketConnection.cpp" />
     <ClCompile Include="AtStorageFile.cpp" />
     <ClCompile Include="AtStrList.cpp" />
     <ClCompile Include="AtCspBuilder.cpp" />
@@ -367,6 +368,7 @@
     <ClInclude Include="AtBgTask.h" />
     <ClInclude Include="AtCert.h" />
     <ClInclude Include="AtCertStore.h" />
+    <ClInclude Include="AtSocketConnection.h" />
     <ClInclude Include="AtStorageFile.h" />
     <ClInclude Include="AtStrList.h" />
     <ClInclude Include="AtEnsureConvert.h" />

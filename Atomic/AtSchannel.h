@@ -76,7 +76,7 @@ namespace At
 		};
 
 		Schannel(Reader* reader = 0, Writer* writer = 0) : m_reader(reader), m_writer(writer) {} 
-		~Schannel();
+		~Schannel() noexcept;
 
 		PCtxtHandle GetCtxt() { return &m_ctxt; }
 

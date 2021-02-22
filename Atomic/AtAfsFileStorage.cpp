@@ -242,10 +242,11 @@ namespace At
 
 		entries.Clear();
 
-		uint64 journalSize = m_journalFile.GetSize();
-		if (!journalSize)
+		uint64 journalSize64 = m_journalFile.GetSize();
+		if (!journalSize64)
 			return false;
 
+		sizet journalSize = NumCast<sizet>(journalSize64);
 		blocks.ReInit(journalSize);
 		m_journalFile.ReadBlocks(blocks.Ptr(), blocks.NrBlocks(), 0);
 
@@ -342,7 +343,7 @@ namespace At
 	{
 		EnsureThrow(it.Any());
 		uint64 const firstBlockIndex = it->m_blockIndex;
-		sizet const fileOffset = MinBlockSize + (m_blockSize * firstBlockIndex);
+		uint64 const fileOffset = MinBlockSize + (m_blockSize * firstBlockIndex);
 
 		if (1 == nrEntries)
 		{

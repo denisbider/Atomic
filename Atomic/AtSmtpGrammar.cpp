@@ -120,7 +120,8 @@ namespace At
         bool C_Domain_or_AddrLit      (ParseNode& p) { return G_Choice              (p, id_Domain_or_AddrLit,   C_Domain, C_AddrLit                                                                           ); }
         bool C_Mailbox                (ParseNode& p) { return G_Req<1,1,1>          (p, id_Mailbox,             C_Local_part, C_At, C_Domain_or_AddrLit                                                       ); }
         bool C_AtDomainList_Colon     (ParseNode& p) { return G_Req<1,1>            (p, id_AtDomainList_Colon,  C_AtDomainList, C_Colon                                                                       ); }   
-        bool C_Path                   (ParseNode& p) { return G_Req<1,0,1,1>        (p, id_Path,                C_Less, C_AtDomainList_Colon, C_Mailbox, C_Grtr                                               ); }
+        bool C_Path_unlim             (ParseNode& p) { return G_Req<1,0,1,1>        (p, id_Path,                C_Less, C_AtDomainList_Colon, C_Mailbox, C_Grtr                                               ); }
+        bool C_Path                   (ParseNode& p) { return G_MaxBytes            (p, id_Append,              C_Path_unlim, 256                                                                             ); }
         bool C_EmptyPath              (ParseNode& p) { return G_SeqMatchExact       (p, id_EmptyPath,           "<>"                                                                                          ); }
         bool C_Reverse_path           (ParseNode& p) { return G_Choice              (p, id_Reverse_path,        C_EmptyPath, C_Path                                                                           ); }
         

@@ -46,15 +46,10 @@ namespace At
 		// RFC 6532 - Internationalized Email Headers
 		// RFC 6854 - Update to Internet Message Format to Allow Group Syntax in the "From:" and "Sender:" Header Fields
 
-		inline bool Is_WSP_byte           (uint c) { return c == 9 || c == 32; }
 		inline bool Is_obs_NO_WS_CTL_byte (uint c) { return (c >= 1 && c <= 8) || c == 11 || c == 12 || (c >= 14 && c <= 31) || (c == 127); }
 		inline bool Is_obs_qp_byte        (uint c) { return c <= 31 || c == 127; }
 		inline bool Is_mil_zone_byte      (uint c) { return (c >= 65 && c <= 73) || (c >= 75 && c <= 90) || (c >= 97 && c <= 105) || (c >= 107 && c <= 122); }
-		inline bool Is_field_name_byte    (uint c) { return (c >= 33 && c <= 57) || (c >= 59 && c <= 126); }
-										  
-		inline bool Is_VCHAR              (uint c) { return (c >= 33 && c != 127); }
-		inline bool Is_quoted_pair_char   (uint c) { return Is_VCHAR(c) || Is_WSP_byte(c); }
-		inline bool Is_std_ctext_char     (uint c) { return (c >= 33 && c <= 39) || (c >= 42 && c <= 91) || (c >= 93 && c != 127); }
+		inline bool Is_field_name_byte    (uint c) { return (c >= 33 && c <= 57) || (c >= 59 && c <= 126); }										  
 		inline bool Is_dtext_char         (uint c) { return (c >= 33 && c <= 90) || (c >= 94 && c != 127); }
 
 		bool V_WSP_byte           (ParseNode& p) { return V_ByteIf        (p, Is_WSP_byte); }
@@ -382,14 +377,16 @@ namespace At
 																					  																														     
 		bool C_std_local_part   (ParseNode& p) { return           G_Choice             (p, id_local_part,       C_dot_atom, C_quoted_string                                                                        ); }
 		bool C_obs_local_part   (ParseNode& p) { return Obs(p) && G_Req<1,0>           (p, id_local_part,       C_word, G_Repeat<G_Req<C_Dot, C_word>>                                                             ); }
-		bool C_local_part       (ParseNode& p) { return           G_Choice             (p, id_Append,           C_std_local_part, C_obs_local_part                                                                 ); }
+		bool C_local_part_unlim (ParseNode& p) { return           G_Choice             (p, id_Append,           C_std_local_part, C_obs_local_part                                                                 ); }
+		bool C_local_part       (ParseNode& p) { return           G_MaxBytes           (p, id_Append,           C_local_part_unlim, 64                                                                             ); }
 																					  																														     
 		bool C_DomLit_content   (ParseNode& p) { return           G_Req<1,0>           (p, id_Append,           G_Repeat<C_FWS_dtext>, C_FWS                                                                       ); }
 		bool C_DomLit_inner     (ParseNode& p) { return           G_Req<1,0,1>         (p, id_Append,           C_SqOpenBr, C_DomLit_content, C_SqCloseBr                                                          ); }
 		bool C_domain_literal   (ParseNode& p) { return           G_Req<0,1,0>         (p, id_Append,           C_CFWS, C_DomLit_inner, C_CFWS                                                                     ); }
 		bool C_std_domain       (ParseNode& p) { return           G_Choice             (p, id_domain,           C_dot_atom, C_domain_literal                                                                       ); }
 		bool C_obs_domain       (ParseNode& p) { return Obs(p) && G_Req<1,0>           (p, id_domain,           C_atom, G_Repeat<G_Req<C_Dot, C_atom>>                                                             ); }
-		bool C_domain           (ParseNode& p) { return           G_Choice             (p, id_Append,           C_std_domain, C_obs_domain                                                                         ); }
+		bool C_domain_unlim     (ParseNode& p) { return           G_Choice             (p, id_Append,           C_std_domain, C_obs_domain                                                                         ); }
+		bool C_domain           (ParseNode& p) { return           G_MaxBytes           (p, id_Append,           C_domain_unlim, 255                                                                                ); }
 																					  																														     
 		bool C_At_domain        (ParseNode& p) { return           G_Req<1,1>           (p, id_Append,           C_At, C_domain                                                                                     ); }
 		bool C_addr_spec        (ParseNode& p) { return           G_Req<1,1,1>         (p, id_addr_spec,        C_local_part, C_At, C_domain                                                                       ); }
