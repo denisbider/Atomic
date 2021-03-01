@@ -10,9 +10,11 @@ namespace At
 	class AfsMemStorage : public AfsStorage
 	{
 	public:
-		AfsMemStorage(uint32 blockSize, uint64 maxNrBlocks) : m_maxNrBlocks(maxNrBlocks) { m_allocator.SetBytesPerBlock(blockSize); }
+		AfsMemStorage(uint32 blockSize, uint64 maxNrBlocks) : m_blockSize(blockSize), m_maxNrBlocks(maxNrBlocks)
+			{ m_allocator.SetBytesPerBlock(blockSize); }
 
-		BlockAllocator& Allocator() { return m_allocator; }
+		uint32 BlockSize() override final { return m_blockSize; }
+		BlockAllocator& Allocator() override final { return m_allocator; }
 		uint64 MaxNrBlocks() override final { return m_maxNrBlocks; }
 		uint64 NrBlocks() override final { return m_blocks.Len(); }
 
@@ -23,6 +25,7 @@ namespace At
 		void CompleteJournaledWrite(RpVec<AfsBlock> const& blocksToWrite) override final;
 
 	private:
+		uint32 const   m_blockSize;
 		BlockAllocator m_allocator;
 		uint64 const   m_maxNrBlocks;
 

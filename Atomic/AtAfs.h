@@ -115,9 +115,12 @@ namespace At
 	class AfsStorage : NoCopy
 	{
 	public:
-		// Afs block size is equal to BlockAllocator block size.
-		// BlockAllocator block size MUST NOT change at any time after first Afs initialization against a particular instance of storage
+		// BlockAllocator block size must be equal to or greater than BlockSize()
 		virtual BlockAllocator& Allocator() = 0;
+
+		// Block size must be equal to or less than BlockAllocator block size.
+		// Block size MUST NOT change at any time after first Afs initialization against a particular instance of storage
+		virtual uint32 BlockSize() = 0;
 
 		// The return value MAY change at any time, including to a lower value than returned by NrBlocks().
 		// Return UINT64_MAX to indicate that the limit is unknown.
@@ -159,7 +162,7 @@ namespace At
 
 		// OurFsVersion == "AFS0"
 		// Minimum block size is the first block size such that the calculation in Init() produces a non-zero MaxNameBytes()
-		enum { OurFsVersion = 0x30534641, MinBlockSize = 156 };
+		enum { OurFsVersion = 0x30534641, MinBlockSize = 144 };
 
 		AfsResult::E Init(Seq rootDirMetaData, Time now);
 

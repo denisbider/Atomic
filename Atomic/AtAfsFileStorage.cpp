@@ -63,12 +63,12 @@ namespace At
 			AutoBlock block { m_allocator };
 			m_dataFile.ReadBlocks(block.Ptr(), 1, 0);
 
-			Seq reader { block.Ptr(), m_allocator.BytesPerBlock() };
+			Seq reader { block.Ptr(), MinBlockSize };
 			if (!reader.StripPrefixExact(signature))                     throw StrErr(__FUNCTION__ ": Invalid signature");
 			if (!DecodeUInt32LE(reader, m_blockSize))                    throw StrErr(__FUNCTION__ ": Could not decode block size");
 			if (0 == m_blockSize || (0 != (m_blockSize % MinBlockSize))) throw StrErr(Str(__FUNCTION__ ": Invalid block size: ").UInt(m_blockSize));
 
-			m_nrBlocksStored = m_dataFile.GetSize() / m_blockSize;
+			m_nrBlocksStored = SatSub<uint64>(m_dataFile.GetSize(), MinBlockSize) / m_blockSize;
 		}
 
 		m_allocator.SetBytesPerBlock(m_blockSize);
@@ -179,7 +179,8 @@ namespace At
 	void AfsFileStorage::CompleteJournaledWrite(RpVec<AfsBlock> const& blocksToWrite)
 	{
 		EnsureThrow(State::JournaledWrite == m_state);
-		uint64 const beyondMaxBlockIndex = m_nrBlocksStored + m_nrBlocksToAdd;
+		uint64 const startNrBlocksStored = m_nrBlocksStored;
+		uint64 const expectNewNrBlocksStored = m_nrBlocksStored + m_nrBlocksToAdd;
 		sizet nrBlocksToAddWritten {};
 
 		m_state = State::Inconsistent;
@@ -200,7 +201,7 @@ namespace At
 
 			if (blockIndex >= m_nrBlocksStored)
 			{
-				EnsureThrowWithNr2(blockIndex < beyondMaxBlockIndex, blockIndex, beyondMaxBlockIndex);
+				EnsureThrowWithNr2(blockIndex < expectNewNrBlocksStored, blockIndex, expectNewNrBlocksStored);
 				++nrBlocksToAddWritten;
 			}
 
@@ -226,7 +227,7 @@ namespace At
 		if (m_consistency >= Consistency::Journal)
 			m_journalFile.Clear();
 
-		m_nrBlocksStored += m_nrBlocksToAdd;
+		EnsureThrowWithNr2(expectNewNrBlocksStored == m_nrBlocksStored, expectNewNrBlocksStored, m_nrBlocksStored);
 		m_nrBlocksToAdd = 0;
 		m_blocksInUse.Clear();
 
@@ -336,6 +337,10 @@ namespace At
 		if (m_consistency == Consistency::Flush)
 			if (!FlushFileBuffers(m_dataFile.Handle()))
 				{ LastWinErr e; throw e.Make("FlushFileBuffers"); }
+
+		uint64 const lastBlockIndex = entries.Last().m_blockIndex;
+		if (lastBlockIndex >= m_nrBlocksStored)
+			m_nrBlocksStored = lastBlockIndex + 1;
 	}
 
 

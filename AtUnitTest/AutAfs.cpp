@@ -1296,165 +1296,204 @@ public:
 void AfsTestsCore()
 {
 	{
-		AfsTestMem test { "NoFreeBlocks", Afs::MinBlockSize, 3, CaseMatch::Insensitive };
-		Time now = Time::NonStrictNow();
-		EnsureThrow(AfsResult::OK == test.m_afs.Init(Seq(), now));
-		EnsureThrow(0 == test.m_afs.FreeSpaceBlocks());
-		test.m_afs.DispMaxNameBytes();
+		auto runTest = [] (AfsTest& afs)
+			{
+				Time now = Time::NonStrictNow();
+				EnsureThrow(AfsResult::OK == afs.Init(Seq(), now));
+				EnsureThrow(0 == afs.FreeSpaceBlocks());
+				afs.DispMaxNameBytes();
 
-		Vec<Afs::DirEntry> dirEntries;
-		EnsureThrow(AfsResult::OK == test.m_afs.CrackPath("/", dirEntries));
-		EnsureThrow(!dirEntries.Any());
-		EnsureThrow(AfsResult::NameNotInDir == test.m_afs.CrackPath("/a", dirEntries));
+				Vec<Afs::DirEntry> dirEntries;
+				EnsureThrow(AfsResult::OK == afs.CrackPath("/", dirEntries));
+				EnsureThrow(!dirEntries.Any());
+				EnsureThrow(AfsResult::NameNotInDir == afs.CrackPath("/a", dirEntries));
 
-		ObjId dirId, fileId;
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.DirCreate(ObjId::Root, "a", Seq(), ++now, dirId));
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.FileCreate(ObjId::Root, "a", Seq(), ++now, fileId));
+				ObjId dirId, fileId;
+				EnsureThrow(AfsResult::OutOfSpace == afs.DirCreate(ObjId::Root, "a", Seq(), ++now, dirId));
+				EnsureThrow(AfsResult::OutOfSpace == afs.FileCreate(ObjId::Root, "a", Seq(), ++now, fileId));
+			};
+
+		{
+			AfsTestMem test { "NoFreeBlocksMem", Afs::MinBlockSize, 3, CaseMatch::Insensitive };
+			runTest(test.m_afs);
+		}
+
+		{
+			AfsTestFile test { "NoFreeBlocksFile", AfsFileStorage::MinBlockSize, 4*AfsFileStorage::MinBlockSize,
+				DeleteExisting::Yes, AfsFileStorage::Consistency::VerifyJournal, CaseMatch::Insensitive };
+			runTest(test.m_afs);
+		}
 	}
 
 	{
-		AfsTestMem test { "OneFreeBlock", Afs::MinBlockSize, 4, CaseMatch::Insensitive };
-		Time now = Time::NonStrictNow();
-		EnsureThrow(AfsResult::OK == test.m_afs.Init(Seq(), now));
-		EnsureThrow(1 == test.m_afs.FreeSpaceBlocks());
-		test.m_afs.DispMaxNameBytes();
+		auto runTest = [] (AfsTest& afs)
+			{
+				Time now = Time::NonStrictNow();
+				EnsureThrow(AfsResult::OK == afs.Init(Seq(), now));
+				EnsureThrow(1 == afs.FreeSpaceBlocks());
+				afs.DispMaxNameBytes();
 
-		ObjId dirId, dummyId;
-		EnsureThrow(AfsResult::OK == test.m_afs.DirCreate(ObjId::Root, "a", Seq(), ++now, dirId));
-		EnsureThrow(0 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::NameExists == test.m_afs.DirCreate(ObjId::Root, "A", Seq(), ++now, dummyId));
-		EnsureThrow(AfsResult::NameExists == test.m_afs.FileCreate(ObjId::Root, "a", Seq(), ++now, dummyId));
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.FileCreate(ObjId::Root, "b", Seq(), ++now, dummyId));
+				ObjId dirId, dummyId;
+				EnsureThrow(AfsResult::OK == afs.DirCreate(ObjId::Root, "a", Seq(), ++now, dirId));
+				EnsureThrow(0 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::NameExists == afs.DirCreate(ObjId::Root, "A", Seq(), ++now, dummyId));
+				EnsureThrow(AfsResult::NameExists == afs.FileCreate(ObjId::Root, "a", Seq(), ++now, dummyId));
+				EnsureThrow(AfsResult::OutOfSpace == afs.FileCreate(ObjId::Root, "b", Seq(), ++now, dummyId));
 
-		Vec<Afs::DirEntry> dirEntries;
-		EnsureThrow(AfsResult::OK == test.m_afs.CrackPath("/A", dirEntries));
-		EnsureThrow(1 == dirEntries.Len());
-		{	Afs::DirEntry& e = dirEntries.First();
-			EnsureThrow(e.m_id == dirId);
-			EnsureThrow(Seq(e.m_name).EqualExact("a"));
-			EnsureThrow(Afs::ObjType::Dir == e.m_type); }
+				Vec<Afs::DirEntry> dirEntries;
+				EnsureThrow(AfsResult::OK == afs.CrackPath("/A", dirEntries));
+				EnsureThrow(1 == dirEntries.Len());
+				{	Afs::DirEntry& e = dirEntries.First();
+					EnsureThrow(e.m_id == dirId);
+					EnsureThrow(Seq(e.m_name).EqualExact("a"));
+					EnsureThrow(Afs::ObjType::Dir == e.m_type); }
 
-		ObjId fileId;
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjDelete(ObjId::Root, "A", ++now));
-		EnsureThrow(1 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::NameNotInDir == test.m_afs.CrackPath("/a", dirEntries));
-		EnsureThrow(AfsResult::OK == test.m_afs.FileCreate(ObjId::Root, "a", Seq(), ++now, fileId));
-		EnsureThrow(0 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.FileCreate(ObjId::Root, "b", Seq(), ++now, dummyId));
-		EnsureThrow(AfsResult::OK == test.m_afs.CrackPath("/A", dirEntries));
-		{	Afs::DirEntry& e = dirEntries.First();
-			EnsureThrow(e.m_id == fileId);
-			EnsureThrow(fileId != dirId);
-			EnsureThrow(Seq(e.m_name).EqualExact("a"));
-			EnsureThrow(Afs::ObjType::File == e.m_type); }
+				ObjId fileId;
+				EnsureThrow(AfsResult::OK == afs.ObjDelete(ObjId::Root, "A", ++now));
+				EnsureThrow(1 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::NameNotInDir == afs.CrackPath("/a", dirEntries));
+				EnsureThrow(AfsResult::OK == afs.FileCreate(ObjId::Root, "a", Seq(), ++now, fileId));
+				EnsureThrow(0 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::OutOfSpace == afs.FileCreate(ObjId::Root, "b", Seq(), ++now, dummyId));
+				EnsureThrow(AfsResult::OK == afs.CrackPath("/A", dirEntries));
+				{	Afs::DirEntry& e = dirEntries.First();
+					EnsureThrow(e.m_id == fileId);
+					EnsureThrow(fileId != dirId);
+					EnsureThrow(Seq(e.m_name).EqualExact("a"));
+					EnsureThrow(Afs::ObjType::File == e.m_type); }
+			};
+
+		{
+			AfsTestMem test { "OneFreeBlockMem", Afs::MinBlockSize, 4, CaseMatch::Insensitive };
+			runTest(test.m_afs);
+		}
+
+		{
+			AfsTestFile test { "OneFreeBlockFile", AfsFileStorage::MinBlockSize, 5*AfsFileStorage::MinBlockSize,
+				DeleteExisting::Yes, AfsFileStorage::Consistency::VerifyJournal, CaseMatch::Insensitive };
+			runTest(test.m_afs);
+		}
 	}
 
 	{
-		AfsTestMem test { "TwoFreeBlocks", Afs::MinBlockSize, 5, CaseMatch::Insensitive };
-		Time now = Time::NonStrictNow();
-		EnsureThrow(AfsResult::OK == test.m_afs.Init(Seq(), now));
-		EnsureThrow(2 == test.m_afs.FreeSpaceBlocks());
-		test.m_afs.DispMaxNameBytes();
+		auto runTest = [] (AfsTest& afs)
+			{
+				Time now = Time::NonStrictNow();
+				EnsureThrow(AfsResult::OK == afs.Init(Seq(), now));
+				EnsureThrow(2 == afs.FreeSpaceBlocks());
+				afs.DispMaxNameBytes();
 
-		ObjId dirId, dummyId;
-		EnsureThrow(AfsResult::OK == test.m_afs.DirCreate(ObjId::Root, "a", Seq(), ++now, dirId));
-		EnsureThrow(1 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::NameExists == test.m_afs.DirCreate(ObjId::Root, "A", Seq(), ++now, dummyId));
+				ObjId dirId, dummyId;
+				EnsureThrow(AfsResult::OK == afs.DirCreate(ObjId::Root, "a", Seq(), ++now, dirId));
+				EnsureThrow(1 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::NameExists == afs.DirCreate(ObjId::Root, "A", Seq(), ++now, dummyId));
 
-		Afs::StatInfo dirInfo;
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjStat(dirId, dirInfo));
-		EnsureThrow(Afs::ObjType::Dir == dirInfo.m_type);
-		EnsureThrow(dirId == dirInfo.m_id);
-		EnsureThrow(0 == dirInfo.m_dir_nrEntries);
-		EnsureThrow(dirInfo.m_createTime < now);
-		EnsureThrow(dirInfo.m_modifyTime == dirInfo.m_createTime);
-		EnsureThrow(!dirInfo.m_metaData.Any());
+				Afs::StatInfo dirInfo;
+				EnsureThrow(AfsResult::OK == afs.ObjStat(dirId, dirInfo));
+				EnsureThrow(Afs::ObjType::Dir == dirInfo.m_type);
+				EnsureThrow(dirId == dirInfo.m_id);
+				EnsureThrow(0 == dirInfo.m_dir_nrEntries);
+				EnsureThrow(dirInfo.m_createTime < now);
+				EnsureThrow(dirInfo.m_modifyTime == dirInfo.m_createTime);
+				EnsureThrow(!dirInfo.m_metaData.Any());
 
-		ObjId fileId;
-		EnsureThrow(AfsResult::OK == test.m_afs.FileCreate(ObjId::Root, "b", Seq(), ++now, fileId));
-		EnsureThrow(0 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.FileCreate(ObjId::Root, "c", Seq(), ++now, dummyId));
+				ObjId fileId;
+				EnsureThrow(AfsResult::OK == afs.FileCreate(ObjId::Root, "b", Seq(), ++now, fileId));
+				EnsureThrow(0 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::OutOfSpace == afs.FileCreate(ObjId::Root, "c", Seq(), ++now, dummyId));
 
-		Afs::StatInfo fileInfo1;
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjStat(fileId, fileInfo1));
-		EnsureThrow(Afs::ObjType::File == fileInfo1.m_type);
-		EnsureThrow(fileId == fileInfo1.m_id);
-		EnsureThrow(0 == fileInfo1.m_file_sizeBytes);
-		EnsureThrow(dirInfo.m_createTime < fileInfo1.m_createTime);
-		EnsureThrow(fileInfo1.m_modifyTime == fileInfo1.m_createTime);
-		EnsureThrow(!fileInfo1.m_metaData.Any());
+				Afs::StatInfo fileInfo1;
+				EnsureThrow(AfsResult::OK == afs.ObjStat(fileId, fileInfo1));
+				EnsureThrow(Afs::ObjType::File == fileInfo1.m_type);
+				EnsureThrow(fileId == fileInfo1.m_id);
+				EnsureThrow(0 == fileInfo1.m_file_sizeBytes);
+				EnsureThrow(dirInfo.m_createTime < fileInfo1.m_createTime);
+				EnsureThrow(fileInfo1.m_modifyTime == fileInfo1.m_createTime);
+				EnsureThrow(!fileInfo1.m_metaData.Any());
 
-		uint32 maxMiniNodeBytes;
-		EnsureThrow(AfsResult::OK == test.m_afs.FileMaxMiniNodeBytes(fileId, maxMiniNodeBytes));
-		Console::Out(Str("maxMiniNodeBytes: ").UInt(maxMiniNodeBytes).Add("\r\n"));
+				uint32 maxMiniNodeBytes;
+				EnsureThrow(AfsResult::OK == afs.FileMaxMiniNodeBytes(fileId, maxMiniNodeBytes));
+				Console::Out(Str("maxMiniNodeBytes: ").UInt(maxMiniNodeBytes).Add("\r\n"));
 
-		Str allData;
-		allData.Ch('1');
-		EnsureThrow(AfsResult::OK == test.m_afs.FileWrite(fileId, 0, allData, ++now));
+				Str allData;
+				allData.Ch('1');
+				EnsureThrow(AfsResult::OK == afs.FileWrite(fileId, 0, allData, ++now));
 
-		Afs::StatInfo fileInfo2;
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjStat(fileId, fileInfo2));
-		EnsureThrow(Afs::ObjType::File == fileInfo2.m_type);
-		EnsureThrow(fileId == fileInfo2.m_id);
-		EnsureThrow(1 == fileInfo2.m_file_sizeBytes);
-		EnsureThrow(fileInfo1.m_createTime == fileInfo2.m_createTime);
-		EnsureThrow(fileInfo1.m_modifyTime < fileInfo2.m_modifyTime);
-		EnsureThrow(!fileInfo2.m_metaData.Any());
+				Afs::StatInfo fileInfo2;
+				EnsureThrow(AfsResult::OK == afs.ObjStat(fileId, fileInfo2));
+				EnsureThrow(Afs::ObjType::File == fileInfo2.m_type);
+				EnsureThrow(fileId == fileInfo2.m_id);
+				EnsureThrow(1 == fileInfo2.m_file_sizeBytes);
+				EnsureThrow(fileInfo1.m_createTime == fileInfo2.m_createTime);
+				EnsureThrow(fileInfo1.m_modifyTime < fileInfo2.m_modifyTime);
+				EnsureThrow(!fileInfo2.m_metaData.Any());
 
-		bool readOk {};
-		int timesCalled {};
-		auto onData = [&] (Seq data, bool reachedEnd)
-			{	EnsureThrow(1 == ++timesCalled);
-				EnsureThrow(reachedEnd);
-				readOk = data.EqualExact(allData); };
-		auto checkReadOk = [&] ()
-			{	EnsureThrow(readOk);
-				readOk = false;
-				timesCalled = 0; };
-		EnsureThrow(AfsResult::OK == test.m_afs.FileRead(fileId, 0, 1000, onData));
-		checkReadOk();
+				bool readOk {};
+				int timesCalled {};
+				auto onData = [&] (Seq data, bool reachedEnd)
+					{	EnsureThrow(1 == ++timesCalled);
+						EnsureThrow(reachedEnd);
+						readOk = data.EqualExact(allData); };
+				auto checkReadOk = [&] ()
+					{	EnsureThrow(readOk);
+						readOk = false;
+						timesCalled = 0; };
+				EnsureThrow(AfsResult::OK == afs.FileRead(fileId, 0, 1000, onData));
+				checkReadOk();
 
-		Str data2;
-		data2.Chars(maxMiniNodeBytes - 1, '2');
-		EnsureThrow(AfsResult::OK == test.m_afs.FileWrite(fileId, 1, data2, ++now));
-		allData.Add(data2);
+				Str data2;
+				data2.Chars(maxMiniNodeBytes - 1, '2');
+				EnsureThrow(AfsResult::OK == afs.FileWrite(fileId, 1, data2, ++now));
+				allData.Add(data2);
 
-		Afs::StatInfo fileInfo3;
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjStat(fileId, fileInfo3));
-		EnsureThrow(maxMiniNodeBytes == fileInfo3.m_file_sizeBytes);
-		EnsureThrow(fileInfo2.m_modifyTime < fileInfo3.m_modifyTime);
+				Afs::StatInfo fileInfo3;
+				EnsureThrow(AfsResult::OK == afs.ObjStat(fileId, fileInfo3));
+				EnsureThrow(maxMiniNodeBytes == fileInfo3.m_file_sizeBytes);
+				EnsureThrow(fileInfo2.m_modifyTime < fileInfo3.m_modifyTime);
 
-		EnsureThrow(AfsResult::OK == test.m_afs.FileRead(fileId, 0, maxMiniNodeBytes, onData));
-		checkReadOk();
+				EnsureThrow(AfsResult::OK == afs.FileRead(fileId, 0, maxMiniNodeBytes, onData));
+				checkReadOk();
 
-		Seq data3 = "3";
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.FileWrite(fileId, fileInfo3.m_file_sizeBytes, data3, ++now));
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjDelete(ObjId::Root, "a", ++now));
-		EnsureThrow(1 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::OK == test.m_afs.FileWrite(fileId, fileInfo3.m_file_sizeBytes, data3, ++now));
-		allData.Add(data3);
-		EnsureThrow(0 == test.m_afs.FreeSpaceBlocks());
+				Seq data3 = "3";
+				EnsureThrow(AfsResult::OutOfSpace == afs.FileWrite(fileId, fileInfo3.m_file_sizeBytes, data3, ++now));
+				EnsureThrow(AfsResult::OK == afs.ObjDelete(ObjId::Root, "a", ++now));
+				EnsureThrow(1 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::OK == afs.FileWrite(fileId, fileInfo3.m_file_sizeBytes, data3, ++now));
+				allData.Add(data3);
+				EnsureThrow(0 == afs.FreeSpaceBlocks());
 
-		Afs::StatInfo fileInfo4;
-		EnsureThrow(AfsResult::OK == test.m_afs.ObjStat(fileId, fileInfo4));
-		EnsureThrow(maxMiniNodeBytes + 1 == fileInfo4.m_file_sizeBytes);
-		EnsureThrow(fileInfo3.m_modifyTime < fileInfo4.m_modifyTime);
+				Afs::StatInfo fileInfo4;
+				EnsureThrow(AfsResult::OK == afs.ObjStat(fileId, fileInfo4));
+				EnsureThrow(maxMiniNodeBytes + 1 == fileInfo4.m_file_sizeBytes);
+				EnsureThrow(fileInfo3.m_modifyTime < fileInfo4.m_modifyTime);
 
-		EnsureThrow(AfsResult::OK == test.m_afs.FileRead(fileId, 0, maxMiniNodeBytes + 1, onData));
-		checkReadOk();
+				EnsureThrow(AfsResult::OK == afs.FileRead(fileId, 0, maxMiniNodeBytes + 1, onData));
+				checkReadOk();
 
-		uint64 actualNewSize {};
-		EnsureThrow(AfsResult::OK == test.m_afs.FileSetSize(fileId, maxMiniNodeBytes, actualNewSize, ++now));
-		EnsureThrow(1 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(maxMiniNodeBytes == actualNewSize);
-		allData.ResizeExact(maxMiniNodeBytes);
+				uint64 actualNewSize {};
+				EnsureThrow(AfsResult::OK == afs.FileSetSize(fileId, maxMiniNodeBytes, actualNewSize, ++now));
+				EnsureThrow(1 == afs.FreeSpaceBlocks());
+				EnsureThrow(maxMiniNodeBytes == actualNewSize);
+				allData.ResizeExact(maxMiniNodeBytes);
 
-		EnsureThrow(AfsResult::OK == test.m_afs.FileRead(fileId, 0, maxMiniNodeBytes, onData));
-		checkReadOk();
+				EnsureThrow(AfsResult::OK == afs.FileRead(fileId, 0, maxMiniNodeBytes, onData));
+				checkReadOk();
 
-		EnsureThrow(AfsResult::OK == test.m_afs.DirCreate(ObjId::Root, "c", Seq(), ++now, dirId));
-		EnsureThrow(0 == test.m_afs.FreeSpaceBlocks());
-		EnsureThrow(AfsResult::OutOfSpace == test.m_afs.DirCreate(ObjId::Root, "d", Seq(), ++now, dummyId));
+				EnsureThrow(AfsResult::OK == afs.DirCreate(ObjId::Root, "c", Seq(), ++now, dirId));
+				EnsureThrow(0 == afs.FreeSpaceBlocks());
+				EnsureThrow(AfsResult::OutOfSpace == afs.DirCreate(ObjId::Root, "d", Seq(), ++now, dummyId));
+			};
+
+		{
+			AfsTestMem test { "TwoFreeBlocksMem", Afs::MinBlockSize, 5, CaseMatch::Insensitive };
+			runTest(test.m_afs);
+		}
+
+		{
+			AfsTestFile test { "TwoFreeBlocksFile", AfsFileStorage::MinBlockSize, 6*AfsFileStorage::MinBlockSize,
+				DeleteExisting::Yes, AfsFileStorage::Consistency::VerifyJournal, CaseMatch::Insensitive };
+			runTest(test.m_afs);
+		}
 	}
 
 	{

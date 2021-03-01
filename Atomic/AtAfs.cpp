@@ -48,7 +48,7 @@ namespace At
 	{
 		EnsureThrow(!m_storage);
 		m_storage = &storage;
-		m_blockSize = (uint32) storage.Allocator().BytesPerBlock();
+		m_blockSize = storage.BlockSize();
 		m_blockIndex = blockIndex;
 		m_dataBlock = dataBlock;
 	}
@@ -2331,7 +2331,10 @@ namespace At
 		bool const firstInit = (0 == m_storage->NrBlocks());
 		AfsResult::E r;
 
-		m_blockSize = NumCast<uint32>(m_storage->Allocator().BytesPerBlock());
+		m_blockSize = m_storage->BlockSize();
+		sizet const allocatorBlockSize = m_storage->Allocator().BytesPerBlock();
+		EnsureThrowWithNr2(m_blockSize <= allocatorBlockSize, m_blockSize, allocatorBlockSize);
+
 		m_masterBlock = new MasterBlock { nullptr };
 		m_rootDirTopNode = new VarBlock { nullptr };
 		m_freeListTailBlock = new VarBlock { nullptr };

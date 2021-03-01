@@ -32,6 +32,7 @@ namespace At
 		uint64 NrCacheMisses () const { return m_nrCacheMisses; }
 
 	public:
+		uint32          BlockSize   () override final { return m_blockSize; }
 		BlockAllocator& Allocator   () override final { return m_allocator; }
 		uint64          MaxNrBlocks () override final { return m_maxNrBlocks; }
 		uint64          NrBlocks    () override final { return m_nrBlocksStored + m_nrBlocksToAdd; }
@@ -79,7 +80,11 @@ namespace At
 		bool ReadJournal(BlockMemory& blocks, Map<JournalEntry>& entries);
 
 		void WriteJournal(Map<JournalEntry> const& entries);
+
+		// On entry, m_nrBlocksStored must equal the previous number of blocks stored
+		// On completion, the function updates m_nrBlocksStored to equal the new number of blocks stored
 		void ExecuteJournal(Map<JournalEntry>& entries);
+
 		void ExecuteConsecutiveJournalEntries(Map<JournalEntry>::ConstIt it, Map<JournalEntry>::ConstIt const& itEnd, sizet nrEntries);
 	};
 
