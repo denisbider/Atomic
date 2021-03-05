@@ -91,6 +91,57 @@ namespace At
 
 		// Key
 
+		Key& Key::GenerateSymmetricKey(Provider const& provider, Seq secret)
+		{
+			Destroy();
+
+			NTSTATUS st = Call_BCryptGenerateSymmetricKey(provider.Handle(), &m_hKey, nullptr, 0, (PUCHAR) secret.p, NumCast<ULONG>(secret.n), 0);
+			if (st != STATUS_SUCCESS)
+			{
+				m_hKey = nullptr;
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptGenerateSymmetricKey");
+			}
+
+			return *this;
+		}
+
+
+		Key& Key::SetChainMode(LPCWSTR chainMode)
+		{
+			sizet lenBytes = sizeof(wchar_t) * (wcslen(chainMode) + 1);
+			NTSTATUS st = Call_BCryptSetProperty(m_hKey, BCRYPT_CHAINING_MODE, (PUCHAR) chainMode, NumCast<ULONG>(lenBytes), 0);
+			if (st != STATUS_SUCCESS)
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptSetProperty");
+			return *this;
+		}
+
+
+		Key& Key::Encrypt_NoPadding(Seq in, byte* iv, sizet ivBytes, byte* out, sizet outBytes)
+		{
+			ULONG cbResult {};
+			NTSTATUS st = Call_BCryptEncrypt(m_hKey, (PUCHAR) in.p, NumCast<ULONG>(in.n), nullptr, iv, NumCast<ULONG>(ivBytes),
+				out, SatCast<ULONG>(outBytes), &cbResult, 0);
+			if (st != STATUS_SUCCESS)
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptEncrypt");
+
+			EnsureThrow(cbResult == in.n);
+			return *this;
+		}
+
+
+		Key& Key::Decrypt_NoPadding(Seq in, byte* iv, sizet ivBytes, byte* out, sizet outBytes)
+		{
+			ULONG cbResult {};
+			NTSTATUS st = Call_BCryptDecrypt(m_hKey, (PUCHAR) in.p, NumCast<ULONG>(in.n), nullptr, iv, NumCast<ULONG>(ivBytes),
+				out, SatCast<ULONG>(outBytes), &cbResult, 0);
+			if (st != STATUS_SUCCESS)
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDecrypt");
+
+			EnsureThrow(cbResult == in.n);
+			return *this;
+		}
+
+
 		Key& Key::GenerateKeyPair(Provider const& provider, ULONG length, ULONG flags)
 		{
 			Destroy();
@@ -181,13 +232,13 @@ namespace At
 			if (m_hKey)
 			{
 				NTSTATUS st = Call_BCryptDestroyKey(m_hKey);
+				m_hKey = nullptr;
+
 				if (st != STATUS_SUCCESS)
 					if (canThrow == CanThrow::No || std::uncaught_exception())
 						EnsureReportWithNr(!"Error in BCryptDestroyKey", st);
 					else
 						throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDestroyKey");
-
-				m_hKey = nullptr;
 			}
 
 			return *this;
@@ -236,6 +287,17 @@ namespace At
 		}
 
 
+		Hash& Hash::Final(byte* out, sizet outBytes)
+		{
+			EnsureThrow(outBytes == m_hashLen);
+			NTSTATUS st = Call_BCryptFinishHash(m_hHash, out, m_hashLen, 0);
+			if (st != STATUS_SUCCESS)
+				throw NtStatusErr<>(st, __FUNCTION__ ": BCryptFinishHash");
+
+			return *this;
+		}
+
+
 		Hash& Hash::Final(Enc& digest)
 		{
 			Enc::Write write = digest.IncWrite(m_hashLen);
@@ -248,14 +310,18 @@ namespace At
 		}
 
 
-		Hash& Hash::Destroy()
+		Hash& Hash::Destroy(CanThrow canThrow)
 		{
 			if (m_hHash)
 			{
 				NTSTATUS st = Call_BCryptDestroyHash(m_hHash);
 				m_hHash = nullptr;
-				if (st != STATUS_SUCCESS && !std::uncaught_exception())
-					throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDestroyHash");
+	
+				if (st != STATUS_SUCCESS)
+					if (canThrow == CanThrow::No || std::uncaught_exception())
+						EnsureReportWithNr(!"Error in BCryptDestroyHash", st);
+					else
+						throw NtStatusErr<>(st, __FUNCTION__ ": BCryptDestroyHash");
 			}
 
 			return *this;

@@ -95,7 +95,6 @@ namespace At
 
 	void AfsFileStorage::SetMaxSizeBytes(uint64 maxSizeBytes)
 	{
-		EnsureThrow(State::Initial != m_state);
 		if (UINT64_MAX == maxSizeBytes)
 			m_maxNrBlocks = UINT64_MAX;
 		else
@@ -126,6 +125,10 @@ namespace At
 
 	AfsResult::E AfsFileStorage::ObtainBlock(AfsBlock& block, uint64 blockIndex)
 	{
+		if (State::Recoverable_ClearJournal   == m_state ||
+		    State::Recoverable_ExecuteJournal == m_state)
+			TryRecover();
+
 		EnsureThrow(State::Ready == m_state || State::JournaledWrite == m_state);
 
 		if (blockIndex >= m_nrBlocksStored)
@@ -157,8 +160,40 @@ namespace At
 	}
 
 
+	AfsResult::E AfsFileStorage::ObtainBlockForOverwrite(AfsBlock& block, uint64 blockIndex)
+	{
+		EnsureThrow(State::JournaledWrite == m_state);
+
+		if (blockIndex >= m_nrBlocksStored)
+			return AfsResult::BlockIndexInvalid;
+
+		Rp<RcBlock> createdBlock;
+		Rp<RcBlock>* dataBlock = m_cachedBlocks.FindEntry(blockIndex);
+		if (dataBlock)
+			++m_nrCacheHits;
+		else
+		{
+			createdBlock = new RcBlock { m_allocator };
+			dataBlock = &createdBlock;
+			++m_nrCacheMisses;
+		}
+
+		bool added {};
+		m_blocksInUse.FindOrAdd(added, blockIndex);
+		EnsureThrow(added);
+
+		block.Init(*this, blockIndex, *dataBlock);
+		m_cachedBlocks.PruneEntries(m_cacheTargetSize, m_cacheMaxAge);
+		return AfsResult::OK;
+	}
+
+
 	void AfsFileStorage::BeginJournaledWrite()
 	{
+		if (State::Recoverable_ClearJournal   == m_state ||
+		    State::Recoverable_ExecuteJournal == m_state)
+			TryRecover();
+
 		EnsureThrow(State::Ready == m_state);
 		m_state = State::JournaledWrite;
 	}
@@ -166,10 +201,12 @@ namespace At
 
 	void AfsFileStorage::AbortJournaledWrite() noexcept
 	{
-		if (State::Inconsistent == m_state)
+		if (State::Recoverable_ClearJournal   == m_state ||
+		    State::Recoverable_ExecuteJournal == m_state ||
+			State::Unrecoverable              == m_state)
 			return;
 
-		EnsureThrow(State::JournaledWrite == m_state);
+		EnsureThrow(State::JournaledWrite == m_state || State::Abortable == m_state);
 		m_blocksInUse.Clear();
 		m_nrBlocksToAdd = 0;
 		m_state = State::Ready;
@@ -183,7 +220,7 @@ namespace At
 		uint64 const expectNewNrBlocksStored = m_nrBlocksStored + m_nrBlocksToAdd;
 		sizet nrBlocksToAddWritten {};
 
-		m_state = State::Inconsistent;
+		m_state = State::Unrecoverable;
 
 		Map<JournalEntry> entries;
 		for (Rp<AfsBlock> const& block : blocksToWrite)
@@ -211,29 +248,67 @@ namespace At
 
 		EnsureThrowWithNr2(nrBlocksToAddWritten == m_nrBlocksToAdd, nrBlocksToAddWritten, m_nrBlocksToAdd);
 
-		if (m_consistency >= Consistency::Journal)
-			WriteJournal(entries);
-
-		if (m_consistency != Consistency::VerifyJournal)
+		if (m_consistency < Consistency::Journal)
 			ExecuteJournal(entries);
 		else
 		{
-			BlockMemory readBlocks { m_allocator };
-			Map<JournalEntry> readEntries;
-			ReadJournal(readBlocks, readEntries);
-			ExecuteJournal(readEntries);
-		}
+			// If an IO error occurs while writing the journal, we can let the journaled write be aborted by clearing the journal and cache.
+			// If an additional IO error occurs while clearing the journal, we can go into state Recoverable_ClearJournal.
+			// We do want to clear the journal here, if possible. If it can be cleared now, better to not defer until recovery, which may not come.
+			try { WriteJournal(entries); }
+			catch (StorageFile::IoErr const&)
+			{
+				try { m_journalFile.Clear(); }
+				catch (StorageFile::IoErr const&)
+				{ 
+					m_state = State::Recoverable_ClearJournal;
+					throw;
+				}
 
-		if (m_consistency >= Consistency::Journal)
-			m_journalFile.Clear();
+				m_cachedBlocks.Clear();
+				m_state = State::Abortable;
+				throw;
+			}
+
+			// If an IO error occurs while executing the journal, we can recover if we can successfully execute the journal later.
+			// In this case, we ignore the IO error, act as though this transaction completed, but set state to Recoverable_Xxxx.
+			// However, if an exception other than an IO error occurs, then the state becomes Unrecoverable. In this case,
+			// we must pass the exception through, but if we do that, code will act as though transaction was aborted when it was
+			// already written to journal and will be committed on recovery
+			try
+			{
+				if (m_consistency != Consistency::VerifyJournal)
+					ExecuteJournal(entries);
+				else
+				{
+					BlockMemory readBlocks { m_allocator };
+					Map<JournalEntry> readEntries;
+					ReadJournal(readBlocks, readEntries);
+					ExecuteJournal(readEntries);
+				}
+			}
+			catch (StorageFile::IoErr const&)
+			{
+				m_state = State::Recoverable_ExecuteJournal;
+				return;
+			}
+
+			try
+			{
+				m_journalFile.Clear();
+			}
+			catch (StorageFile::IoErr const&)
+			{
+				m_state = State::Recoverable_ClearJournal;
+				return;
+			}
+		}
 
 		EnsureThrowWithNr2(expectNewNrBlocksStored == m_nrBlocksStored, expectNewNrBlocksStored, m_nrBlocksStored);
 		m_nrBlocksToAdd = 0;
 		m_blocksInUse.Clear();
-
-		m_state = State::Ready;
-
 		m_cachedBlocks.PruneEntries(m_cacheTargetSize, m_cacheMaxAge);
+		m_state = State::Ready;
 	}
 
 
@@ -314,8 +389,6 @@ namespace At
 		Map<JournalEntry>::ConstIt it = entries.begin();
 		sizet nrEntries = 1;
 
-		m_state = State::Inconsistent;
-
 		while (true)
 		{
 			uint64 const expectBlockIndex = it->m_blockIndex + 1;
@@ -336,7 +409,7 @@ namespace At
 
 		if (m_consistency == Consistency::Flush)
 			if (!FlushFileBuffers(m_dataFile.Handle()))
-				{ LastWinErr e; throw e.Make("FlushFileBuffers"); }
+				{ LastWinErr e; throw e.Make<StorageFile::IoErr>("FlushFileBuffers"); }
 
 		uint64 const lastBlockIndex = entries.Last().m_blockIndex;
 		if (lastBlockIndex >= m_nrBlocksStored)
@@ -381,6 +454,39 @@ namespace At
 
 			EnsureThrow(p == pEnd);
 			m_dataFile.WriteBlocks(blocks.Ptr(), blocks.NrBlocks(), fileOffset);
+		}
+	}
+
+
+	void AfsFileStorage::TryRecover()
+	{
+		if (Consistency::Journal <= m_consistency)
+		{
+			if (State::Recoverable_ExecuteJournal == m_state)
+			{
+
+				BlockMemory blocks { m_allocator };
+				Map<JournalEntry> entries;
+		
+				if (ReadJournal(blocks, entries))
+				{
+					if (entries.Any())
+						ExecuteJournal(entries);
+
+					m_state = State::Recoverable_ClearJournal;
+				}
+			}
+
+			if (State::Recoverable_ClearJournal == m_state)
+			{
+				m_journalFile.Clear();
+				m_cachedBlocks.Clear();
+
+				m_nrBlocksToAdd = 0;
+				m_blocksInUse.Clear();
+
+				m_state = State::Ready;
+			}
 		}
 	}
 

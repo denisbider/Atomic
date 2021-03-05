@@ -56,11 +56,13 @@ namespace At
 	};
 
 
-	template <class T> struct AutoAction_Free    { static void Action(T* p) noexcept { NoExcept(delete p); } };
-	template <class T> struct AutoAction_SetZero { static void Action(T* p) noexcept { *p = 0; } };
+	template <class T>        struct AutoAction_Free       { static void Action(T* p) noexcept { NoExcept(delete p); } };
+	template <class T>        struct AutoAction_SetZero    { static void Action(T* p) noexcept { *p = 0; } };
+	template <class T, int N> struct AutoAction_ZeroMemory { static void Action(T* p) noexcept { RtlSecureZeroMemory(p, N); } };
 
-	template <class T> using AutoFree    = AutoAction<T, AutoAction_Free   <T>>;
-	template <class T> using AutoSetZero = AutoAction<T, AutoAction_SetZero<T>>;
+	template <class T>        using AutoFree       = AutoAction<T, AutoAction_Free      <T>>;
+	template <class T>        using AutoSetZero    = AutoAction<T, AutoAction_SetZero   <T>>;
+	template <class T, int N> using AutoZeroMemory = AutoAction<T, AutoAction_ZeroMemory<T,N>>;
 
 
 

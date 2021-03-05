@@ -15,13 +15,17 @@ namespace At
 			~Provider() { Close(); }
 
 			Provider& Open(LPCWSTR algId, LPCWSTR implementation, DWORD flags);
-			Provider& OpenRng       () { return Open(BCRYPT_RNG_ALGORITHM,        nullptr, 0); }
-			Provider& OpenEcdhP256  () { return Open(BCRYPT_ECDH_P256_ALGORITHM,  nullptr, 0); }
-			Provider& OpenEcdsaP256 () { return Open(BCRYPT_ECDSA_P256_ALGORITHM, nullptr, 0); }
-			Provider& OpenMd5       () { return Open(BCRYPT_MD5_ALGORITHM,        nullptr, 0); }
-			Provider& OpenSha256    () { return Open(BCRYPT_SHA256_ALGORITHM,     nullptr, 0); }
-			Provider& OpenSha384    () { return Open(BCRYPT_SHA384_ALGORITHM,     nullptr, 0); }
-			Provider& OpenSha512    () { return Open(BCRYPT_SHA512_ALGORITHM,     nullptr, 0); }
+			Provider& OpenRng        () { return Open(BCRYPT_RNG_ALGORITHM,        nullptr, 0); }
+			Provider& OpenEcdhP256   () { return Open(BCRYPT_ECDH_P256_ALGORITHM,  nullptr, 0); }
+			Provider& OpenEcdsaP256  () { return Open(BCRYPT_ECDSA_P256_ALGORITHM, nullptr, 0); }
+			Provider& OpenMd5        () { return Open(BCRYPT_MD5_ALGORITHM,        nullptr, 0); }
+			Provider& OpenSha256     () { return Open(BCRYPT_SHA256_ALGORITHM,     nullptr, 0); }
+			Provider& OpenSha384     () { return Open(BCRYPT_SHA384_ALGORITHM,     nullptr, 0); }
+			Provider& OpenSha512     () { return Open(BCRYPT_SHA512_ALGORITHM,     nullptr, 0); }
+			Provider& OpenHmacSha256 () { return Open(BCRYPT_SHA256_ALGORITHM,     nullptr, BCRYPT_ALG_HANDLE_HMAC_FLAG); }
+			Provider& OpenHmacSha384 () { return Open(BCRYPT_SHA384_ALGORITHM,     nullptr, BCRYPT_ALG_HANDLE_HMAC_FLAG); }
+			Provider& OpenHmacSha512 () { return Open(BCRYPT_SHA512_ALGORITHM,     nullptr, BCRYPT_ALG_HANDLE_HMAC_FLAG); }
+			Provider& OpenAes        () { return Open(BCRYPT_AES_ALGORITHM,        nullptr, 0); }
 			Provider& Close();
 
 			BCRYPT_ALG_HANDLE Handle() const { return m_hProvider; }
@@ -116,6 +120,13 @@ namespace At
 		public:
 			~Key() noexcept { Destroy(CanThrow::No); }
 
+			BCRYPT_KEY_HANDLE Handle() { return m_hKey; }
+
+			Key& GenerateSymmetricKey(Provider const& provider, Seq secret);
+			Key& SetChainMode(LPCWSTR chainMode);
+			Key& Encrypt_NoPadding(Seq in, byte* iv, sizet ivBytes, byte* out, sizet outBytes);
+			Key& Decrypt_NoPadding(Seq in, byte* iv, sizet ivBytes, byte* out, sizet outBytes);
+
 			Key& GenerateKeyPair(Provider const& provider, ULONG length, ULONG flags);
 			Key& FinalizeKeyPair();
 			Key& Export(Str& buf, LPCWSTR blobType);
@@ -123,8 +134,6 @@ namespace At
 			Key& Sign(void* padInfo, Seq hash, Str& sig, ULONG flags);
 			bool Verify(void* padInfo, Seq hash, Seq sig, ULONG flags);
 			Key& Destroy(CanThrow canThrow = CanThrow::Yes);
-
-			BCRYPT_KEY_HANDLE Handle() { return m_hKey; }
 
 		private:
 			BCRYPT_KEY_HANDLE m_hKey {};
@@ -135,15 +144,16 @@ namespace At
 		class Hash
 		{
 		public:
-			~Hash() { Destroy(); }
+			~Hash() noexcept { Destroy(CanThrow::No); }
 
 			Hash& Init(Provider const& provider, Seq secretKey);
 			Hash& Init(Provider const& provider) { return Init(provider, Seq()); }
 			
 			Hash& Begin(Provider const& provider);
 			Hash& Update(Seq data);
+			Hash& Final(byte* out, sizet outBytes);
 			Hash& Final(Enc& digest);
-			Hash& Destroy();
+			Hash& Destroy(CanThrow canThrow = CanThrow::Yes);
 
 		private:
 			BCRYPT_HASH_HANDLE m_hHash      {};

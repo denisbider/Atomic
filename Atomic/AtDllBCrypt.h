@@ -20,6 +20,10 @@ namespace At
 	FuncType_BCryptGetProperty GetFunc_BCryptGetProperty();
 	NTSTATUS Call_BCryptGetProperty(BCRYPT_HANDLE, LPCWSTR, PUCHAR, ULONG, ULONG*, ULONG);
 
+	typedef NTSTATUS (__stdcall* FuncType_BCryptSetProperty)(BCRYPT_HANDLE, LPCWSTR, PUCHAR, ULONG, ULONG);
+	FuncType_BCryptSetProperty GetFunc_BCryptSetProperty();
+	NTSTATUS Call_BCryptSetProperty(BCRYPT_HANDLE, LPCWSTR, PUCHAR, ULONG, ULONG);
+
 	typedef NTSTATUS (__stdcall* FuncType_BCryptGenRandom)(BCRYPT_ALG_HANDLE, PUCHAR, ULONG, ULONG);
 	FuncType_BCryptGenRandom GetFunc_BCryptGenRandom();
 	NTSTATUS Call_BCryptGenRandom(BCRYPT_ALG_HANDLE, PUCHAR, ULONG, ULONG);
@@ -27,6 +31,18 @@ namespace At
 	typedef NTSTATUS (__stdcall* FuncType_BCryptDestroyKey)(BCRYPT_KEY_HANDLE);
 	FuncType_BCryptDestroyKey GetFunc_BCryptDestroyKey();
 	NTSTATUS Call_BCryptDestroyKey(BCRYPT_KEY_HANDLE);
+
+	typedef NTSTATUS (__stdcall* FuncType_BCryptGenerateSymmetricKey)(BCRYPT_ALG_HANDLE, BCRYPT_KEY_HANDLE, PUCHAR, ULONG, PUCHAR, ULONG, ULONG);
+	FuncType_BCryptGenerateSymmetricKey GetFunc_BCryptGenerateSymmetricKey();
+	NTSTATUS Call_BCryptGenerateSymmetricKey(BCRYPT_ALG_HANDLE, BCRYPT_KEY_HANDLE, PUCHAR, ULONG, PUCHAR, ULONG, ULONG);
+
+	typedef NTSTATUS (__stdcall* FuncType_BCryptEncrypt)(BCRYPT_KEY_HANDLE, PUCHAR, ULONG, void*, PUCHAR, ULONG, PUCHAR, ULONG, ULONG*, ULONG);
+	FuncType_BCryptEncrypt GetFunc_BCryptEncrypt();
+	NTSTATUS Call_BCryptEncrypt(BCRYPT_KEY_HANDLE, PUCHAR, ULONG, void*, PUCHAR, ULONG, PUCHAR, ULONG, ULONG*, ULONG);
+
+	typedef NTSTATUS (__stdcall* FuncType_BCryptDecrypt)(BCRYPT_KEY_HANDLE, PUCHAR, ULONG, void*, PUCHAR, ULONG, PUCHAR, ULONG, ULONG*, ULONG);
+	FuncType_BCryptDecrypt GetFunc_BCryptDecrypt();
+	NTSTATUS Call_BCryptDecrypt(BCRYPT_KEY_HANDLE, PUCHAR, ULONG, void*, PUCHAR, ULONG, PUCHAR, ULONG, ULONG*, ULONG);
 
 	typedef NTSTATUS (__stdcall* FuncType_BCryptGenerateKeyPair)(BCRYPT_ALG_HANDLE, BCRYPT_KEY_HANDLE*, ULONG, ULONG);
 	FuncType_BCryptGenerateKeyPair GetFunc_BCryptGenerateKeyPair();

@@ -19,6 +19,11 @@ namespace At
 		// Returns the journal file path corresponding to the provided data file path
 		static Str GetJournalFilePath(Seq dataFilePath);
 
+		// Used to simulate IO errors for testing purposes. Pass nullptr to clear a previously set SimErrDecider
+		void SetSimErrDecider(StorageFile::SimErrDecider* d) { m_dataFile.SetSimErrDecider(d); m_journalFile.SetSimErrDecider(d); }
+		uint64 NrSimulatedIoErrs_Data    () const { return m_dataFile    .NrSimulatedIoErrs(); }
+		uint64 NrSimulatedIoErrs_Journal () const { return m_journalFile .NrSimulatedIoErrs(); }
+
 		// If storage already exists, blockSize is ignored and may be invalid
 		// Otherwise, to initialize new storage, blockSize must be a multiple of MinBlockSize
 		void Init(Seq dataFileFullPath, uint32 blockSize, Consistency consistency);
@@ -39,13 +44,14 @@ namespace At
 
 		AfsResult::E AddNewBlock(AfsBlock& block) override final;
 		AfsResult::E ObtainBlock(AfsBlock& block, uint64 blockIndex) override final;
+		AfsResult::E ObtainBlockForOverwrite(AfsBlock& block, uint64 blockIndex) override final;
 
 		void BeginJournaledWrite() override final;
 		void AbortJournaledWrite() noexcept override final;
 		void CompleteJournaledWrite(RpVec<AfsBlock> const& blocksToWrite) override final;
 		
 	private:
-		enum class State { Initial, Ready, JournaledWrite, Inconsistent };
+		enum class State { Initial, Ready, JournaledWrite, Abortable, Recoverable_ClearJournal, Recoverable_ExecuteJournal, Unrecoverable };
 
 		State          m_state              {};
 		uint32         m_blockSize          {};
@@ -86,6 +92,9 @@ namespace At
 		void ExecuteJournal(Map<JournalEntry>& entries);
 
 		void ExecuteConsecutiveJournalEntries(Map<JournalEntry>::ConstIt it, Map<JournalEntry>::ConstIt const& itEnd, sizet nrEntries);
+
+		// State must be Recoverable_Xxxx when called. If could recover, state becomes Ready. If could not recover, state remains Recoverable_Xxxx.
+		void TryRecover();
 	};
 
 }

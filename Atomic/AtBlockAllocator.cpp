@@ -76,7 +76,7 @@ namespace At
 	}
 
 
-	void BlockAllocator::ReleaseBlock(void* p)
+	void BlockAllocator::ReleaseBlock(void* p) noexcept
 	{
 		EnsureAbort(m_blocksUsed > 0);
 		--m_blocksUsed;
@@ -85,13 +85,31 @@ namespace At
 			FreeMemory(p);
 		else
 		{
-			memset(p, 0, m_bytesPerBlock);
-			m_availBlocks.Add((byte*) p);
+			// We go to all this trouble so that the function can be noexcept, which is important in destructors
+			try
+			{
+				bool badAlloc {};
+				try { m_availBlocks.ReserveInc(1); }
+				catch (std::bad_alloc const&) { badAlloc = true; }
+
+				if (badAlloc)
+					FreeMemory(p);
+				else
+				{
+					memset(p, 0, m_bytesPerBlock);
+					m_availBlocks.Add((byte*) p);
+				}
+			}
+			catch (std::exception const& e)
+			{
+				Str msg = Str::Join("\"" __FUNCTION__ "\", line " AT_EXPAND_STRINGIFY(__LINE__) ":\r\n", Seq::WithNull(e.what()));
+				EnsureFail_Abort(msg.CharPtr());
+			}
 		}
 	}
 
 
-	bool BlockAllocator::HaveSuperfluousBlocks() const
+	bool BlockAllocator::HaveSuperfluousBlocks() const noexcept
 	{
 		if (m_availBlocks.Len() <= MinBlocksToCache)
 			return false;

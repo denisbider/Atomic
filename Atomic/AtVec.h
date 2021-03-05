@@ -43,6 +43,9 @@ namespace At
 		Val const* end() const   noexcept { return Ptr() + m_len; }
 		Val*       end()         noexcept { return Ptr() + m_len; }
 
+		Val const* PtrEnd() const   noexcept { return Ptr() + m_len; }
+		Val*       PtrEnd()         noexcept { return Ptr() + m_len; }
+
 		Slice<Val> GetSlice(sizet i, sizet n = SIZE_MAX) const noexcept
 			{ if (i > m_len) i = m_len; if (n > m_len - i) n = m_len - i; return Slice<Val>(Ptr()+i, Ptr()+i+n); }
 		

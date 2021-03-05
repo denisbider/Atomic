@@ -178,6 +178,7 @@ namespace At
 	enum class CanThrow  { No, Yes };
 	enum class CaseMatch { Exact, Insensitive };
 	enum class CharCase  { Upper, Lower };
+	enum class EncrDir   { Encrypt, Decrypt };
 	enum class EnumDir   { Forward, Reverse };
 	enum class ProtoSide { None, Client, Server };
 	enum class Normalize { No, Yes };

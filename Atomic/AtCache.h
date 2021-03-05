@@ -15,12 +15,17 @@ namespace At
 		struct Entry
 		{
 			Value* m_value;
-			Time m_lastAccessTime;
+			Time m_lastAccessTime;		// MUST be obtained using Time::StrictNow, as opposed to NonStrictNow, to ensure uniqueness
 		};
 
 	public:
-		~Cache()
+		~Cache() noexcept { Clear(); }
+
+
+		void Clear() noexcept
 		{
+			static_assert(std::is_nothrow_destructible<Value>::value, "Cannot provide exception safety if destructor can throw");
+
 			EntriesByKey::iterator it = m_entriesByKey.begin();
 			while (it != m_entriesByKey.end())
 			{
@@ -32,6 +37,9 @@ namespace At
 
 				++it;
 			}
+
+			m_entriesByKey.clear();
+			m_keysByLastAccessTime.clear();
 		}
 
 
@@ -42,7 +50,7 @@ namespace At
 				return nullptr;
 
 			Time prevTime = it->second.m_lastAccessTime;
-			it->second.m_lastAccessTime = Time::NonStrictNow();
+			it->second.m_lastAccessTime = Time::StrictNow();
 
 			KeysByLastAccessTime::iterator timeIt = m_keysByLastAccessTime.find(prevTime);
 			EnsureThrow(timeIt != m_keysByLastAccessTime.end());
@@ -58,7 +66,7 @@ namespace At
 			if (it != m_entriesByKey.end())
 			{
 				Time prevTime = it->second.m_lastAccessTime;
-				it->second.m_lastAccessTime = Time::NonStrictNow();
+				it->second.m_lastAccessTime = Time::StrictNow();
 
 				KeysByLastAccessTime::iterator timeIt = m_keysByLastAccessTime.find(prevTime);
 				EnsureThrow(timeIt != m_keysByLastAccessTime.end());
@@ -68,7 +76,7 @@ namespace At
 			{
 				it = m_entriesByKey.insert(std::make_pair(key, Entry<Value>())).first;
 				it->second.m_value = new Value;
-				it->second.m_lastAccessTime = Time::NonStrictNow();
+				it->second.m_lastAccessTime = Time::StrictNow();
 			}
 
 			m_keysByLastAccessTime.insert(std::make_pair(it->second.m_lastAccessTime, key));
@@ -103,7 +111,7 @@ namespace At
 
 		void PruneEntries(sizet targetSize, Time maxAge)
 		{
-			Time now = Time::NonStrictNow();
+			Time now = Time::StrictNow();
 			while (true)
 			{
 				KeysByLastAccessTime::iterator timeIt = m_keysByLastAccessTime.begin();
@@ -115,8 +123,12 @@ namespace At
 						break;
 
 				EntriesByKey::iterator it = m_entriesByKey.find(timeIt->second);
+				EnsureThrow(it != m_entriesByKey.end());
 				if (it->second.m_value != nullptr)
+				{
 					delete it->second.m_value;
+					it->second.m_value = nullptr;
+				}
 
 				m_entriesByKey.erase(it);
 				m_keysByLastAccessTime.erase(timeIt);

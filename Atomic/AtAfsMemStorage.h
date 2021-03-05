@@ -20,6 +20,7 @@ namespace At
 
 		AfsResult::E AddNewBlock(AfsBlock& block) override final;
 		AfsResult::E ObtainBlock(AfsBlock& block, uint64 blockIndex) override final;
+		AfsResult::E ObtainBlockForOverwrite(AfsBlock& block, uint64 blockIndex) override final;
 		void BeginJournaledWrite() override final;
 		void AbortJournaledWrite() noexcept override final;
 		void CompleteJournaledWrite(RpVec<AfsBlock> const& blocksToWrite) override final;

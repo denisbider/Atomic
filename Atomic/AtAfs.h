@@ -137,14 +137,26 @@ namespace At
 		// If block cannot be added because out of space, must return OutOfSpace.
 		virtual AfsResult::E AddNewBlock(AfsBlock& block) = 0;
 
-		// Must obtain an existing block or block that has been recently created but not yet written.
-		// If blockIndex is past the current last block, must return BlockIndexInvalid.
-		// A block obtained with AddNewBlockXxxx must not be obtained through ObtainBlockXxxx until the journaled write has aborted or completed.
+		// Must obtain an existing block that has already been written. If blockIndex is past the current last block, must return BlockIndexInvalid.
+		// A block obtained with AddNewBlock must not be obtained through ObtainBlock or ObtainBlockForOverwrite until the journaled write has aborted or completed.
 		virtual AfsResult::E ObtainBlock(AfsBlock& block, uint64 blockIndex) = 0;
 
-		// These functions are used to ensure filesystem consistency when blocks are written. All modifications must be done within a journaled write.
+		// Obtains an existing block, but without loading its data. If blockIndex is past the current last block, must return BlockIndexInvalid.
+		// This must be called from within a journaled write. If the journaled write is completed, the block MUST be included in the call to CompleteJournaledWrite.
+		// A block obtained with AddNewBlock must not be obtained through ObtainBlock or ObtainBlockForOverwrite until the journaled write has aborted or completed.
+		virtual AfsResult::E ObtainBlockForOverwrite(AfsBlock& block, uint64 blockIndex) = 0;
+
+		// Journaled writes are used to ensure filesystem consistency when blocks are written. All modifications must be done within a journaled write.
+		// This method may attempt to perform recovery from a previous storage failure. If the recovery attempt fails, this method may throw.
 		virtual void BeginJournaledWrite() = 0;
+
+		// To call AbortJournaledWrite(), there must have been a call to BeginJournaledWrite() without a corresponding call to CompleteJournaledWrite(),
+		// or the call to CompleteJournaledWrite() must have thrown an exception.
 		virtual void AbortJournaledWrite() noexcept = 0;
+
+		// If CompleteJournaledWrite() throws an exception, the journaled write must be aborted using AbortJournaledWrite().
+		// Depending on the nature of the error, the AfsStorage instance may or may not continue to function.
+		// If the error is transient, the AfsStorage instance may continue to throw exceptions for an amount of time, and later recover.
 		virtual void CompleteJournaledWrite(RpVec<AfsBlock> const& blocksToWrite) = 0;
 	};
 

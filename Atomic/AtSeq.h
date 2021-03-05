@@ -67,6 +67,8 @@ namespace At
 		Seq(void const* pp, sizet nn) noexcept : p((byte const*) pp), n(nn) {}
 		Seq(Vec<wchar_t> const& v)    noexcept : p((byte const*) v.Ptr()), n(v.Len()*sizeof(wchar_t)) {}
 
+		static Seq WithNull(char const* z) noexcept { return Seq((byte const*) z, ZLen(z) + 1); }
+
 		Seq& operator= (Seq const& x) noexcept = default;
 		Seq& operator= (Enc const& x) noexcept;		// Defined inline in AtEnc.h
 		Seq& operator= (Str const& x) noexcept;		// Defined inline in AtStr.h
@@ -81,7 +83,6 @@ namespace At
 
 		sizet CalcWidth(sizet precedingWidth=0, sizet tabStop=4) const noexcept;	// precedingWidth and tabStop control how tab stops are applied. Use precedingWidth=0 for first column
 
-		Seq& SetNull() noexcept { p = 0; n = 0; return *this; }
 		Seq& Set(char const* pp)           noexcept { p = (byte const*) pp; n = ZLen(pp); return *this; }
 		Seq& Set(void const* pp, sizet nn) noexcept { p = (byte const*) pp; n = nn; return *this; }
 

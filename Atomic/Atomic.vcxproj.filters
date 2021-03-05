@@ -535,6 +535,12 @@
     <ClCompile Include="AtSocketConnection.cpp">
       <Filter>Connections</Filter>
     </ClCompile>
+    <ClCompile Include="AtAfsCryptStorage.cpp">
+      <Filter>Afs</Filter>
+    </ClCompile>
+    <ClCompile Include="AtAfsBCryptStorage.cpp">
+      <Filter>Afs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtAbortable.h">
@@ -1148,6 +1154,12 @@
     </ClInclude>
     <ClInclude Include="AtSocketConnection.h">
       <Filter>Connections</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAfsCryptStorage.h">
+      <Filter>Afs</Filter>
+    </ClInclude>
+    <ClInclude Include="AtAfsBCryptStorage.h">
+      <Filter>Afs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

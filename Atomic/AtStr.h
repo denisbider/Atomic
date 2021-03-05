@@ -93,8 +93,14 @@ namespace At
 		byte const* Ptr() const { return Vec<byte>::Ptr(); }
 		byte*       Ptr()       { return Vec<byte>::Ptr(); }
 
+		byte const* PtrEnd() const { return Vec<byte>::PtrEnd(); }
+		byte*       PtrEnd()       { return Vec<byte>::PtrEnd(); }
+
 		char const* CharPtr() const { return (char const*) Vec<byte>::Ptr(); }
 		char*       CharPtr()       { return (char*)       Vec<byte>::Ptr(); }
+
+		char const* CharPtrEnd() const { return (char const*) Vec<byte>::PtrEnd(); }
+		char*       CharPtrEnd()       { return (char*)       Vec<byte>::PtrEnd(); }
 
 		bool  Any()   const { return m_len != 0; }
 		sizet Len()   const { return m_len; }

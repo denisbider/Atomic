@@ -37,8 +37,12 @@ namespace At
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptOpenAlgorithmProvider)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptCloseAlgorithmProvider)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptGetProperty)
+	ATDLL_GETFUNC_IMPL(bcrypt, BCryptSetProperty)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptGenRandom)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptDestroyKey)
+	ATDLL_GETFUNC_IMPL(bcrypt, BCryptGenerateSymmetricKey)
+	ATDLL_GETFUNC_IMPL(bcrypt, BCryptEncrypt)
+	ATDLL_GETFUNC_IMPL(bcrypt, BCryptDecrypt)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptGenerateKeyPair)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptFinalizeKeyPair)
 	ATDLL_GETFUNC_IMPL(bcrypt, BCryptImportKeyPair)
@@ -72,6 +76,13 @@ namespace At
 		return STATUS_NOT_IMPLEMENTED;
 	}
 
+	NTSTATUS Call_BCryptSetProperty(BCRYPT_HANDLE a, LPCWSTR b, PUCHAR c, ULONG d, ULONG e)
+	{
+		FuncType_BCryptSetProperty fn = GetFunc_BCryptSetProperty();
+		if (fn) return fn(a, b, c, d, e);
+		return STATUS_NOT_IMPLEMENTED;
+	}
+
 	NTSTATUS Call_BCryptGenRandom(BCRYPT_ALG_HANDLE a, PUCHAR b, ULONG c, ULONG d)
 	{
 		FuncType_BCryptGenRandom fn = GetFunc_BCryptGenRandom();
@@ -83,6 +94,27 @@ namespace At
 	{
 		FuncType_BCryptDestroyKey fn = GetFunc_BCryptDestroyKey();
 		if (fn) return fn(a);
+		return STATUS_NOT_IMPLEMENTED;
+	}
+
+	NTSTATUS Call_BCryptGenerateSymmetricKey(BCRYPT_ALG_HANDLE a, BCRYPT_KEY_HANDLE b, PUCHAR c, ULONG d, PUCHAR e, ULONG f, ULONG g)
+	{
+		FuncType_BCryptGenerateSymmetricKey fn = GetFunc_BCryptGenerateSymmetricKey();
+		if (fn) return fn(a, b, c, d, e, f, g);
+		return STATUS_NOT_IMPLEMENTED;
+	}
+
+	NTSTATUS Call_BCryptEncrypt(BCRYPT_KEY_HANDLE a, PUCHAR b, ULONG c, void* d, PUCHAR e, ULONG f, PUCHAR g, ULONG h, ULONG* i, ULONG j)
+	{
+		FuncType_BCryptEncrypt fn = GetFunc_BCryptEncrypt();
+		if (fn) return fn(a, b, c, d, e, f, g, h, i, j);
+		return STATUS_NOT_IMPLEMENTED;
+	}
+
+	NTSTATUS Call_BCryptDecrypt(BCRYPT_KEY_HANDLE a, PUCHAR b, ULONG c, void* d, PUCHAR e, ULONG f, PUCHAR g, ULONG h, ULONG* i, ULONG j)
+	{
+		FuncType_BCryptDecrypt fn = GetFunc_BCryptDecrypt();
+		if (fn) return fn(a, b, c, d, e, f, g, h, i, j);
 		return STATUS_NOT_IMPLEMENTED;
 	}
 

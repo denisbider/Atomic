@@ -35,7 +35,9 @@ namespace At
 		void SetMaxAvailPercent(uint maxAvailPercent);
 
 		byte* GetBlock();
-		void ReleaseBlock(void* p);
+
+		// May either free the block or cache it, depending on how many blocks are already cached
+		void ReleaseBlock(void* p) noexcept;
 
 		// Consumers that need a specific amount of memory can call AllocMemory and FreeMemory directly
 		byte* AllocMemory(sizet nrBytes);
@@ -59,7 +61,7 @@ namespace At
 
 		enum { MinBlocksToCache = 100 };
 
-		bool HaveSuperfluousBlocks() const;
+		bool HaveSuperfluousBlocks() const noexcept;
 		void FreeSuperfluousBlocks();
 		void FreeAvailBlocks() noexcept;
 	};

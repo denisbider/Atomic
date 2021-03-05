@@ -1,6 +1,7 @@
 #include "AtIncludes.h"
 #include "AtStorageFile.h"
 
+#include "AtEnsureStackTrace.h"
 #include "AtWinErr.h"
 
 
@@ -8,6 +9,9 @@ namespace At
 {
 
 	// StorageFile
+
+	#define AT_STORAGEFILE_SIMULATEIOERR(OPNAME) (!m_simErrDecider || !m_simErrDecider->DecideIoSimErr() ? 0 : (SimulateIoErr((OPNAME), __FUNCTION__, __LINE__), 0))
+
 
 	void StorageFile::Open(WriteThrough writeThrough, Uncached uncached)
 	{
@@ -77,20 +81,36 @@ namespace At
 
 	void StorageFile::ReadInner(void* pDestination, DWORD bytesToRead, uint64 offset)
 	{
-
+		EnsureThrow(offset < UINT64_MAX - bytesToRead);
 		DWORD bytesRead = 0;
+
 		if (offset < m_fileSize)
 		{
 			if (offset != m_lastOffset)
 			{
 				LARGE_INTEGER li;
 				li.QuadPart = NumCast<LONGLONG>(offset);
-				if (!SetFilePointerEx(m_hFile, li, 0, FILE_BEGIN))
-					{ LastWinErr e; throw e.Make<>(DescribeFileError(__FUNCTION__, "SetFilePointerEx")); }
+				AT_STORAGEFILE_SIMULATEIOERR("SetFilePointerEx");
+				if (SetFilePointerEx(m_hFile, li, 0, FILE_BEGIN))
+					m_lastOffset = offset;
+				else
+				{
+					m_lastOffset = UINT64_MAX;
+					LastWinErr e; throw e.Make<IoErr>(DescribeFileError(__FUNCTION__, "SetFilePointerEx"));
+				}
 			}
 
-			if (!ReadFile(m_hFile, pDestination, bytesToRead, &bytesRead, 0))
-				{ LastWinErr e; throw e.Make<>(DescribeFileError(__FUNCTION__, "ReadFile")); }
+			AT_STORAGEFILE_SIMULATEIOERR("ReadFile");
+			if (ReadFile(m_hFile, pDestination, bytesToRead, &bytesRead, 0))
+			{
+				EnsureAbort(bytesRead <= bytesToRead);
+				m_lastOffset += bytesRead;
+			}
+			else
+			{
+				m_lastOffset = UINT64_MAX;
+				LastWinErr e; throw e.Make<IoErr>(DescribeFileError(__FUNCTION__, "ReadFile"));
+			}
 		}
 
 		if (bytesRead != bytesToRead)
@@ -101,8 +121,6 @@ namespace At
 			EnsureThrow(pZero + nZero == ((byte*) pDestination) + bytesToRead);
 			Mem::Zero(pZero, nZero);
 		}
-
-		m_lastOffset = offset + bytesRead;
 	}
 
 
@@ -112,21 +130,36 @@ namespace At
 		EnsureThrow((offset % MinSectorSize) == 0);
 		EnsureThrow(nrBlocks < (MAXDWORD / m_blockSize));
 
+		DWORD bytesToWrite = (DWORD) (nrBlocks * m_blockSize);
+		EnsureThrow(offset < UINT64_MAX - bytesToWrite);
+
 		if (offset != m_lastOffset)
 		{
+
 			LARGE_INTEGER li;
 			li.QuadPart = NumCast<LONGLONG>(offset);
-			if (!SetFilePointerEx(m_hFile, li, 0, FILE_BEGIN))
-				{ LastWinErr e; throw e.Make<>(DescribeFileError(__FUNCTION__, "SetFilePointerEx")); }
+			AT_STORAGEFILE_SIMULATEIOERR("SetFilePointerEx");
+			if (SetFilePointerEx(m_hFile, li, 0, FILE_BEGIN))
+				m_lastOffset = offset;
+			else
+			{
+				m_lastOffset = UINT64_MAX;
+				LastWinErr e; throw e.Make<IoErr>(DescribeFileError(__FUNCTION__, "SetFilePointerEx"));
+			}
 		}
 
-		DWORD bytesToWrite = (DWORD) (nrBlocks * m_blockSize);
 		DWORD bytesWritten = 0;
-		if (!WriteFile(m_hFile, firstBlock, bytesToWrite, &bytesWritten, 0))
-			{ LastWinErr e; throw e.Make<>(DescribeFileError(__FUNCTION__, "WriteFile")); }
-		EnsureAbort(bytesWritten == bytesToWrite);
-
-		m_lastOffset = offset + bytesWritten;
+		AT_STORAGEFILE_SIMULATEIOERR("WriteFile");
+		if (WriteFile(m_hFile, firstBlock, bytesToWrite, &bytesWritten, 0))
+		{
+			EnsureAbort(bytesWritten == bytesToWrite);
+			m_lastOffset += bytesWritten;
+		}
+		else
+		{
+			m_lastOffset = UINT64_MAX;
+			LastWinErr e; throw e.Make<IoErr>(DescribeFileError(__FUNCTION__, "WriteFile"));
+		}
 
 		if (m_fileSize < m_lastOffset)
 			m_fileSize = m_lastOffset;
@@ -135,21 +168,41 @@ namespace At
 
 	void StorageFile::SetEof(uint64 offset)
 	{
+		EnsureThrow(offset < UINT64_MAX);
 		EnsureThrow((offset % MinSectorSize) == 0);
 
 		if (offset != m_lastOffset)
 		{
 			LARGE_INTEGER li;
 			li.QuadPart = NumCast<LONGLONG>(offset);
-			if (!SetFilePointerEx(m_hFile, li, 0, FILE_BEGIN))
-				{ LastWinErr e; throw e.Make<>(DescribeFileError(__FUNCTION__, "SetFilePointerEx")); }
+			AT_STORAGEFILE_SIMULATEIOERR("SetFilePointerEx");
+			if (SetFilePointerEx(m_hFile, li, 0, FILE_BEGIN))
+				m_lastOffset = offset;
+			else
+			{
+				m_lastOffset = UINT64_MAX;
+				LastWinErr e; throw e.Make<IoErr>(DescribeFileError(__FUNCTION__, "SetFilePointerEx"));
+			}
 		}
 
+		AT_STORAGEFILE_SIMULATEIOERR("SetEndOfFile");
 		if (!SetEndOfFile(m_hFile))
-			{ LastWinErr e; throw e.Make<>(DescribeFileError(__FUNCTION__, "SetEndOfFile")); }
+			{ LastWinErr e; throw e.Make<IoErr>(DescribeFileError(__FUNCTION__, "SetEndOfFile")); }
 
 		m_lastOffset = offset;
 		m_fileSize = offset;
+	}
+
+
+	void StorageFile::SimulateIoErr(char const* zOp, char const* zLoc, long line)
+	{
+		++m_nrSimulatedIoErrs;
+
+		EnsureFailDescRef efdRef { EnsureFailDesc::Create() };
+		efdRef.Add("\"").Add(zLoc).Add("\", line ").SInt(line).Add(":\r\nSimulated error in ").Add(zOp).Add("\r\n");
+		Ensure_AddStackTrace(efdRef, 2U, 15U);
+
+		throw SimulatedIoErr(efdRef.Z());
 	}
 
 

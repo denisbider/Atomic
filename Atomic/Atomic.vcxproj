@@ -135,7 +135,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ATOMIC_DBGHELP;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -154,7 +154,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl />
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ATOMIC_DBGHELP;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -171,6 +171,8 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AtAfsBCryptStorage.cpp" />
+    <ClCompile Include="AtAfsCryptStorage.cpp" />
     <ClCompile Include="AtAfsMemStorage.cpp" />
     <ClCompile Include="AtAbortable.cpp" />
     <ClCompile Include="AtAfs.cpp" />
@@ -359,6 +361,8 @@
     <ClInclude Include="AtAbortable.h" />
     <ClInclude Include="AtAfs.h" />
     <ClInclude Include="AtActv.h" />
+    <ClInclude Include="AtAfsBCryptStorage.h" />
+    <ClInclude Include="AtAfsCryptStorage.h" />
     <ClInclude Include="AtAfsFileStorage.h" />
     <ClInclude Include="AtAfsMemStorage.h" />
     <ClInclude Include="AtArgs.h" />

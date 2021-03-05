@@ -42,6 +42,22 @@ namespace At
 	}
 
 
+	AfsResult::E AfsMemStorage::ObtainBlockForOverwrite(AfsBlock& block, uint64 blockIndex)
+	{
+		EnsureThrow(m_haveJournaledWrite);
+		if (blockIndex >= m_nextBlockIndex)
+			return AfsResult::BlockIndexInvalid;
+
+		bool added {};
+		OrderedSet<uint64>::It it = m_obtainedBlocks.FindOrAdd(added, blockIndex);
+		EnsureThrow(it.Any());
+		EnsureThrow(added);
+
+		block.Init(*this, blockIndex, new RcBlock { m_allocator } );
+		return AfsResult::OK;
+	}
+
+
 	void AfsMemStorage::BeginJournaledWrite()
 	{
 		EnsureThrow(!m_haveJournaledWrite);

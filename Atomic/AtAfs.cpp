@@ -90,11 +90,12 @@ namespace At
 
 	Afs::JournaledWrite::JournaledWrite(Afs& afs) : m_afs(afs)
 	{
+		m_afs.m_storage->BeginJournaledWrite();
+
+		// Set change trackers after BeginJournaledWrite in case it throws an exception
 		m_afs.m_rootDirTopNode->SetChangeTracker(*this);
 		m_afs.m_masterBlock->SetChangeTracker(*this);
 		m_afs.m_freeListTailBlock->SetChangeTracker(*this);
-		
-		m_afs.m_storage->BeginJournaledWrite();
 	}
 
 

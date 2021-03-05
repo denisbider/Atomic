@@ -395,7 +395,7 @@ namespace At
 			BlockAllocator* m_allocator {};
 			byte*           m_block     {};
 
-			~CachedBlock() { if (m_block != nullptr) m_allocator->ReleaseBlock(m_block); }
+			~CachedBlock() noexcept { if (m_block != nullptr) m_allocator->ReleaseBlock(m_block); }
 
 			bool Inited() const { return m_block != nullptr; }
 			void Init(BlockAllocator& allocator) { EnsureAbort(m_block == nullptr); m_allocator = &allocator; m_block = m_allocator->GetBlock(); }
