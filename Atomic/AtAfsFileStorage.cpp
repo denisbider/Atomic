@@ -17,7 +17,7 @@ namespace At
 	}
 
 
-	void AfsFileStorage::Init(Seq dataFileFullPath, uint32 blockSize, Consistency consistency)
+	void AfsFileStorage::Init(Seq dataFileFullPath, uint32 createBlockSize, Consistency consistency)
 	{
 		EnsureThrow(State::Initial == m_state);
 		EnsureThrow(dataFileFullPath.n);
@@ -44,10 +44,10 @@ namespace At
 		if (0 == m_dataFile.GetSize())
 		{
 			// Create new storage
-			EnsureThrow(0 != blockSize);
-			EnsureThrow(0 == (blockSize % MinBlockSize));
+			EnsureThrow(0 != createBlockSize);
+			EnsureThrow(0 == (createBlockSize % MinBlockSize));
 
-			m_blockSize = blockSize;
+			m_blockSize = createBlockSize;
 
 			AutoBlock block { m_allocator };
 			byte* p = block.Ptr();

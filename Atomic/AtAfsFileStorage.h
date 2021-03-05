@@ -24,9 +24,9 @@ namespace At
 		uint64 NrSimulatedIoErrs_Data    () const { return m_dataFile    .NrSimulatedIoErrs(); }
 		uint64 NrSimulatedIoErrs_Journal () const { return m_journalFile .NrSimulatedIoErrs(); }
 
-		// If storage already exists, blockSize is ignored and may be invalid
-		// Otherwise, to initialize new storage, blockSize must be a multiple of MinBlockSize
-		void Init(Seq dataFileFullPath, uint32 blockSize, Consistency consistency);
+		// If storage already exists, createBlockSize is ignored and may be invalid
+		// Otherwise, to initialize new storage, createBlockSize must be a multiple of MinBlockSize
+		void Init(Seq dataFileFullPath, uint32 createBlockSize, Consistency consistency);
 
 		// Call after successful Init() to set a maximum size for the storage file
 		// The maximum size excludes the journal file which may briefly grow to arbitrary size depending on use

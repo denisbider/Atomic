@@ -176,7 +176,7 @@ namespace At
 		// Minimum block size is the first block size such that the calculation in Init() produces a non-zero MaxNameBytes()
 		enum { OurFsVersion = 0x30534641, MinBlockSize = 144 };
 
-		AfsResult::E Init(Seq rootDirMetaData, Time now);
+		AfsResult::E Init(Seq createRootDirMetaData, Time now);
 
 		uint32 MaxNameBytes() const { EnsureThrow(State::Inited == m_state); return m_maxNameBytes; }
 		uint32 MaxMetaBytes() const { EnsureThrow(State::Inited == m_state); return m_maxMetaBytes; }

@@ -20,7 +20,7 @@ namespace At
 		{
 			MinOuterBlockSize = 512,
 			EncrKeyBytes      = 32,
-			MacKeyBytes       = 64,
+			MacKeyBytes       = 32,
 		};
 
 		// Pass the underlying storage, for example an instance of AfsFileStorage

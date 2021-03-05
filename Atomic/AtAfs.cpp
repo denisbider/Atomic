@@ -2323,7 +2323,7 @@ namespace At
 	}
 
 	
-	AfsResult::E Afs::Init(Seq rootDirMetaData, Time now)
+	AfsResult::E Afs::Init(Seq createRootDirMetaData, Time now)
 	{
 		EnsureThrow(m_state == State::Uninited);
 		EnsureThrow(m_storage);
@@ -2360,7 +2360,7 @@ namespace At
 			top.Set_Dir_NrEntries() = 0;
 			top.SetCreateTime() = now.ToFt();
 			top.SetModifyTime() = top.GetCreateTime();
-			top.SetMetaData(rootDirMetaData);
+			top.SetMetaData(createRootDirMetaData);
 
 			DirView dir = top.AsDirView();
 			dir.SetDirNodeLevel() = 0;
@@ -2414,7 +2414,7 @@ namespace At
 		m_maxNameBytes = PickMin<uint32>(0xFFFFU, SatSub<uint32>(topDirLeafNode_spaceForEntries / NodeRebalanceThresholdFraction, DirLeafEntry::EncodedSizeOverhead));
 		EnsureThrow(0 != m_maxNameBytes);
 		m_maxMetaBytes = m_maxNameBytes;
-		EnsureThrowWithNr2(rootDirMetaData.n <= m_maxMetaBytes, m_maxMetaBytes, rootDirMetaData.n);
+		EnsureThrowWithNr2(createRootDirMetaData.n <= m_maxMetaBytes, m_maxMetaBytes, createRootDirMetaData.n);
 
 		m_state = State::Inited;
 		return stateGuard.Dismiss(AfsResult::OK);
